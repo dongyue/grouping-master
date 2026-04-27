@@ -14,11 +14,13 @@ DATABASE_URL = f"mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB
 SECRET_KEY = os.getenv("SECRET_KEY", "dev-secret-change-me")
 SESSION_EXPIRE_DAYS = 30
 
-SMTP_HOST = os.getenv("SMTP_HOST", "")
+SMTP_HOST = os.getenv("SMTP_HOST", "").strip()
 SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))
-SMTP_USER = os.getenv("SMTP_USER", "")
-SMTP_PASSWORD = os.getenv("SMTP_PASSWORD", "")
-SMTP_FROM = os.getenv("SMTP_FROM", "noreply@fenzudashi.com")
+SMTP_USER = os.getenv("SMTP_USER", "").strip()
+SMTP_PASSWORD = os.getenv("SMTP_PASSWORD", "").strip()
+SMTP_FROM = os.getenv("SMTP_FROM", "noreply@fenzudashi.com").strip()
+SMTP_USE_SSL = os.getenv("SMTP_USE_SSL", "false").lower() == "true"
+SMTP_STARTTLS = os.getenv("SMTP_STARTTLS", "true").lower() != "false"  # 默认 true，显式设 false 才跳过
 
 UPLOAD_DIR = os.getenv("UPLOAD_DIR", "uploads")
 AVATAR_DIR = os.path.join(UPLOAD_DIR, "avatars")
