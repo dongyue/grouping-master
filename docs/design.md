@@ -65,6 +65,7 @@
 | POST | `/api/auth/reset-password` | 无 | 重置密码 |
 | PUT | `/api/auth/profile` | Session | 更新个人资料 |
 | POST | `/api/auth/avatar` | Session | 上传头像 |
+| DELETE | `/api/auth/account` | Session | 注销账号 |
 
 ### 3.2 认证机制
 

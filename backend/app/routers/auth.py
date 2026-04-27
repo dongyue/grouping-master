@@ -201,3 +201,17 @@ async def upload_avatar(
         avatar_path=user.avatar_path,
         created_at=user.created_at.isoformat(),
     )
+
+
+@router.delete("/account", response_model=MessageResponse)
+def delete_account(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    user = db.query(User).filter(User.id == current_user.id).first()
+    if not user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="用户不存在")
+    auth_service.delete_user(db, user)
+    response = JSONResponse(content={"message": "账号已注销"})
+    response.delete_cookie(key="session_id")
+    return response

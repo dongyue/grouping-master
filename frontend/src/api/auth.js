@@ -37,3 +37,7 @@ export function uploadAvatar(file) {
   formData.append('file', file)
   return api.post('/auth/avatar', formData)
 }
+
+export function deleteAccount() {
+  return api.delete('/auth/account')
+}

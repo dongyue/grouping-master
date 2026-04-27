@@ -1,7 +1,7 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { updateProfile, uploadAvatar } from '../api/auth'
+import { updateProfile, uploadAvatar, deleteAccount } from '../api/auth'
 import { useAuthStore } from '../stores/auth'
 
 const router = useRouter()
@@ -12,6 +12,7 @@ const error = ref('')
 const success = ref('')
 const saving = ref(false)
 const uploading = ref(false)
+const deleting = ref(false)
 
 const avatarUrl = computed(() => {
   if (auth.user?.avatar_path) {
@@ -50,6 +51,24 @@ async function handleAvatarUpload(e) {
     error.value = err.response?.data?.detail || '头像上传失败'
   } finally {
     uploading.value = false
+  }
+}
+
+async function handleDeleteAccount() {
+  if (!confirm('确定要注销账号吗？此操作不可撤销，所有数据将被永久删除。')) {
+    return
+  }
+  error.value = ''
+  deleting.value = true
+  try {
+    await deleteAccount()
+    auth.user = null
+    router.push('/login')
+  } catch (err) {
+    console.error('注销错误:', err)
+    error.value = err.response?.data?.detail || '注销失败'
+  } finally {
+    deleting.value = false
   }
 }
 </script>
@@ -109,6 +128,9 @@ async function handleAvatarUpload(e) {
 
     <!-- 修改密码 -->
     <a href="/settings/change-password" @click.prevent="router.push('/settings/change-password')" class="link-item">修改密码</a>
+    <a href="#" @click.prevent="handleDeleteAccount" class="link-item link-danger" :class="{ disabled: deleting }">
+      {{ deleting ? '注销中...' : '注销账号' }}
+    </a>
   </div>
 </template>
 
@@ -149,5 +171,14 @@ async function handleAvatarUpload(e) {
   color: #4f46e5;
   text-decoration: none;
   font-size: 14px;
+}
+
+.link-danger {
+  color: #dc2626;
+}
+
+.link-danger.disabled {
+  opacity: 0.5;
+  pointer-events: none;
 }
 </style>

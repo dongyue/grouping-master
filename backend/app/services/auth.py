@@ -1,3 +1,4 @@
+import os
 import sys
 from datetime import datetime, timedelta
 from sqlalchemy.orm import Session
@@ -126,3 +127,14 @@ def update_user_profile(db: Session, user: User, nickname: str | None, avatar_pa
     db.commit()
     db.refresh(user)
     return user
+
+
+def delete_user(db: Session, user: User) -> None:
+    # 删除头像文件
+    if user.avatar_path:
+        avatar_full_path = os.path.join(os.path.dirname(__file__), "..", "..", user.avatar_path)
+        if os.path.exists(avatar_full_path):
+            os.remove(avatar_full_path)
+    # sessions 和 password_resets 通过外键 CASCADE 自动删除
+    db.delete(user)
+    db.commit()
