@@ -50,9 +50,22 @@
 | used | BOOLEAN | DEFAULT FALSE | 是否已使用 |
 | created_at | DATETIME | DEFAULT NOW() | 创建时间 |
 
+### 2.4 activities 表
+
+| 字段 | 类型 | 约束 | 说明 |
+|------|------|------|------|
+| id | INT | PK, AUTO_INCREMENT | 主键 |
+| user_id | INT | FK → users.id, NOT NULL, INDEX | 创建者 ID |
+| title | VARCHAR(100) | NOT NULL | 活动标题 |
+| description | TEXT | NULLABLE | 活动描述 |
+| created_at | DATETIME | DEFAULT NOW() | 创建时间 |
+| updated_at | DATETIME | DEFAULT NOW() ON UPDATE NOW() | 更新时间 |
+
 ## 3. API 设计
 
-### 3.1 认证接口
+### 3.1 API 端点
+
+**认证接口**
 
 | 方法 | 路径 | 鉴权 | 说明 |
 |------|------|------|------|
@@ -66,6 +79,13 @@
 | PUT | `/api/auth/profile` | Session | 更新个人资料 |
 | POST | `/api/auth/avatar` | Session | 上传头像 |
 | DELETE | `/api/auth/account` | Session | 注销账号 |
+
+**活动接口**
+
+| 方法 | 路径 | 鉴权 | 说明 |
+|------|------|------|------|
+| POST | `/api/activities` | Session | 创建活动 |
+| GET | `/api/activities` | Session | 获取当前用户的活动列表（按创建时间倒序） |
 
 ### 3.2 认证机制
 
@@ -82,14 +102,14 @@
 - 忘记密码接口无论邮箱是否存在返回统一信息，防止用户枚举
 - 重置密码后销毁该用户所有 Session，强制重新登录
 
-## 5. 前端路由
+## 5. 前端路由与页面
 
-| 路径 | 页面 | 鉴权 |
-|------|------|------|
-| `/login` | 登录页 | 仅未登录可访问 |
-| `/register` | 注册页 | 仅未登录可访问 |
-| `/forgot-password` | 忘记密码页 | 公开 |
-| `/reset-password` | 重置密码页 | 公开（需 token 参数） |
-| `/` | 首页 | 需登录 |
-| `/settings` | 设置页 | 需登录 |
-| `/settings/change-password` | 修改密码页 | 需登录 |
+| 路径 | 页面 | 鉴权 | 说明 |
+|------|------|------|------|
+| `/login` | 登录页 | 仅未登录可访问 | 账号名 + 密码表单 |
+| `/register` | 注册页 | 仅未登录可访问 | 注册表单（含确认密码） |
+| `/forgot-password` | 忘记密码页 | 公开 | 输入邮箱发送重置链接 |
+| `/reset-password` | 重置密码页 | 公开 | ?token=xxx，设置新密码 |
+| `/` | 首页 | 需登录 | 创建活动表单 + 我的活动列表 |
+| `/settings` | 设置页 | 需登录 | 头像上传、修改昵称、注销账号入口 |
+| `/settings/change-password` | 修改密码页 | 需登录 | 旧密码 + 新密码表单 |

@@ -7,6 +7,8 @@ from app.schemas.auth import (
     UpdateProfileRequest,
     UserResponse,
     MessageResponse,
+    ActivityCreateRequest,
+    ActivityResponse,
 )
 
 __all__ = [
@@ -18,4 +20,6 @@ __all__ = [
     "UpdateProfileRequest",
     "UserResponse",
     "MessageResponse",
+    "ActivityCreateRequest",
+    "ActivityResponse",
 ]

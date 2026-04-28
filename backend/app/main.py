@@ -2,7 +2,7 @@ import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from app.routers import auth_router
+from app.routers import auth_router, activities_router
 from app.config import FRONTEND_URL, UPLOAD_DIR
 
 app = FastAPI(title="分组大师", version="0.1.0")
@@ -17,6 +17,7 @@ app.add_middleware(
 )
 
 app.include_router(auth_router)
+app.include_router(activities_router)
 
 if os.path.exists(UPLOAD_DIR):
     app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")

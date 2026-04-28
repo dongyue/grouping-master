@@ -1,5 +1,6 @@
 from app.models.user import User
 from app.models.session import Session
 from app.models.password_reset import PasswordReset
+from app.models.activity import Activity
 
-__all__ = ["User", "Session", "PasswordReset"]
+__all__ = ["User", "Session", "PasswordReset", "Activity"]
