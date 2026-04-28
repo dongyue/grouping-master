@@ -161,10 +161,34 @@
 
 - 密码使用 bcrypt 哈希存储，不存明文
 - Cookie 设为 HttpOnly 防 XSS，SameSite=Lax 防 CSRF
-- 头像上传校验 MIME 类型和文件大小（2MB），UUID 重命名防遍历
+- 头像上传校验 MIME 类型、文件魔术头和文件大小（2MB），UUID 重命名防遍历
 - 忘记密码接口无论邮箱是否存在返回统一信息，防止用户枚举
 - 重置密码后销毁该用户所有 Session，强制重新登录
 - 活动使用随机 slug 替代自增 ID 暴露在 URL 中，防止枚举遍历
+- 登录、注册、忘记密码接口实施 IP 级别速率限制，防暴力破解
+
+### 4.1 速率限制
+
+| 接口 | 限制 | 超限响应 |
+|------|------|----------|
+| `POST /api/auth/login` | 同 IP 每分钟 5 次 | 429 Too Many Requests |
+| `POST /api/auth/register` | 同 IP 每分钟 5 次 | 429 Too Many Requests |
+| `POST /api/auth/forgot-password` | 同 IP 每分钟 5 次 | 429 Too Many Requests |
+
+- 基于 FastAPI `Depends` 依赖注入实现，仅限目标路由
+- 限流数据存于应用内存，基于 IP + 接口路径计数，滑动窗口 60 秒
+- 服务重启后清零，不持久化
+
+### 4.2 头像文件魔术头校验
+
+| 类型 | 魔术头 (hex) |
+|------|-------------|
+| JPEG | `FF D8 FF` |
+| PNG | `89 50 4E 47` |
+| GIF | `47 49 46 38` |
+
+- 在上传头像时，除 MIME 类型检查外，校验文件二进制前若干字节
+- 校验不通过返回 400，防止伪造 Content-Type 上传恶意文件
 
 ## 5. 前端路由与页面
 

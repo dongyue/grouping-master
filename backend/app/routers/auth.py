@@ -18,13 +18,17 @@ from app.schemas.auth import (
 )
 from app.services import auth as auth_service
 from app.middleware.auth import get_current_user
+from app.middleware.rate_limit import RateLimiter
+from app.services.upload import validate_magic_bytes
 from app.config import AVATAR_DIR, MAX_AVATAR_SIZE, SESSION_EXPIRE_DAYS, FRONTEND_URL
+
+rate_limiter = RateLimiter()
 
 router = APIRouter(prefix="/api/auth", tags=["认证"])
 
 
 @router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
-def register(body: RegisterRequest, db: Session = Depends(get_db)):
+def register(body: RegisterRequest, db: Session = Depends(get_db), rate: None = Depends(rate_limiter)):
     existing = db.query(User).filter(User.username == body.username).first()
     if existing:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="账号名已被注册")
@@ -59,7 +63,7 @@ def register(body: RegisterRequest, db: Session = Depends(get_db)):
 
 
 @router.post("/login", response_model=UserResponse)
-def login(body: LoginRequest, db: Session = Depends(get_db)):
+def login(body: LoginRequest, db: Session = Depends(get_db), rate: None = Depends(rate_limiter)):
     user = auth_service.authenticate_user(db, body.username, body.password)
     if not user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="账号名或密码错误")
@@ -125,7 +129,7 @@ def change_password(
 
 
 @router.post("/forgot-password", response_model=MessageResponse)
-def forgot_password(request: Request, body: ForgotPasswordRequest, db: Session = Depends(get_db)):
+def forgot_password(request: Request, body: ForgotPasswordRequest, db: Session = Depends(get_db), rate: None = Depends(rate_limiter)):
     user = auth_service.get_user_by_email(db, body.email)
     if not user:
         return {"message": "如果该邮箱已注册，重置密码链接已发送"}
@@ -179,6 +183,8 @@ async def upload_avatar(
     content = await file.read()
     if len(content) > MAX_AVATAR_SIZE:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="文件大小不能超过 2MB")
+
+    validate_magic_bytes(content, file.content_type)
 
     os.makedirs(AVATAR_DIR, exist_ok=True)
 

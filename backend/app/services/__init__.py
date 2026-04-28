@@ -14,6 +14,7 @@ from app.services.auth import (
     update_user_profile,
 )
 from app.services.mail import send_reset_email, generate_token
+from app.services.upload import validate_magic_bytes
 
 __all__ = [
     "hash_password",
@@ -31,4 +32,5 @@ __all__ = [
     "update_user_profile",
     "send_reset_email",
     "generate_token",
+    "validate_magic_bytes",
 ]

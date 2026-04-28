@@ -45,13 +45,15 @@
 | `__init__.py` | 汇总导出业务函数 |
 | `auth.py` | 密码哈希/校验、注册/登录、Session 创建/查询/删除、密码重置令牌生成 |
 | `mail.py` | SMTP 邮件发送（`send_reset_email`）、随机令牌生成 |
+| `upload.py` | 文件魔术头校验（`validate_magic_bytes`），防伪造 MIME 类型上传 |
 
 ### 中间件（app/middleware/）
 
 | 文件 | 职责 |
 |------|------|
-| `__init__.py` | 导出 `get_current_user` |
+| `__init__.py` | 导出 `get_current_user`、`RateLimiter` |
 | `auth.py` | `get_current_user` 依赖注入：从 Cookie session_id 校验并返回当前 User |
+| `rate_limit.py` | `RateLimiter` 类：基于 IP + 路径的请求频率限制，窗口 60 秒，用于登录/注册/忘记密码接口 |
 
 ### 数据库迁移（alembic/）
 
