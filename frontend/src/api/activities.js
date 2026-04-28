@@ -23,3 +23,7 @@ export function leaveActivity(slug) {
 export function deleteActivity(slug) {
   return api.delete(`/activities/${slug}`)
 }
+
+export function updateActivity(slug, data) {
+  return api.put(`/activities/${slug}`, data)
+}

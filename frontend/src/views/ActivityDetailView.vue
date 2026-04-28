@@ -19,6 +19,7 @@ const leaving = ref(false)
 const leaveError = ref('')
 const deleting = ref(false)
 const deleteError = ref('')
+const updated = ref(false)
 
 onMounted(async () => {
   try {
@@ -33,6 +34,12 @@ onMounted(async () => {
     }
   } finally {
     loading.value = false
+  }
+
+  if (route.query.updated === '1') {
+    updated.value = true
+    router.replace({ query: {} })
+    setTimeout(() => (updated.value = false), 3000)
   }
 })
 
@@ -118,6 +125,7 @@ async function handleDelete() {
         </div>
         <p v-else class="members-empty">暂无成员</p>
       </div>
+      <div v-if="updated" class="success-msg" style="margin-bottom: 12px;">活动信息已更新</div>
       <div v-if="joinError" class="error-msg" style="margin-bottom: 12px;">{{ joinError }}</div>
       <div v-if="joinSuccess" class="success-msg" style="margin-bottom: 12px;">{{ joinSuccess }}</div>
       <div v-if="leaveError" class="error-msg" style="margin-bottom: 12px;">{{ leaveError }}</div>
@@ -128,6 +136,9 @@ async function handleDelete() {
         </button>
         <button v-if="activity.is_member" class="btn btn-secondary" :disabled="leaving" @click="handleLeave">
           {{ leaving ? '退出中...' : '退出活动' }}
+        </button>
+        <button v-if="activity.is_creator" class="btn btn-secondary" @click="router.push({ name: 'activity-edit', params: { slug: route.params.slug } })">
+          编辑活动
         </button>
         <button class="btn btn-secondary" @click="handleCopyLink" style="white-space: nowrap;">
           {{ copied ? '已复制！' : '分享链接' }}

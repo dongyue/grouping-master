@@ -120,6 +120,19 @@ class ActivityCreateRequest(BaseModel):
         return v
 
 
+class ActivityUpdateRequest(BaseModel):
+    title: str
+    description: str | None = None
+
+    @field_validator("title")
+    @classmethod
+    def validate_title(cls, v: str) -> str:
+        v = v.strip()
+        if len(v) < 1 or len(v) > 100:
+            raise ValueError("标题长度 1-100 位")
+        return v
+
+
 class ActivityResponse(BaseModel):
     id: int
     slug: str

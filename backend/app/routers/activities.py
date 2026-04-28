@@ -5,7 +5,7 @@ from app.database import get_db
 from app.models.user import User
 from app.models.activity import Activity
 from app.models.activity_member import ActivityMember
-from app.schemas.auth import ActivityCreateRequest, ActivityResponse, ActivityDetailResponse, MemberItem
+from app.schemas.auth import ActivityCreateRequest, ActivityUpdateRequest, ActivityResponse, ActivityDetailResponse, MemberItem
 from app.middleware.auth import get_current_user
 
 router = APIRouter(prefix="/api/activities", tags=["活动"])
@@ -165,6 +165,34 @@ def leave_activity(
     db.delete(membership)
     db.commit()
     return {"message": "已退出活动"}
+
+
+@router.put("/{slug}", response_model=ActivityResponse)
+def update_activity(
+    slug: str,
+    body: ActivityUpdateRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    activity = db.query(Activity).filter(Activity.slug == slug).first()
+    if not activity:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="活动不存在")
+
+    if activity.user_id != current_user.id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="只有活动创建者才能编辑活动")
+
+    activity.title = body.title.strip()
+    activity.description = body.description.strip() if body.description else None
+    db.commit()
+
+    return ActivityResponse(
+        id=activity.id,
+        slug=activity.slug,
+        title=activity.title,
+        description=activity.description,
+        creator_nickname=activity.user.nickname,
+        created_at=activity.created_at.isoformat(),
+    )
 
 
 @router.delete("/{slug}")

@@ -36,7 +36,7 @@
 |------|------|
 | `__init__.py` | 汇总导出路由 |
 | `auth.py` | `/api/auth/*` — 注册/登录/登出/me/改密/忘记密码/重置密码/更新资料/头像/注销账号 |
-| `activities.py` | `/api/activities` — POST 创建、GET 列表、GET `/:slug` 详情、POST `/:slug` 加入/退出、DELETE `/:slug` 删除 |
+| `activities.py` | `/api/activities` — POST 创建、GET 列表、GET `/:slug` 详情、POST `/:slug` 加入/退出、PUT `/:slug` 编辑、DELETE `/:slug` 删除 |
 
 ### 业务服务（app/services/）
 
@@ -80,7 +80,7 @@
 |------|------|
 | `index.js` | Axios 实例：baseURL、withCredentials、响应/错误拦截器 |
 | `auth.js` | 认证 API：注册/登录/登出/me/改密/忘记密码/重置密码/更新资料/头像/注销 |
-| `activities.js` | 活动 API：createActivity、listActivities、getActivity、joinActivity、leaveActivity、deleteActivity |
+| `activities.js` | 活动 API：createActivity、listActivities、getActivity、joinActivity、leaveActivity、updateActivity、deleteActivity |
 
 ### 状态管理（stores/）
 
@@ -93,7 +93,8 @@
 | 文件 | 职责 |
 |------|------|
 | `HomeView.vue` | 首页：活动创建表单 + 我的活动列表（点击可跳转详情） |
-| `ActivityDetailView.vue` | 活动详情页：标题/描述/创建者/时间 + 分享按钮 |
+| `ActivityDetailView.vue` | 活动详情页：标题/描述/创建者/时间 + 编辑/分享/加入/退出/删除按钮 |
+| `ActivityEditView.vue` | 编辑活动页：修改标题和描述，仅创建者可访问 |
 | `LoginView.vue` | 登录页 |
 | `RegisterView.vue` | 注册页 |
 | `ForgotPasswordView.vue` | 忘记密码：发送重置邮件 |
