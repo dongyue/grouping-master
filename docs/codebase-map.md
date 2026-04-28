@@ -50,6 +50,7 @@
 
 | 文件 | 职责 |
 |------|------|
+| `__init__.py` | 导出 `get_current_user` |
 | `auth.py` | `get_current_user` 依赖注入：从 Cookie session_id 校验并返回当前 User |
 
 ### 数据库迁移（alembic/）
@@ -72,6 +73,7 @@
 |------|------|
 | `main.js` | Vue 3 入口：创建 Pinia、Router，挂载 `#app` |
 | `App.vue` | 根组件：顶部导航栏 + `<router-view>` |
+| `style.css` | 全局样式表 |
 | `router/index.js` | 路由表 + `beforeEach` 鉴权守卫（requiresAuth/guest） |
 
 ### API 调用层（api/）
@@ -87,6 +89,12 @@
 | 文件 | 职责 |
 |------|------|
 | `auth.js` | Pinia store：user 状态、isLoggedIn、fetchUser/login/logout |
+
+### 静态资源（assets/）
+
+| 文件 | 职责 |
+|------|------|
+| `vue.svg` | Vue 图标 |
 
 ### 页面组件（views/）
 
