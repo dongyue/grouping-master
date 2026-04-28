@@ -123,6 +123,7 @@ class ActivityResponse(BaseModel):
     id: int
     title: str
     description: str | None
+    creator_nickname: str
     created_at: str
 
     model_config = {"from_attributes": True}

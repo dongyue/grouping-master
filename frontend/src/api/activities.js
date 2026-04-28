@@ -7,3 +7,7 @@ export function createActivity(data) {
 export function listActivities() {
   return api.get('/activities')
 }
+
+export function getActivity(id) {
+  return api.get(`/activities/${id}`)
+}

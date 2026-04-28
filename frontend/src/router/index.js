@@ -31,6 +31,16 @@ const routes = [
     component: () => import('../views/ResetPasswordView.vue'),
   },
   {
+    path: '/activities',
+    redirect: '/',
+  },
+  {
+    path: '/activities/:id',
+    name: 'activity-detail',
+    component: () => import('../views/ActivityDetailView.vue'),
+    meta: { requiresAuth: true },
+  },
+  {
     path: '/settings',
     name: 'settings',
     component: () => import('../views/SettingsView.vue'),

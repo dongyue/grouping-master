@@ -28,6 +28,7 @@ def create_activity(
         id=activity.id,
         title=activity.title,
         description=activity.description,
+        creator_nickname=current_user.nickname,
         created_at=activity.created_at.isoformat(),
     )
 
@@ -48,7 +49,26 @@ def list_activities(
             id=a.id,
             title=a.title,
             description=a.description,
+            creator_nickname=a.user.nickname,
             created_at=a.created_at.isoformat(),
         )
         for a in activities
     ]
+
+
+@router.get("/{activity_id}", response_model=ActivityResponse)
+def get_activity(
+    activity_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    activity = db.query(Activity).filter(Activity.id == activity_id).first()
+    if not activity:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="活动不存在")
+    return ActivityResponse(
+        id=activity.id,
+        title=activity.title,
+        description=activity.description,
+        creator_nickname=activity.user.nickname,
+        created_at=activity.created_at.isoformat(),
+    )

@@ -1,7 +1,10 @@
 <script setup>
 import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { createActivity, listActivities } from '../api/activities'
+
+const router = useRouter()
 
 const auth = useAuthStore()
 
@@ -76,7 +79,7 @@ async function handleCreate() {
       <div v-else-if="activities.length === 0" style="text-align: center; color: #999; padding: 20px;">
         还没有活动，创建一个吧
       </div>
-      <div v-for="a in activities" :key="a.id" class="activity-item">
+      <div v-for="a in activities" :key="a.id" class="activity-item" @click="router.push(`/activities/${a.id}`)" style="cursor: pointer;">
         <div class="activity-title">{{ a.title }}</div>
         <div v-if="a.description" class="activity-desc">
           {{ a.description.length > 50 ? a.description.slice(0, 50) + '...' : a.description }}

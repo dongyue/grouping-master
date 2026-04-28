@@ -86,6 +86,9 @@
 |------|------|------|------|
 | POST | `/api/activities` | Session | 创建活动 |
 | GET | `/api/activities` | Session | 获取当前用户的活动列表（按创建时间倒序） |
+| GET | `/api/activities/{id}` | Session | 查看活动详情（任意登录用户均可查看） |
+
+> 活动列表和详情共用 `ActivityResponse` 响应格式：`{id, title, description, creator_nickname, created_at}`
 
 ### 3.2 认证机制
 
@@ -111,5 +114,6 @@
 | `/forgot-password` | 忘记密码页 | 公开 | 输入邮箱发送重置链接 |
 | `/reset-password` | 重置密码页 | 公开 | ?token=xxx，设置新密码 |
 | `/` | 首页 | 需登录 | 创建活动表单 + 我的活动列表 |
+| `/activities/:id` | 活动详情页 | 需登录 | 活动完整信息 + 分享按钮 |
 | `/settings` | 设置页 | 需登录 | 头像上传、修改昵称、注销账号入口 |
 | `/settings/change-password` | 修改密码页 | 需登录 | 旧密码 + 新密码表单 |
