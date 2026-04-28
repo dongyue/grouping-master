@@ -122,6 +122,7 @@ class ActivityCreateRequest(BaseModel):
 
 class ActivityResponse(BaseModel):
     id: int
+    slug: str
     title: str
     description: str | None
     creator_nickname: str

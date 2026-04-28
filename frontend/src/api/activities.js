@@ -8,18 +8,18 @@ export function listActivities(type) {
   return api.get('/activities', { params: { type } })
 }
 
-export function getActivity(id) {
-  return api.get(`/activities/${id}`)
+export function getActivity(slug) {
+  return api.get(`/activities/${slug}`)
 }
 
-export function joinActivity(id) {
-  return api.post(`/activities/${id}/join`)
+export function joinActivity(slug) {
+  return api.post(`/activities/${slug}/join`)
 }
 
-export function leaveActivity(id) {
-  return api.post(`/activities/${id}/leave`)
+export function leaveActivity(slug) {
+  return api.post(`/activities/${slug}/leave`)
 }
 
-export function deleteActivity(id) {
-  return api.delete(`/activities/${id}`)
+export function deleteActivity(slug) {
+  return api.delete(`/activities/${slug}`)
 }

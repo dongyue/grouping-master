@@ -20,7 +20,7 @@
 | `user.py` | `User` 表：id, username, nickname, password_hash, email, avatar_path, 时间戳 |
 | `session.py` | `Session` 表：服务端 session 持久化（id, user_id, data, expires_at） |
 | `password_reset.py` | `PasswordReset` 表：密码重置令牌（token, expires_at, used） |
-| `activity.py` | `Activity` 表：活动（id, user_id FK, title, description, 时间戳），关联 User |
+| `activity.py` | `Activity` 表：活动（id, slug, user_id FK, title, description, 时间戳），关联 User |
 | `activity_member.py` | `ActivityMember` 表：活动成员关系（id, activity_id FK, user_id FK, 时间戳），联合唯一约束 |
 
 ### Pydantic Schema（app/schemas/）
@@ -36,7 +36,7 @@
 |------|------|
 | `__init__.py` | 汇总导出路由 |
 | `auth.py` | `/api/auth/*` — 注册/登录/登出/me/改密/忘记密码/重置密码/更新资料/头像/注销账号 |
-| `activities.py` | `/api/activities` — POST 创建、GET 列表、GET `/:id` 详情、DELETE `/:id` 删除 |
+| `activities.py` | `/api/activities` — POST 创建、GET 列表、GET `/:slug` 详情、POST `/:slug` 加入/退出、DELETE `/:slug` 删除 |
 
 ### 业务服务（app/services/）
 
@@ -60,6 +60,7 @@
 | `versions/802b0df17e93_init.py` | 初始迁移：users、sessions、password_resets 三表 |
 | `versions/4ebf2b01b301_add_activities_table.py` | 新增 activities 表 |
 | `versions/4373c7646a4b_add_activity_members_table.py` | 新增 activity_members 表 |
+| `versions/d9158a7c8e2f_add_slug_to_activities.py` | activities 表新增 slug 列 |
 
 ---
 
@@ -79,7 +80,7 @@
 |------|------|
 | `index.js` | Axios 实例：baseURL、withCredentials、响应/错误拦截器 |
 | `auth.js` | 认证 API：注册/登录/登出/me/改密/忘记密码/重置密码/更新资料/头像/注销 |
-| `activities.js` | 活动 API：createActivity、listActivities、getActivity |
+| `activities.js` | 活动 API：createActivity、listActivities、getActivity、joinActivity、leaveActivity、deleteActivity |
 
 ### 状态管理（stores/）
 

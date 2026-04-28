@@ -32,6 +32,7 @@ def create_activity(
     db.commit()
     return ActivityResponse(
         id=activity.id,
+        slug=activity.slug,
         title=activity.title,
         description=activity.description,
         creator_nickname=current_user.nickname,
@@ -64,6 +65,7 @@ def list_activities(
     return [
         ActivityResponse(
             id=a.id,
+            slug=a.slug,
             title=a.title,
             description=a.description,
             creator_nickname=a.user.nickname,
@@ -73,24 +75,24 @@ def list_activities(
     ]
 
 
-@router.get("/{activity_id}", response_model=ActivityDetailResponse)
+@router.get("/{slug}", response_model=ActivityDetailResponse)
 def get_activity(
-    activity_id: int,
+    slug: str,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    activity = db.query(Activity).filter(Activity.id == activity_id).first()
+    activity = db.query(Activity).filter(Activity.slug == slug).first()
     if not activity:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="活动不存在")
 
     is_member = db.query(ActivityMember).filter(
-        ActivityMember.activity_id == activity_id,
+        ActivityMember.activity_id == activity.id,
         ActivityMember.user_id == current_user.id,
     ).first() is not None
 
     members = (
         db.query(ActivityMember)
-        .filter(ActivityMember.activity_id == activity_id)
+        .filter(ActivityMember.activity_id == activity.id)
         .order_by(ActivityMember.created_at.asc())
         .all()
     )
@@ -109,6 +111,7 @@ def get_activity(
 
     return ActivityDetailResponse(
         id=activity.id,
+        slug=activity.slug,
         title=activity.title,
         description=activity.description,
         creator_nickname=activity.user.nickname,
@@ -119,41 +122,41 @@ def get_activity(
     )
 
 
-@router.post("/{activity_id}/join")
+@router.post("/{slug}/join")
 def join_activity(
-    activity_id: int,
+    slug: str,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    activity = db.query(Activity).filter(Activity.id == activity_id).first()
+    activity = db.query(Activity).filter(Activity.slug == slug).first()
     if not activity:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="活动不存在")
 
     existing = db.query(ActivityMember).filter(
-        ActivityMember.activity_id == activity_id,
+        ActivityMember.activity_id == activity.id,
         ActivityMember.user_id == current_user.id,
     ).first()
     if existing:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="您已加入该活动")
 
-    member = ActivityMember(activity_id=activity_id, user_id=current_user.id)
+    member = ActivityMember(activity_id=activity.id, user_id=current_user.id)
     db.add(member)
     db.commit()
     return {"message": "加入成功"}
 
 
-@router.post("/{activity_id}/leave")
+@router.post("/{slug}/leave")
 def leave_activity(
-    activity_id: int,
+    slug: str,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    activity = db.query(Activity).filter(Activity.id == activity_id).first()
+    activity = db.query(Activity).filter(Activity.slug == slug).first()
     if not activity:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="活动不存在")
 
     membership = db.query(ActivityMember).filter(
-        ActivityMember.activity_id == activity_id,
+        ActivityMember.activity_id == activity.id,
         ActivityMember.user_id == current_user.id,
     ).first()
     if not membership:
@@ -164,13 +167,13 @@ def leave_activity(
     return {"message": "已退出活动"}
 
 
-@router.delete("/{activity_id}")
+@router.delete("/{slug}")
 def delete_activity(
-    activity_id: int,
+    slug: str,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    activity = db.query(Activity).filter(Activity.id == activity_id).first()
+    activity = db.query(Activity).filter(Activity.slug == slug).first()
     if not activity:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="活动不存在")
 

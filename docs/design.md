@@ -54,7 +54,8 @@
 
 | 字段 | 类型 | 约束 | 说明 |
 |------|------|------|------|
-| id | INT | PK, AUTO_INCREMENT | 主键 |
+| id | INT | PK, AUTO_INCREMENT | 主键（内部使用） |
+| slug | VARCHAR(12) | UNIQUE, NOT NULL, INDEX | 公网标识（URL 中使用） |
 | user_id | INT | FK → users.id, NOT NULL, INDEX | 创建者 ID |
 | title | VARCHAR(100) | NOT NULL | 活动标题 |
 | description | TEXT | NULLABLE | 活动描述 |
@@ -102,41 +103,43 @@
 |------|------|------|------|
 | POST | `/api/activities` | Session | 创建活动 |
 | GET | `/api/activities` | Session | 获取活动列表（按 `type` 参数返回 `created` 或 `joined`） |
-| GET | `/api/activities/{id}` | Session | 查看活动详情（任意登录用户均可查看） |
-| POST | `/api/activities/{id}/join` | Session | 加入活动 |
-| DELETE | `/api/activities/{id}` | Session | 删除活动（仅创建者） |
-| POST | `/api/activities/{id}/leave` | Session | 退出活动 |
+| GET | `/api/activities/{slug}` | Session | 查看活动详情（任意登录用户均可查看） |
+| POST | `/api/activities/{slug}/join` | Session | 加入活动 |
+| DELETE | `/api/activities/{slug}` | Session | 删除活动（仅创建者） |
+| POST | `/api/activities/{slug}/leave` | Session | 退出活动 |
 
 `POST /api/activities` 创建活动
 - 请求体：`{title: str, description?: str, join_activity?: bool}`
 - `join_activity` 默认 `true`，为 `true` 时创建者同时加入活动
+- 创建时自动生成 12 位随机 slug，作为活动公网标识
 
 `GET /api/activities?type=created|joined`
 - `type=created` 返回当前用户创建的活动列表
 - `type=joined` 返回当前用户加入的活动列表
 - 均按创建时间倒序
 
-`GET /api/activities/{id}`
-- 响应字段：`{id, title, description, creator_nickname, created_at, is_member, members}`
+`GET /api/activities/{slug}`
+- 响应字段：`{id, slug, title, description, creator_nickname, created_at, is_member, is_creator, members}`
 - `is_member`：当前用户是否已加入该活动
+- `is_creator`：当前用户是否为该活动创建者
 - `members`：`[MemberItem]` 成员列表，每项 `{user_id, nickname, avatar_path, joined_at}`，按加入时间升序
 
-`POST /api/activities/{id}/join`
+`POST /api/activities/{slug}/join`
 - 无请求体
 - 用户已加入时返回 409
 
-`DELETE /api/activities/{id}`
+`DELETE /api/activities/{slug}`
 - 仅活动创建者可删除
 - 非创建者返回 403
 - 活动不存在返回 404
 - 数据库已配置 ON DELETE CASCADE，删除活动时成员关系自动清除
 - 响应：`{message: "活动已删除"}`
 
-`POST /api/activities/{id}/leave`
+`POST /api/activities/{slug}/leave`
 - 无请求体
 - 用户未加入活动时返回 409
 
-> 活动列表项响应格式：`{id, title, description, creator_nickname, created_at}`
+> 活动列表项响应格式：`{id, slug, title, description, creator_nickname, created_at}`
 
 ## 4. 安全策略
 
@@ -145,6 +148,7 @@
 - 头像上传校验 MIME 类型和文件大小（2MB），UUID 重命名防遍历
 - 忘记密码接口无论邮箱是否存在返回统一信息，防止用户枚举
 - 重置密码后销毁该用户所有 Session，强制重新登录
+- 活动使用随机 slug 替代自增 ID 暴露在 URL 中，防止枚举遍历
 
 ## 5. 前端路由与页面
 
@@ -155,6 +159,6 @@
 | `/forgot-password` | 忘记密码页 | 公开 | 输入邮箱发送重置链接 |
 | `/reset-password` | 重置密码页 | 公开 | ?token=xxx，设置新密码 |
 | `/` | 首页 | 需登录 | 创建活动表单（含「同时加入活动」复选框） + 「我创建的活动」列表 + 「我加入的活动」列表 |
-| `/activities/:id` | 活动详情页 | 需登录 | 活动完整信息 + 分享按钮 + 加入活动按钮（仅未加入时显示） + 退出活动按钮（仅已加入时显示） + 删除按钮（仅创建者可见） |
+| `/activities/:slug` | 活动详情页 | 需登录 | 活动完整信息 + 分享按钮 + 加入活动按钮（仅未加入时显示） + 退出活动按钮（仅已加入时显示） + 删除按钮（仅创建者可见） |
 | `/settings` | 设置页 | 需登录 | 头像上传、修改昵称、注销账号入口 |
 | `/settings/change-password` | 修改密码页 | 需登录 | 旧密码 + 新密码表单 |

@@ -114,7 +114,7 @@ function truncate(text) {
       <div class="activity-section">
         <h2 class="section-title">我创建的活动</h2>
         <div v-if="createdActivities.length === 0" class="empty-hint">暂无</div>
-        <div v-for="a in createdActivities" :key="'created-' + a.id" class="activity-item" @click="router.push(`/activities/${a.id}`)" style="cursor: pointer;">
+        <div v-for="a in createdActivities" :key="'created-' + a.id" class="activity-item" @click="router.push(`/activities/${a.slug}`)" style="cursor: pointer;">
           <div class="activity-title">{{ a.title }}</div>
           <div v-if="a.description" class="activity-desc">{{ truncate(a.description) }}</div>
           <div class="activity-time">{{ a.created_at.slice(0, 10) }}</div>
@@ -125,7 +125,7 @@ function truncate(text) {
       <div class="activity-section">
         <h2 class="section-title">我加入的活动</h2>
         <div v-if="joinedActivities.length === 0" class="empty-hint">暂无</div>
-        <div v-for="a in joinedActivities" :key="'joined-' + a.id" class="activity-item" @click="router.push(`/activities/${a.id}`)" style="cursor: pointer;">
+        <div v-for="a in joinedActivities" :key="'joined-' + a.id" class="activity-item" @click="router.push(`/activities/${a.slug}`)" style="cursor: pointer;">
           <div class="activity-title">{{ a.title }}</div>
           <div v-if="a.description" class="activity-desc">{{ truncate(a.description) }}</div>
           <div class="activity-time">{{ a.created_at.slice(0, 10) }}</div>

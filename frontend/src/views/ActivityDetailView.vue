@@ -22,7 +22,7 @@ const deleteError = ref('')
 
 onMounted(async () => {
   try {
-    const res = await getActivity(route.params.id)
+    const res = await getActivity(route.params.slug)
     activity.value = res.data
   } catch (err) {
     console.error('加载活动详情错误:', err)
@@ -37,7 +37,7 @@ onMounted(async () => {
 })
 
 function handleCopyLink() {
-  const url = window.location.origin + router.resolve({ name: 'activity-detail', params: { id: route.params.id } }).href
+  const url = window.location.origin + router.resolve({ name: 'activity-detail', params: { slug: route.params.slug } }).href
   navigator.clipboard.writeText(url).then(() => {
     copied.value = true
     setTimeout(() => (copied.value = false), 2000)
@@ -49,7 +49,7 @@ async function handleJoin() {
   joinError.value = ''
   joinSuccess.value = ''
   try {
-    await joinActivity(route.params.id)
+    await joinActivity(route.params.slug)
     activity.value.is_member = true
     joinSuccess.value = '加入成功'
     setTimeout(() => (joinSuccess.value = ''), 2000)
@@ -65,7 +65,7 @@ async function handleLeave() {
   leaving.value = true
   leaveError.value = ''
   try {
-    await leaveActivity(route.params.id)
+    await leaveActivity(route.params.slug)
     activity.value.is_member = false
     activity.value.members = activity.value.members.filter(m => m.user_id !== auth.user.id)
     router.push({ name: 'home', query: { left: '1' } })
@@ -81,7 +81,7 @@ async function handleDelete() {
   deleting.value = true
   deleteError.value = ''
   try {
-    await deleteActivity(route.params.id)
+    await deleteActivity(route.params.slug)
     router.push({ name: 'home', query: { deleted: '1' } })
   } catch (err) {
     deleteError.value = err.response?.data?.detail || '删除失败'
