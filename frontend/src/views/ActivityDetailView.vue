@@ -2,7 +2,7 @@
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
-import { getActivity, joinActivity, leaveActivity, deleteActivity } from '../api/activities'
+import { getActivity, joinActivity, leaveActivity, deleteActivity, kickMember } from '../api/activities'
 
 const route = useRoute()
 const router = useRouter()
@@ -20,6 +20,8 @@ const leaveError = ref('')
 const deleting = ref(false)
 const deleteError = ref('')
 const updated = ref(false)
+const kickingUserId = ref(null)
+const kickError = ref('')
 
 onMounted(async () => {
   try {
@@ -96,6 +98,20 @@ async function handleDelete() {
     deleting.value = false
   }
 }
+
+async function handleKick(userId, nickname) {
+  if (!confirm(`确定要将 ${nickname} 踢出此活动吗？`)) return
+  kickingUserId.value = userId
+  kickError.value = ''
+  try {
+    await kickMember(route.params.slug, userId)
+    activity.value.members = activity.value.members.filter(m => m.user_id !== userId)
+  } catch (err) {
+    kickError.value = err.response?.data?.detail || '踢出失败'
+  } finally {
+    kickingUserId.value = null
+  }
+}
 </script>
 
 <template>
@@ -121,6 +137,14 @@ async function handleDelete() {
               <span v-else class="avatar-placeholder">{{ member.nickname[0] }}</span>
             </div>
             <span class="member-nickname">{{ member.nickname }}</span>
+            <button
+              v-if="activity.is_creator && member.user_id !== auth.user.id"
+              class="btn-kick"
+              :disabled="kickingUserId === member.user_id"
+              @click="handleKick(member.user_id, member.nickname)"
+            >
+              {{ kickingUserId === member.user_id ? '踢出中...' : '踢出' }}
+            </button>
           </div>
         </div>
         <p v-else class="members-empty">暂无成员</p>
@@ -130,6 +154,7 @@ async function handleDelete() {
       <div v-if="joinSuccess" class="success-msg" style="margin-bottom: 12px;">{{ joinSuccess }}</div>
       <div v-if="leaveError" class="error-msg" style="margin-bottom: 12px;">{{ leaveError }}</div>
       <div v-if="deleteError" class="error-msg" style="margin-bottom: 12px;">{{ deleteError }}</div>
+      <div v-if="kickError" class="error-msg" style="margin-bottom: 12px;">{{ kickError }}</div>
       <div class="actions">
         <button v-if="!activity.is_member" class="btn btn-primary" :disabled="joining" @click="handleJoin">
           {{ joining ? '加入中...' : '加入活动' }}
@@ -257,5 +282,27 @@ async function handleDelete() {
 .members-empty {
   font-size: 13px;
   color: #bbb;
+}
+
+.btn-kick {
+  font-size: 11px;
+  padding: 2px 10px;
+  border: 1px solid #e74c3c;
+  border-radius: 4px;
+  background: transparent;
+  color: #e74c3c;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-left: auto;
+}
+
+.btn-kick:hover:not(:disabled) {
+  background: #e74c3c;
+  color: #fff;
+}
+
+.btn-kick:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 </style>

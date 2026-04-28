@@ -24,6 +24,11 @@ export function deleteActivity(slug) {
   return api.delete(`/activities/${slug}`)
 }
 
+export function kickMember(slug, userId) {
+  return api.delete(`/activities/${slug}/members/${userId}`)
+}
+
 export function updateActivity(slug, data) {
   return api.put(`/activities/${slug}`, data)
 }
+

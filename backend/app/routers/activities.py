@@ -195,6 +195,35 @@ def update_activity(
     )
 
 
+@router.delete("/{slug}/members/{user_id}")
+def kick_member(
+    slug: str,
+    user_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    activity = db.query(Activity).filter(Activity.slug == slug).first()
+    if not activity:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="活动不存在")
+
+    if activity.user_id != current_user.id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="只有活动创建者才能踢出成员")
+
+    if user_id == current_user.id:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="创建者不能踢出自己，请使用退出活动功能")
+
+    membership = db.query(ActivityMember).filter(
+        ActivityMember.activity_id == activity.id,
+        ActivityMember.user_id == user_id,
+    ).first()
+    if not membership:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="该用户不是本活动成员")
+
+    db.delete(membership)
+    db.commit()
+    return {"message": "已将该成员移出活动"}
+
+
 @router.delete("/{slug}")
 def delete_activity(
     slug: str,

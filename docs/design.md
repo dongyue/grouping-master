@@ -108,6 +108,7 @@
 | DELETE | `/api/activities/{slug}` | Session | 删除活动（仅创建者） |
 | POST | `/api/activities/{slug}/leave` | Session | 退出活动 |
 | PUT | `/api/activities/{slug}` | Session | 更新活动（仅创建者） |
+| DELETE | `/api/activities/{slug}/members/{user_id}` | Session | 踢出成员（仅创建者） |
 
 `POST /api/activities` 创建活动
 - 请求体：`{title: str, description?: str, join_activity?: bool}`
@@ -146,6 +147,14 @@
 - 非创建者返回 403
 - 响应：更新后的 `ActivityResponse`
 
+`DELETE /api/activities/{slug}/members/{user_id}`
+- 无请求体
+- 仅活动创建者可踢出成员
+- 非创建者返回 403
+- 目标用户不是该活动成员时返回 404
+- 创建者不能踢出自己，返回 400
+- 响应：`{message: "已将该成员移出活动"}`
+
 > 活动列表项响应格式：`{id, slug, title, description, creator_nickname, created_at}`
 
 ## 4. 安全策略
@@ -166,7 +175,7 @@
 | `/forgot-password` | 忘记密码页 | 公开 | 输入邮箱发送重置链接 |
 | `/reset-password` | 重置密码页 | 公开 | ?token=xxx，设置新密码 |
 | `/` | 首页 | 需登录 | 创建活动表单（含「同时加入活动」复选框） + 「我创建的活动」列表 + 「我加入的活动」列表 |
-| `/activities/:slug` | 活动详情页 | 需登录 | 活动完整信息 + 编辑按钮（创建者）+ 分享按钮 + 加入/退出按钮 + 删除按钮 |
+| `/activities/:slug` | 活动详情页 | 需登录 | 活动完整信息 + 编辑按钮（创建者）+ 分享按钮 + 加入/退出按钮 + 删除按钮 + 踢出成员（创建者可操作） |
 | `/activities/:slug/edit` | 编辑活动页 | 需登录 | 编辑活动标题和描述，仅创建者可操作，非创建者重定向回详情页 |
 | `/settings` | 设置页 | 需登录 | 头像上传、修改昵称、注销账号入口 |
 | `/settings/change-password` | 修改密码页 | 需登录 | 旧密码 + 新密码表单 |
