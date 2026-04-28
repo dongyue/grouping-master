@@ -39,3 +39,6 @@ backend/alembic/README
 
 # 日志
 *.log
+
+# diff 工具输出
+diff.md
