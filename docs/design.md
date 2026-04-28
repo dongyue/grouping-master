@@ -104,6 +104,7 @@
 | GET | `/api/activities` | Session | 获取活动列表（按 `type` 参数返回 `created` 或 `joined`） |
 | GET | `/api/activities/{id}` | Session | 查看活动详情（任意登录用户均可查看） |
 | POST | `/api/activities/{id}/join` | Session | 加入活动 |
+| DELETE | `/api/activities/{id}` | Session | 删除活动（仅创建者） |
 
 `POST /api/activities` 创建活动
 - 请求体：`{title: str, description?: str, join_activity?: bool}`
@@ -122,6 +123,13 @@
 `POST /api/activities/{id}/join`
 - 无请求体
 - 用户已加入时返回 409
+
+`DELETE /api/activities/{id}`
+- 仅活动创建者可删除
+- 非创建者返回 403
+- 活动不存在返回 404
+- 数据库已配置 ON DELETE CASCADE，删除活动时成员关系自动清除
+- 响应：`{message: "活动已删除"}`
 
 > 活动列表项响应格式：`{id, title, description, creator_nickname, created_at}`
 
@@ -142,6 +150,6 @@
 | `/forgot-password` | 忘记密码页 | 公开 | 输入邮箱发送重置链接 |
 | `/reset-password` | 重置密码页 | 公开 | ?token=xxx，设置新密码 |
 | `/` | 首页 | 需登录 | 创建活动表单（含「同时加入活动」复选框） + 「我创建的活动」列表 + 「我加入的活动」列表 |
-| `/activities/:id` | 活动详情页 | 需登录 | 活动完整信息 + 分享按钮 + 加入活动按钮（仅未加入时显示） |
+| `/activities/:id` | 活动详情页 | 需登录 | 活动完整信息 + 分享按钮 + 加入活动按钮（仅未加入时显示） + 删除按钮（仅创建者可见） |
 | `/settings` | 设置页 | 需登录 | 头像上传、修改昵称、注销账号入口 |
 | `/settings/change-password` | 修改密码页 | 需登录 | 旧密码 + 新密码表单 |

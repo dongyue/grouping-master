@@ -105,6 +105,8 @@ def get_activity(
         for m in members
     ]
 
+    is_creator = activity.user_id == current_user.id
+
     return ActivityDetailResponse(
         id=activity.id,
         title=activity.title,
@@ -112,6 +114,7 @@ def get_activity(
         creator_nickname=activity.user.nickname,
         created_at=activity.created_at.isoformat(),
         is_member=is_member,
+        is_creator=is_creator,
         members=members_data,
     )
 
@@ -137,3 +140,21 @@ def join_activity(
     db.add(member)
     db.commit()
     return {"message": "加入成功"}
+
+
+@router.delete("/{activity_id}")
+def delete_activity(
+    activity_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    activity = db.query(Activity).filter(Activity.id == activity_id).first()
+    if not activity:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="活动不存在")
+
+    if activity.user_id != current_user.id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="只有活动创建者才能删除活动")
+
+    db.delete(activity)
+    db.commit()
+    return {"message": "活动已删除"}

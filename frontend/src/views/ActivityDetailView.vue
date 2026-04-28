@@ -1,7 +1,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { getActivity, joinActivity } from '../api/activities'
+import { getActivity, joinActivity, deleteActivity } from '../api/activities'
 
 const route = useRoute()
 const router = useRouter()
@@ -13,6 +13,8 @@ const copied = ref(false)
 const joining = ref(false)
 const joinError = ref('')
 const joinSuccess = ref('')
+const deleting = ref(false)
+const deleteError = ref('')
 
 onMounted(async () => {
   try {
@@ -53,6 +55,20 @@ async function handleJoin() {
     joining.value = false
   }
 }
+
+async function handleDelete() {
+  if (!confirm('确定要删除此活动吗？删除后不可恢复。')) return
+  deleting.value = true
+  deleteError.value = ''
+  try {
+    await deleteActivity(route.params.id)
+    router.push({ name: 'home', query: { deleted: '1' } })
+  } catch (err) {
+    deleteError.value = err.response?.data?.detail || '删除失败'
+  } finally {
+    deleting.value = false
+  }
+}
 </script>
 
 <template>
@@ -84,6 +100,7 @@ async function handleJoin() {
       </div>
       <div v-if="joinError" class="error-msg" style="margin-bottom: 12px;">{{ joinError }}</div>
       <div v-if="joinSuccess" class="success-msg" style="margin-bottom: 12px;">{{ joinSuccess }}</div>
+      <div v-if="deleteError" class="error-msg" style="margin-bottom: 12px;">{{ deleteError }}</div>
       <div class="actions">
         <button v-if="!activity.is_member" class="btn btn-primary" :disabled="joining" @click="handleJoin">
           {{ joining ? '加入中...' : '加入活动' }}
@@ -94,6 +111,9 @@ async function handleJoin() {
         <router-link to="/" class="btn btn-secondary" style="text-decoration: none; display: inline-flex; align-items: center; white-space: nowrap;">
           返回首页
         </router-link>
+        <button v-if="activity.is_creator" class="btn btn-danger" :disabled="deleting" @click="handleDelete">
+          {{ deleting ? '删除中...' : '删除活动' }}
+        </button>
       </div>
     </template>
   </div>
@@ -131,6 +151,7 @@ async function handleJoin() {
 
 .actions {
   display: flex;
+  flex-wrap: wrap;
   gap: 12px;
 }
 

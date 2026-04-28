@@ -15,3 +15,7 @@ export function getActivity(id) {
 export function joinActivity(id) {
   return api.post(`/activities/${id}/join`)
 }
+
+export function deleteActivity(id) {
+  return api.delete(`/activities/${id}`)
+}

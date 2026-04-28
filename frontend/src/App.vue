@@ -141,6 +141,15 @@ main {
   background: #4338ca;
 }
 
+.btn-danger {
+  background: #dc2626;
+  color: #fff;
+}
+
+.btn-danger:hover {
+  background: #b91c1c;
+}
+
 .btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;

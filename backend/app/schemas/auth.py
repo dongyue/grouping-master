@@ -141,4 +141,5 @@ class MemberItem(BaseModel):
 
 class ActivityDetailResponse(ActivityResponse):
     is_member: bool
+    is_creator: bool
     members: list[MemberItem]

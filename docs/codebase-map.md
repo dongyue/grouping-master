@@ -36,7 +36,7 @@
 |------|------|
 | `__init__.py` | 汇总导出路由 |
 | `auth.py` | `/api/auth/*` — 注册/登录/登出/me/改密/忘记密码/重置密码/更新资料/头像/注销账号 |
-| `activities.py` | `/api/activities` — POST 创建、GET 列表、GET `/:id` 详情 |
+| `activities.py` | `/api/activities` — POST 创建、GET 列表、GET `/:id` 详情、DELETE `/:id` 删除 |
 
 ### 业务服务（app/services/）
 

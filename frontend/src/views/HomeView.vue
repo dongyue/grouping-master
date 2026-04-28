@@ -1,10 +1,11 @@
 <script setup>
 import { ref, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { createActivity, listActivities } from '../api/activities'
 
 const router = useRouter()
+const route = useRoute()
 
 const auth = useAuthStore()
 
@@ -33,7 +34,14 @@ async function fetchActivities() {
   }
 }
 
-onMounted(fetchActivities)
+onMounted(() => {
+  fetchActivities()
+  if (route.query.deleted === '1') {
+    success.value = '活动已删除'
+    router.replace({ query: {} })
+    setTimeout(() => (success.value = ''), 3000)
+  }
+})
 
 async function handleCreate() {
   error.value = ''
