@@ -1,10 +1,12 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { getActivity, joinActivity, deleteActivity } from '../api/activities'
+import { useAuthStore } from '../stores/auth'
+import { getActivity, joinActivity, leaveActivity, deleteActivity } from '../api/activities'
 
 const route = useRoute()
 const router = useRouter()
+const auth = useAuthStore()
 
 const activity = ref(null)
 const loading = ref(true)
@@ -13,6 +15,8 @@ const copied = ref(false)
 const joining = ref(false)
 const joinError = ref('')
 const joinSuccess = ref('')
+const leaving = ref(false)
+const leaveError = ref('')
 const deleting = ref(false)
 const deleteError = ref('')
 
@@ -53,6 +57,22 @@ async function handleJoin() {
     joinError.value = err.response?.data?.detail || '加入失败'
   } finally {
     joining.value = false
+  }
+}
+
+async function handleLeave() {
+  if (!confirm('确定要退出此活动吗？')) return
+  leaving.value = true
+  leaveError.value = ''
+  try {
+    await leaveActivity(route.params.id)
+    activity.value.is_member = false
+    activity.value.members = activity.value.members.filter(m => m.user_id !== auth.user.id)
+    router.push({ name: 'home', query: { left: '1' } })
+  } catch (err) {
+    leaveError.value = err.response?.data?.detail || '退出失败'
+  } finally {
+    leaving.value = false
   }
 }
 
@@ -100,10 +120,14 @@ async function handleDelete() {
       </div>
       <div v-if="joinError" class="error-msg" style="margin-bottom: 12px;">{{ joinError }}</div>
       <div v-if="joinSuccess" class="success-msg" style="margin-bottom: 12px;">{{ joinSuccess }}</div>
+      <div v-if="leaveError" class="error-msg" style="margin-bottom: 12px;">{{ leaveError }}</div>
       <div v-if="deleteError" class="error-msg" style="margin-bottom: 12px;">{{ deleteError }}</div>
       <div class="actions">
         <button v-if="!activity.is_member" class="btn btn-primary" :disabled="joining" @click="handleJoin">
           {{ joining ? '加入中...' : '加入活动' }}
+        </button>
+        <button v-if="activity.is_member" class="btn btn-secondary" :disabled="leaving" @click="handleLeave">
+          {{ leaving ? '退出中...' : '退出活动' }}
         </button>
         <button class="btn btn-secondary" @click="handleCopyLink" style="white-space: nowrap;">
           {{ copied ? '已复制！' : '分享链接' }}

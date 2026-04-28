@@ -142,6 +142,28 @@ def join_activity(
     return {"message": "加入成功"}
 
 
+@router.post("/{activity_id}/leave")
+def leave_activity(
+    activity_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    activity = db.query(Activity).filter(Activity.id == activity_id).first()
+    if not activity:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="活动不存在")
+
+    membership = db.query(ActivityMember).filter(
+        ActivityMember.activity_id == activity_id,
+        ActivityMember.user_id == current_user.id,
+    ).first()
+    if not membership:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="您尚未加入该活动")
+
+    db.delete(membership)
+    db.commit()
+    return {"message": "已退出活动"}
+
+
 @router.delete("/{activity_id}")
 def delete_activity(
     activity_id: int,

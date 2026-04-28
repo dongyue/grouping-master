@@ -41,6 +41,11 @@ onMounted(() => {
     router.replace({ query: {} })
     setTimeout(() => (success.value = ''), 3000)
   }
+  if (route.query.left === '1') {
+    success.value = '已退出活动'
+    router.replace({ query: {} })
+    setTimeout(() => (success.value = ''), 3000)
+  }
 })
 
 async function handleCreate() {

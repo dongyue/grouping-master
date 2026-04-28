@@ -16,6 +16,10 @@ export function joinActivity(id) {
   return api.post(`/activities/${id}/join`)
 }
 
+export function leaveActivity(id) {
+  return api.post(`/activities/${id}/leave`)
+}
+
 export function deleteActivity(id) {
   return api.delete(`/activities/${id}`)
 }
