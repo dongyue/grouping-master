@@ -5,7 +5,7 @@ from app.database import get_db
 from app.models.user import User
 from app.models.activity import Activity
 from app.models.activity_member import ActivityMember
-from app.schemas.auth import ActivityCreateRequest, ActivityResponse, ActivityDetailResponse
+from app.schemas.auth import ActivityCreateRequest, ActivityResponse, ActivityDetailResponse, MemberItem
 from app.middleware.auth import get_current_user
 
 router = APIRouter(prefix="/api/activities", tags=["活动"])
@@ -88,6 +88,23 @@ def get_activity(
         ActivityMember.user_id == current_user.id,
     ).first() is not None
 
+    members = (
+        db.query(ActivityMember)
+        .filter(ActivityMember.activity_id == activity_id)
+        .order_by(ActivityMember.created_at.asc())
+        .all()
+    )
+
+    members_data = [
+        MemberItem(
+            user_id=m.user_id,
+            nickname=m.user.nickname,
+            avatar_path=m.user.avatar_path,
+            joined_at=m.created_at.isoformat(),
+        )
+        for m in members
+    ]
+
     return ActivityDetailResponse(
         id=activity.id,
         title=activity.title,
@@ -95,6 +112,7 @@ def get_activity(
         creator_nickname=activity.user.nickname,
         created_at=activity.created_at.isoformat(),
         is_member=is_member,
+        members=members_data,
     )
 
 

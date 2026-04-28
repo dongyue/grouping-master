@@ -115,8 +115,9 @@
 - 均按创建时间倒序
 
 `GET /api/activities/{id}`
-- 响应字段：`{id, title, description, creator_nickname, created_at, is_member}`
+- 响应字段：`{id, title, description, creator_nickname, created_at, is_member, members}`
 - `is_member`：当前用户是否已加入该活动
+- `members`：`[MemberItem]` 成员列表，每项 `{user_id, nickname, avatar_path, joined_at}`，按加入时间升序
 
 `POST /api/activities/{id}/join`
 - 无请求体

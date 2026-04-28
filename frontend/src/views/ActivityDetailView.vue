@@ -69,6 +69,19 @@ async function handleJoin() {
         <p v-if="activity.description" class="description">{{ activity.description }}</p>
         <p v-else class="description" style="color: #bbb;">暂无描述</p>
       </div>
+      <div class="members-section">
+        <h3 class="members-title">已加入的成员（{{ activity.members?.length || 0 }}）</h3>
+        <div v-if="activity.members?.length" class="members-list">
+          <div v-for="member in activity.members" :key="member.user_id" class="member-item">
+            <div class="member-avatar">
+              <img v-if="member.avatar_path" :src="`http://localhost:8000/${member.avatar_path}`" />
+              <span v-else class="avatar-placeholder">{{ member.nickname[0] }}</span>
+            </div>
+            <span class="member-nickname">{{ member.nickname }}</span>
+          </div>
+        </div>
+        <p v-else class="members-empty">暂无成员</p>
+      </div>
       <div v-if="joinError" class="error-msg" style="margin-bottom: 12px;">{{ joinError }}</div>
       <div v-if="joinSuccess" class="success-msg" style="margin-bottom: 12px;">{{ joinSuccess }}</div>
       <div class="actions">
@@ -125,5 +138,68 @@ async function handleJoin() {
   width: auto;
   flex-shrink: 0;
   padding: 0 20px;
+}
+
+.members-section {
+  margin-bottom: 24px;
+}
+
+.members-title {
+  font-size: 14px;
+  color: #666;
+  margin-bottom: 12px;
+  font-weight: 600;
+}
+
+.members-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.member-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  background: #f8f9fa;
+  border-radius: 8px;
+}
+
+.member-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+  background: #e0e0e0;
+}
+
+.member-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.avatar-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  font-size: 12px;
+  color: #888;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.member-nickname {
+  font-size: 13px;
+  color: #333;
+}
+
+.members-empty {
+  font-size: 13px;
+  color: #bbb;
 }
 </style>

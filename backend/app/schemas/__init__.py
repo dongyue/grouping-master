@@ -10,6 +10,7 @@ from app.schemas.auth import (
     ActivityCreateRequest,
     ActivityResponse,
     ActivityDetailResponse,
+    MemberItem,
 )
 
 __all__ = [
@@ -24,4 +25,5 @@ __all__ = [
     "ActivityCreateRequest",
     "ActivityResponse",
     "ActivityDetailResponse",
+    "MemberItem",
 ]

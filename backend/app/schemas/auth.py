@@ -130,5 +130,15 @@ class ActivityResponse(BaseModel):
     model_config = {"from_attributes": True}
 
 
+class MemberItem(BaseModel):
+    user_id: int
+    nickname: str
+    avatar_path: str | None
+    joined_at: str
+
+    model_config = {"from_attributes": True}
+
+
 class ActivityDetailResponse(ActivityResponse):
     is_member: bool
+    members: list[MemberItem]
