@@ -21,6 +21,7 @@
 | `session.py` | `Session` 表：服务端 session 持久化（id, user_id, data, expires_at） |
 | `password_reset.py` | `PasswordReset` 表：密码重置令牌（token, expires_at, used） |
 | `activity.py` | `Activity` 表：活动（id, user_id FK, title, description, 时间戳），关联 User |
+| `activity_member.py` | `ActivityMember` 表：活动成员关系（id, activity_id FK, user_id FK, 时间戳），联合唯一约束 |
 
 ### Pydantic Schema（app/schemas/）
 
@@ -58,6 +59,7 @@
 | `env.py` | Alembic 引擎配置，关联 Base.metadata |
 | `versions/802b0df17e93_init.py` | 初始迁移：users、sessions、password_resets 三表 |
 | `versions/4ebf2b01b301_add_activities_table.py` | 新增 activities 表 |
+| `versions/4373c7646a4b_add_activity_members_table.py` | 新增 activity_members 表 |
 
 ---
 

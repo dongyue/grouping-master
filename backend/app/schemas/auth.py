@@ -109,6 +109,7 @@ class MessageResponse(BaseModel):
 class ActivityCreateRequest(BaseModel):
     title: str
     description: str | None = None
+    join_activity: bool = True
 
     @field_validator("title")
     @classmethod
@@ -127,3 +128,7 @@ class ActivityResponse(BaseModel):
     created_at: str
 
     model_config = {"from_attributes": True}
+
+
+class ActivityDetailResponse(ActivityResponse):
+    is_member: bool

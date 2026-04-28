@@ -1,9 +1,18 @@
 import os
+import logging
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from app.routers import auth_router, activities_router
 from app.config import FRONTEND_URL, UPLOAD_DIR
+
+# 给 uvicorn 日志加上时间戳
+log_format = "%(asctime)s %(levelname)-8s %(message)s"
+date_format = "%Y-%m-%d %H:%M:%S"
+formatter = logging.Formatter(log_format, datefmt=date_format)
+for name in ("uvicorn", "uvicorn.access", "uvicorn.error"):
+    for handler in logging.getLogger(name).handlers:
+        handler.setFormatter(formatter)
 
 app = FastAPI(title="分组大师", version="0.1.0")
 

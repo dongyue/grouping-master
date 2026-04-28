@@ -1,7 +1,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { getActivity } from '../api/activities'
+import { getActivity, joinActivity } from '../api/activities'
 
 const route = useRoute()
 const router = useRouter()
@@ -10,6 +10,9 @@ const activity = ref(null)
 const loading = ref(true)
 const error = ref('')
 const copied = ref(false)
+const joining = ref(false)
+const joinError = ref('')
+const joinSuccess = ref('')
 
 onMounted(async () => {
   try {
@@ -34,6 +37,22 @@ function handleCopyLink() {
     setTimeout(() => (copied.value = false), 2000)
   })
 }
+
+async function handleJoin() {
+  joining.value = true
+  joinError.value = ''
+  joinSuccess.value = ''
+  try {
+    await joinActivity(route.params.id)
+    activity.value.is_member = true
+    joinSuccess.value = '加入成功'
+    setTimeout(() => (joinSuccess.value = ''), 2000)
+  } catch (err) {
+    joinError.value = err.response?.data?.detail || '加入失败'
+  } finally {
+    joining.value = false
+  }
+}
 </script>
 
 <template>
@@ -50,7 +69,12 @@ function handleCopyLink() {
         <p v-if="activity.description" class="description">{{ activity.description }}</p>
         <p v-else class="description" style="color: #bbb;">暂无描述</p>
       </div>
+      <div v-if="joinError" class="error-msg" style="margin-bottom: 12px;">{{ joinError }}</div>
+      <div v-if="joinSuccess" class="success-msg" style="margin-bottom: 12px;">{{ joinSuccess }}</div>
       <div class="actions">
+        <button v-if="!activity.is_member" class="btn btn-primary" :disabled="joining" @click="handleJoin">
+          {{ joining ? '加入中...' : '加入活动' }}
+        </button>
         <button class="btn btn-secondary" @click="handleCopyLink" style="white-space: nowrap;">
           {{ copied ? '已复制！' : '分享链接' }}
         </button>
@@ -95,5 +119,11 @@ function handleCopyLink() {
 .actions {
   display: flex;
   gap: 12px;
+}
+
+.actions .btn {
+  width: auto;
+  flex-shrink: 0;
+  padding: 0 20px;
 }
 </style>

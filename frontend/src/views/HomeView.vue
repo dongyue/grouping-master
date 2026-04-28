@@ -10,16 +10,22 @@ const auth = useAuthStore()
 
 const title = ref('')
 const description = ref('')
+const joinActivity = ref(true)
 const error = ref('')
 const success = ref('')
 const creating = ref(false)
-const activities = ref([])
+const createdActivities = ref([])
+const joinedActivities = ref([])
 const loading = ref(true)
 
 async function fetchActivities() {
   try {
-    const res = await listActivities()
-    activities.value = res.data
+    const [createdRes, joinedRes] = await Promise.all([
+      listActivities('created'),
+      listActivities('joined'),
+    ])
+    createdActivities.value = createdRes.data
+    joinedActivities.value = joinedRes.data
   } catch (err) {
     console.error('加载活动列表错误:', err)
   } finally {
@@ -37,10 +43,15 @@ async function handleCreate() {
     const res = await createActivity({
       title: title.value,
       description: description.value || null,
+      join_activity: joinActivity.value,
     })
-    activities.value.unshift(res.data)
+    createdActivities.value.unshift(res.data)
+    if (joinActivity.value) {
+      joinedActivities.value.unshift(res.data)
+    }
     title.value = ''
     description.value = ''
+    joinActivity.value = true
     success.value = '活动创建成功'
     setTimeout(() => (success.value = ''), 3000)
   } catch (err) {
@@ -50,16 +61,20 @@ async function handleCreate() {
     creating.value = false
   }
 }
+
+function truncate(text) {
+  return text.length > 50 ? text.slice(0, 50) + '...' : text
+}
 </script>
 
 <template>
   <div class="page-card">
-    <h1 class="page-title">我的活动</h1>
     <div v-if="error" class="error-msg">{{ error }}</div>
     <div v-if="success" class="success-msg">{{ success }}</div>
 
     <!-- 创建活动表单 -->
     <form @submit.prevent="handleCreate" class="create-form">
+      <h2 class="section-title">创建活动</h2>
       <div class="form-group">
         <label>活动标题 *</label>
         <input v-model="title" type="text" required placeholder="输入活动标题" />
@@ -68,25 +83,42 @@ async function handleCreate() {
         <label>活动描述 <span class="optional">(可选)</span></label>
         <textarea v-model="description" rows="3" placeholder="输入活动描述" class="textarea"></textarea>
       </div>
+      <div class="form-group checkbox-group">
+        <label class="checkbox-label">
+          <input v-model="joinActivity" type="checkbox" />
+          <span>同时加入活动</span>
+        </label>
+      </div>
       <button type="submit" class="btn btn-primary" :disabled="creating">
         {{ creating ? '创建中...' : '创建活动' }}
       </button>
     </form>
 
-    <!-- 活动列表 -->
-    <div class="activity-list">
-      <div v-if="loading" style="text-align: center; color: #999; padding: 20px;">加载中...</div>
-      <div v-else-if="activities.length === 0" style="text-align: center; color: #999; padding: 20px;">
-        还没有活动，创建一个吧
-      </div>
-      <div v-for="a in activities" :key="a.id" class="activity-item" @click="router.push(`/activities/${a.id}`)" style="cursor: pointer;">
-        <div class="activity-title">{{ a.title }}</div>
-        <div v-if="a.description" class="activity-desc">
-          {{ a.description.length > 50 ? a.description.slice(0, 50) + '...' : a.description }}
+    <div v-if="loading" style="text-align: center; color: #999; padding: 20px;">加载中...</div>
+
+    <template v-else>
+      <!-- 我创建的活动 -->
+      <div class="activity-section">
+        <h2 class="section-title">我创建的活动</h2>
+        <div v-if="createdActivities.length === 0" class="empty-hint">暂无</div>
+        <div v-for="a in createdActivities" :key="'created-' + a.id" class="activity-item" @click="router.push(`/activities/${a.id}`)" style="cursor: pointer;">
+          <div class="activity-title">{{ a.title }}</div>
+          <div v-if="a.description" class="activity-desc">{{ truncate(a.description) }}</div>
+          <div class="activity-time">{{ a.created_at.slice(0, 10) }}</div>
         </div>
-        <div class="activity-time">{{ a.created_at.slice(0, 10) }}</div>
       </div>
-    </div>
+
+      <!-- 我加入的活动 -->
+      <div class="activity-section">
+        <h2 class="section-title">我加入的活动</h2>
+        <div v-if="joinedActivities.length === 0" class="empty-hint">暂无</div>
+        <div v-for="a in joinedActivities" :key="'joined-' + a.id" class="activity-item" @click="router.push(`/activities/${a.id}`)" style="cursor: pointer;">
+          <div class="activity-title">{{ a.title }}</div>
+          <div v-if="a.description" class="activity-desc">{{ truncate(a.description) }}</div>
+          <div class="activity-time">{{ a.created_at.slice(0, 10) }}</div>
+        </div>
+      </div>
+    </template>
   </div>
 </template>
 
@@ -111,6 +143,47 @@ async function handleCreate() {
 
 .textarea:focus {
   border-color: #4f46e5;
+}
+
+.checkbox-group {
+  margin-bottom: 12px;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  color: #555;
+}
+
+.checkbox-label input[type="checkbox"] {
+  width: 15px;
+  height: 15px;
+  margin: 0;
+  accent-color: #4f46e5;
+  cursor: pointer;
+}
+
+.activity-section {
+  margin-bottom: 24px;
+}
+
+.section-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid #4f46e5;
+}
+
+.empty-hint {
+  text-align: center;
+  color: #bbb;
+  padding: 16px 0;
+  font-size: 14px;
 }
 
 .activity-item {

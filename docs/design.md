@@ -61,11 +61,20 @@
 | created_at | DATETIME | DEFAULT NOW() | 创建时间 |
 | updated_at | DATETIME | DEFAULT NOW() ON UPDATE NOW() | 更新时间 |
 
+### 2.5 activity_members 表
+
+| 字段 | 类型 | 约束 | 说明 |
+|------|------|------|------|
+| id | INT | PK, AUTO_INCREMENT | 主键 |
+| activity_id | INT | FK → activities.id, NOT NULL | 活动 ID |
+| user_id | INT | FK → users.id, NOT NULL | 成员 ID |
+| created_at | DATETIME | DEFAULT NOW() | 加入时间 |
+
+> 联合唯一约束：(activity_id, user_id)，防止重复加入
+
 ## 3. API 设计
 
-### 3.1 API 端点
-
-**认证接口**
+### 3.1 认证接口
 
 | 方法 | 路径 | 鉴权 | 说明 |
 |------|------|------|------|
@@ -80,22 +89,40 @@
 | POST | `/api/auth/avatar` | Session | 上传头像 |
 | DELETE | `/api/auth/account` | Session | 注销账号 |
 
-**活动接口**
-
-| 方法 | 路径 | 鉴权 | 说明 |
-|------|------|------|------|
-| POST | `/api/activities` | Session | 创建活动 |
-| GET | `/api/activities` | Session | 获取当前用户的活动列表（按创建时间倒序） |
-| GET | `/api/activities/{id}` | Session | 查看活动详情（任意登录用户均可查看） |
-
-> 活动列表和详情共用 `ActivityResponse` 响应格式：`{id, title, description, creator_nickname, created_at}`
-
-### 3.2 认证机制
+**认证机制**
 
 - 登录成功后服务端创建 Session（MySQL sessions 表），生成随机 session_id
 - session_id 通过 `Set-Cookie` 返回，属性：`HttpOnly; SameSite=Lax; Max-Age=2592000`（30天）
 - 后续请求自动携带 Cookie，中间件 `get_current_user` 校验 session_id 是否有效
 - 登出时删除服务端 session，前端清除 Cookie
+
+### 3.2 活动接口
+
+| 方法 | 路径 | 鉴权 | 说明 |
+|------|------|------|------|
+| POST | `/api/activities` | Session | 创建活动 |
+| GET | `/api/activities` | Session | 获取活动列表（按 `type` 参数返回 `created` 或 `joined`） |
+| GET | `/api/activities/{id}` | Session | 查看活动详情（任意登录用户均可查看） |
+| POST | `/api/activities/{id}/join` | Session | 加入活动 |
+
+`POST /api/activities` 创建活动
+- 请求体：`{title: str, description?: str, join_activity?: bool}`
+- `join_activity` 默认 `true`，为 `true` 时创建者同时加入活动
+
+`GET /api/activities?type=created|joined`
+- `type=created` 返回当前用户创建的活动列表
+- `type=joined` 返回当前用户加入的活动列表
+- 均按创建时间倒序
+
+`GET /api/activities/{id}`
+- 响应字段：`{id, title, description, creator_nickname, created_at, is_member}`
+- `is_member`：当前用户是否已加入该活动
+
+`POST /api/activities/{id}/join`
+- 无请求体
+- 用户已加入时返回 409
+
+> 活动列表项响应格式：`{id, title, description, creator_nickname, created_at}`
 
 ## 4. 安全策略
 
@@ -113,7 +140,7 @@
 | `/register` | 注册页 | 仅未登录可访问 | 注册表单（含确认密码） |
 | `/forgot-password` | 忘记密码页 | 公开 | 输入邮箱发送重置链接 |
 | `/reset-password` | 重置密码页 | 公开 | ?token=xxx，设置新密码 |
-| `/` | 首页 | 需登录 | 创建活动表单 + 我的活动列表 |
-| `/activities/:id` | 活动详情页 | 需登录 | 活动完整信息 + 分享按钮 |
+| `/` | 首页 | 需登录 | 创建活动表单（含「同时加入活动」复选框） + 「我创建的活动」列表 + 「我加入的活动」列表 |
+| `/activities/:id` | 活动详情页 | 需登录 | 活动完整信息 + 分享按钮 + 加入活动按钮（仅未加入时显示） |
 | `/settings` | 设置页 | 需登录 | 头像上传、修改昵称、注销账号入口 |
 | `/settings/change-password` | 修改密码页 | 需登录 | 旧密码 + 新密码表单 |

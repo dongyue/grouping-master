@@ -1,10 +1,11 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models.user import User
 from app.models.activity import Activity
-from app.schemas.auth import ActivityCreateRequest, ActivityResponse
+from app.models.activity_member import ActivityMember
+from app.schemas.auth import ActivityCreateRequest, ActivityResponse, ActivityDetailResponse
 from app.middleware.auth import get_current_user
 
 router = APIRouter(prefix="/api/activities", tags=["活动"])
@@ -22,8 +23,13 @@ def create_activity(
         description=body.description.strip() if body.description else None,
     )
     db.add(activity)
+    db.flush()
+
+    if body.join_activity:
+        member = ActivityMember(activity_id=activity.id, user_id=current_user.id)
+        db.add(member)
+
     db.commit()
-    db.refresh(activity)
     return ActivityResponse(
         id=activity.id,
         title=activity.title,
@@ -35,15 +41,26 @@ def create_activity(
 
 @router.get("", response_model=list[ActivityResponse])
 def list_activities(
+    type: str = Query("created", regex="^(created|joined)$"),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    activities = (
-        db.query(Activity)
-        .filter(Activity.user_id == current_user.id)
-        .order_by(Activity.created_at.desc())
-        .all()
-    )
+    if type == "created":
+        activities = (
+            db.query(Activity)
+            .filter(Activity.user_id == current_user.id)
+            .order_by(Activity.created_at.desc())
+            .all()
+        )
+    else:
+        activities = (
+            db.query(Activity)
+            .join(ActivityMember, ActivityMember.activity_id == Activity.id)
+            .filter(ActivityMember.user_id == current_user.id)
+            .order_by(Activity.created_at.desc())
+            .all()
+        )
+
     return [
         ActivityResponse(
             id=a.id,
@@ -56,7 +73,7 @@ def list_activities(
     ]
 
 
-@router.get("/{activity_id}", response_model=ActivityResponse)
+@router.get("/{activity_id}", response_model=ActivityDetailResponse)
 def get_activity(
     activity_id: int,
     current_user: User = Depends(get_current_user),
@@ -65,10 +82,40 @@ def get_activity(
     activity = db.query(Activity).filter(Activity.id == activity_id).first()
     if not activity:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="活动不存在")
-    return ActivityResponse(
+
+    is_member = db.query(ActivityMember).filter(
+        ActivityMember.activity_id == activity_id,
+        ActivityMember.user_id == current_user.id,
+    ).first() is not None
+
+    return ActivityDetailResponse(
         id=activity.id,
         title=activity.title,
         description=activity.description,
         creator_nickname=activity.user.nickname,
         created_at=activity.created_at.isoformat(),
+        is_member=is_member,
     )
+
+
+@router.post("/{activity_id}/join")
+def join_activity(
+    activity_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    activity = db.query(Activity).filter(Activity.id == activity_id).first()
+    if not activity:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="活动不存在")
+
+    existing = db.query(ActivityMember).filter(
+        ActivityMember.activity_id == activity_id,
+        ActivityMember.user_id == current_user.id,
+    ).first()
+    if existing:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="您已加入该活动")
+
+    member = ActivityMember(activity_id=activity_id, user_id=current_user.id)
+    db.add(member)
+    db.commit()
+    return {"message": "加入成功"}

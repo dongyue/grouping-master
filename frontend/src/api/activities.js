@@ -4,10 +4,14 @@ export function createActivity(data) {
   return api.post('/activities', data)
 }
 
-export function listActivities() {
-  return api.get('/activities')
+export function listActivities(type) {
+  return api.get('/activities', { params: { type } })
 }
 
 export function getActivity(id) {
   return api.get(`/activities/${id}`)
+}
+
+export function joinActivity(id) {
+  return api.post(`/activities/${id}/join`)
 }
