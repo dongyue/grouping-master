@@ -156,11 +156,11 @@ async function handleGroup() {
       </div>
       <div class="members-section">
         <h3 class="members-title">
-          已加入的成员（{{ activity.members?.length || 0 }}）<template v-if="activity.has_groups && activity.groups?.length">，共 {{ activity.groups.length }} 组</template>
+          已加入的成员 {{ activity.members?.length || 0 }} 人<template v-if="activity.has_groups && activity.groups?.length">，共 {{ activity.groups.length }} 组</template>
         </h3>
         <div v-if="activity.has_groups && activity.groups?.length">
           <div v-for="group in activity.groups" :key="group.group_number" class="group-card">
-            <h4 class="group-title">第 {{ group.group_number }} 组（{{ group.members.length }} 人）</h4>
+            <h4 class="group-title">第 {{ group.group_number }} 组 {{ group.members.length }} 人</h4>
             <div class="members-list">
               <div v-for="member in group.members" :key="member.user_id" class="member-item">
                 <div class="member-avatar">
