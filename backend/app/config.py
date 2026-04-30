@@ -28,4 +28,6 @@ MAX_AVATAR_SIZE = 2 * 1024 * 1024  # 2MB
 
 FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
 
+REQUIRE_PASSWORD = os.getenv("REQUIRE_PASSWORD", "true").lower() != "false"
+
 RESET_TOKEN_EXPIRE_MINUTES = 30

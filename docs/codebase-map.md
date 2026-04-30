@@ -9,7 +9,7 @@
 | 文件 | 职责 |
 |------|------|
 | `app/main.py` | FastAPI 入口：CORS 配置、静态文件挂载、路由注册 |
-| `app/config.py` | 读取 `.env`，导出数据库/SMTP/Session/上传目录等全局配置 |
+| `app/config.py` | 读取 `.env`，导出数据库/SMTP/Session/上传目录/密码要求等全局配置 |
 | `app/database.py` | SQLAlchemy 引擎/Session 工厂、`Base` 基类、`get_db` 依赖注入 |
 
 ### ORM 模型（app/models/）
@@ -123,7 +123,7 @@
 | `ActivityDetailView.vue` | 活动详情页：主行 + 更多下拉菜单 + 成员列表 + 管理成员开关 + 确认对话框 |
 | `ActivityEditView.vue` | 编辑活动页：修改标题和描述，仅创建者可访问，取消回到详情页 |
 | `LoginView.vue` | 登录页 |
-| `RegisterView.vue` | 注册页（前端校验两次密码一致性） |
+| `RegisterView.vue` | 注册页（通过 API 获取密码要求配置，决定表单是否显示密码字段） |
 | `ForgotPasswordView.vue` | 忘记密码：发送重置邮件 |
 | `ResetPasswordView.vue` | 重置密码：通过 URL token 设置新密码（含确认密码输入框） |
 | `ChangePasswordView.vue` | 修改密码：旧密码+新密码+确认新密码 |

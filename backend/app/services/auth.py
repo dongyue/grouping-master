@@ -19,11 +19,11 @@ def verify_password(plain: str, hashed: str) -> bool:
     return _bcrypt.checkpw(plain.encode("utf-8"), hashed.encode("utf-8"))
 
 
-def create_user(db: Session, username: str, nickname: str, password: str, email: str | None) -> User:
+def create_user(db: Session, username: str, nickname: str, password: str | None, email: str | None) -> User:
     user = User(
         username=username,
         nickname=nickname,
-        password_hash=hash_password(password),
+        password_hash=hash_password(password) if password else "",
         email=email if email else None,
     )
     db.add(user)
@@ -34,7 +34,11 @@ def create_user(db: Session, username: str, nickname: str, password: str, email:
 
 def authenticate_user(db: Session, username: str, password: str) -> User | None:
     user = db.query(User).filter(User.username == username).first()
-    if user and verify_password(password, user.password_hash):
+    if not user:
+        return None
+    if not user.password_hash:
+        return user
+    if verify_password(password, user.password_hash):
         return user
     return None
 

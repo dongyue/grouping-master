@@ -5,8 +5,8 @@ import re
 class RegisterRequest(BaseModel):
     username: str
     nickname: str
-    password: str
-    password_confirm: str
+    password: str | None = None
+    password_confirm: str | None = None
     email: str | None = None
 
     @field_validator("username")
@@ -18,22 +18,30 @@ class RegisterRequest(BaseModel):
 
     @field_validator("password")
     @classmethod
-    def validate_password(cls, v: str) -> str:
+    def validate_password(cls, v: str | None) -> str | None:
+        if v is None or v == "":
+            return None
         if len(v) < 8:
             raise ValueError("密码长度至少8位")
         return v
 
     @field_validator("password_confirm")
     @classmethod
-    def validate_password_confirm(cls, v: str) -> str:
+    def validate_password_confirm(cls, v: str | None) -> str | None:
+        if v is None or v == "":
+            return None
         if len(v) < 8:
             raise ValueError("确认密码长度至少8位")
         return v
 
     @model_validator(mode="after")
-    def validate_passwords_match(self):
-        if self.password != self.password_confirm:
-            raise ValueError("两次输入的密码不一致")
+    def validate_passwords(self):
+        from app.config import REQUIRE_PASSWORD
+        if self.password or self.password_confirm:
+            if self.password != self.password_confirm:
+                raise ValueError("两次输入的密码不一致")
+        elif REQUIRE_PASSWORD:
+            raise ValueError("密码不能为空")
         return self
 
     @field_validator("nickname")

@@ -1,5 +1,9 @@
 import api from './index'
 
+export function getAuthConfig() {
+  return api.get('/auth/config')
+}
+
 export function register(data) {
   return api.post('/auth/register', data)
 }

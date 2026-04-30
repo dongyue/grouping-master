@@ -38,7 +38,7 @@ async function handleLogin() {
       </div>
       <div class="form-group">
         <label>密码</label>
-        <input v-model="password" type="password" required placeholder="输入密码" />
+        <input v-model="password" type="password" placeholder="输入密码" />
       </div>
       <button type="submit" class="btn btn-primary" :disabled="loading">
         {{ loading ? '登录中...' : '登录' }}

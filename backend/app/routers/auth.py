@@ -20,11 +20,16 @@ from app.services import auth as auth_service
 from app.middleware.auth import get_current_user
 from app.middleware.rate_limit import RateLimiter
 from app.services.upload import validate_magic_bytes
-from app.config import AVATAR_DIR, MAX_AVATAR_SIZE, SESSION_EXPIRE_DAYS, FRONTEND_URL
+from app.config import AVATAR_DIR, MAX_AVATAR_SIZE, SESSION_EXPIRE_DAYS, FRONTEND_URL, REQUIRE_PASSWORD
 
 rate_limiter = RateLimiter()
 
 router = APIRouter(prefix="/api/auth", tags=["认证"])
+
+
+@router.get("/config")
+def get_config():
+    return {"require_password": REQUIRE_PASSWORD}
 
 
 @router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)

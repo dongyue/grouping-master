@@ -103,6 +103,7 @@
 
 | 方法 | 路径 | 鉴权 | 说明 |
 |------|------|------|------|
+| GET | `/api/auth/config` | 无 | 获取认证配置（如密码是否必填） |
 | POST | `/api/auth/register` | 无 | 注册 |
 | POST | `/api/auth/login` | 无 | 登录 |
 | POST | `/api/auth/logout` | Session | 登出 |
@@ -120,6 +121,12 @@
 - session_id 通过 `Set-Cookie` 返回，属性：`HttpOnly; SameSite=Lax; Max-Age=2592000`（30天）
 - 后续请求自动携带 Cookie，中间件 `get_current_user` 校验 session_id 是否有效
 - 登出时删除服务端 session，前端清除 Cookie
+
+**注册密码要求**
+- `.env` 中 `REQUIRE_PASSWORD` 控制注册时是否必须设置密码（默认 `true`）
+- 前端通过 `GET /api/auth/config` 获取该配置，动态决定注册表单是否显示密码字段
+- `true`（默认）：密码必填，至少 8 位
+- `false`（调试用）：密码可选，不填密码的用户登录时无需密码
 
 ### 3.2 活动接口
 

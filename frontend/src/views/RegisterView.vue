@@ -1,6 +1,8 @@
 <script setup>
 import { ref } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
+import { useAuthStore } from '../stores/auth'
+import { register } from '../api/auth'
 
 const router = useRouter()
 const route = useRoute()
@@ -18,21 +20,28 @@ const loading = ref(false)
 
 async function handleRegister() {
   error.value = ''
-  if (form.value.password !== form.value.password_confirm) {
-    error.value = '两次输入的密码不一致'
-    return
+  if (form.value.password || form.value.password_confirm) {
+    if (form.value.password !== form.value.password_confirm) {
+      error.value = '两次输入的密码不一致'
+      return
+    }
+    if (form.value.password.length < 8) {
+      error.value = '密码长度至少8位'
+      return
+    }
   }
   loading.value = true
   try {
     const data = {
       username: form.value.username,
       nickname: form.value.nickname,
-      password: form.value.password,
-      password_confirm: form.value.password_confirm,
+      password: form.value.password || null,
+      password_confirm: form.value.password_confirm || null,
       email: form.value.email || null,
     }
     const res = await register(data)
     auth.user = res.data
+    form.value = { username: '', nickname: '', password: '', password_confirm: '', email: '' }
     router.push(route.query.redirect || '/')
   } catch (err) {
     console.error('注册错误:', err)
@@ -58,11 +67,11 @@ async function handleRegister() {
       </div>
       <div class="form-group">
         <label>密码 *</label>
-        <input v-model="form.password" type="password" required placeholder="至少8位" />
+        <input v-model="form.password" type="password" placeholder="至少8位" />
       </div>
       <div class="form-group">
         <label>确认密码 *</label>
-        <input v-model="form.password_confirm" type="password" required placeholder="再次输入密码" />
+        <input v-model="form.password_confirm" type="password" placeholder="再次输入密码" />
       </div>
       <div class="form-group">
         <label>备用邮箱 <span class="optional">(可选，用于找回密码)</span></label>
