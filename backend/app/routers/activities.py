@@ -160,6 +160,9 @@ def join_activity(
     if not activity:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="活动不存在")
 
+    if _activity_has_groups(db, activity.id):
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="该活动已分组，无法加入")
+
     existing = db.query(ActivityMember).filter(
         ActivityMember.activity_id == activity.id,
         ActivityMember.user_id == current_user.id,
@@ -178,10 +181,13 @@ def leave_activity(
     slug: str,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
-):
+): 
     activity = db.query(Activity).filter(Activity.slug == slug).first()
     if not activity:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="活动不存在")
+
+    if _activity_has_groups(db, activity.id):
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="该活动已分组，无法退出")
 
     membership = db.query(ActivityMember).filter(
         ActivityMember.activity_id == activity.id,
@@ -234,6 +240,9 @@ def kick_member(
     if not activity:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="活动不存在")
 
+    if _activity_has_groups(db, activity.id):
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="该活动已分组，无法踢出成员")
+
     if activity.user_id != current_user.id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="只有活动创建者才能踢出成员")
 
@@ -268,6 +277,10 @@ def delete_activity(
     db.delete(activity)
     db.commit()
     return {"message": "活动已删除"}
+
+
+def _activity_has_groups(db: Session, activity_id: int) -> bool:
+    return db.query(Group).filter(Group.activity_id == activity_id).first() is not None
 
 
 @router.post("/{slug}/groups")

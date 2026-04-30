@@ -180,7 +180,7 @@ async function handleGroup() {
             </div>
             <span class="member-nickname">{{ member.nickname }}</span>
             <button
-              v-if="activity.is_creator && member.user_id !== auth.user.id"
+              v-if="activity.is_creator && member.user_id !== auth.user.id && !activity.has_groups"
               class="btn-kick"
               :disabled="kickingUserId === member.user_id"
               @click="handleKick(member.user_id, member.nickname)"
@@ -200,10 +200,10 @@ async function handleGroup() {
       <div v-if="groupError" class="error-msg" style="margin-bottom: 12px;">{{ groupError }}</div>
       <div v-if="groupSuccess" class="success-msg" style="margin-bottom: 12px;">{{ groupSuccess }}</div>
       <div class="actions">
-        <button v-if="!activity.is_member" class="btn btn-primary" :disabled="joining" @click="handleJoin">
+        <button v-if="!activity.is_member && !activity.has_groups" class="btn btn-primary" :disabled="joining" @click="handleJoin">
           {{ joining ? '加入中...' : '加入活动' }}
         </button>
-        <button v-if="activity.is_member" class="btn btn-secondary" :disabled="leaving" @click="handleLeave">
+        <button v-if="activity.is_member && !activity.has_groups" class="btn btn-secondary" :disabled="leaving" @click="handleLeave">
           {{ leaving ? '退出中...' : '退出活动' }}
         </button>
         <button v-if="activity.is_creator && !activity.has_groups" class="btn btn-primary" :disabled="grouping" @click="handleGroup">
