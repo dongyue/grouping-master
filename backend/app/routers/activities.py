@@ -24,6 +24,9 @@ def create_activity(
         user_id=current_user.id,
         title=body.title.strip(),
         description=body.description.strip() if body.description else None,
+        group_strategy=body.group_strategy,
+        group_param=body.group_param,
+        remainder_handling=body.remainder_handling,
     )
     db.add(activity)
     db.flush()
@@ -38,6 +41,9 @@ def create_activity(
         slug=activity.slug,
         title=activity.title,
         description=activity.description,
+        group_strategy=activity.group_strategy,
+        group_param=activity.group_param,
+        remainder_handling=activity.remainder_handling,
         creator_nickname=current_user.nickname,
         created_at=activity.created_at.isoformat(),
     )
@@ -71,6 +77,9 @@ def list_activities(
             slug=a.slug,
             title=a.title,
             description=a.description,
+            group_strategy=a.group_strategy,
+            group_param=a.group_param,
+            remainder_handling=a.remainder_handling,
             creator_nickname=a.user.nickname,
             created_at=a.created_at.isoformat(),
         )
@@ -140,6 +149,9 @@ def get_activity(
         slug=activity.slug,
         title=activity.title,
         description=activity.description,
+        group_strategy=activity.group_strategy,
+        group_param=activity.group_param,
+        remainder_handling=activity.remainder_handling,
         creator_nickname=activity.user.nickname,
         created_at=activity.created_at.isoformat(),
         is_member=is_member,
@@ -217,6 +229,9 @@ def update_activity(
 
     activity.title = body.title.strip()
     activity.description = body.description.strip() if body.description else None
+    activity.group_strategy = body.group_strategy
+    activity.group_param = body.group_param
+    activity.remainder_handling = body.remainder_handling
     db.commit()
 
     return ActivityResponse(
@@ -224,6 +239,9 @@ def update_activity(
         slug=activity.slug,
         title=activity.title,
         description=activity.description,
+        group_strategy=activity.group_strategy,
+        group_param=activity.group_param,
+        remainder_handling=activity.remainder_handling,
         creator_nickname=activity.user.nickname,
         created_at=activity.created_at.isoformat(),
     )
@@ -305,11 +323,32 @@ def create_groups(
     member_user_ids = [m.user_id for m in members]
     random.shuffle(member_user_ids)
 
+    total = len(member_user_ids)
+    group_param = activity.group_param
+    handling = activity.remainder_handling
+
+    if handling == "evenly" and total >= group_param:
+        num_groups = total // group_param
+        base_size = total // num_groups
+        remainder = total % num_groups
+    elif handling == "rebalance":
+        num_groups = (total + group_param - 1) // group_param
+        base_size = total // num_groups
+        remainder = total % num_groups
+    else:  # separate
+        num_groups = (total + group_param - 1) // group_param
+        base_size = group_param
+        remainder = 0
+
     group_number = 1
     groups_result = []
+    idx = 0
 
-    for i in range(0, len(member_user_ids), 2):
-        chunk = member_user_ids[i:i + 2]
+    for g in range(num_groups):
+        size = base_size + (1 if g < remainder else 0)
+        chunk = member_user_ids[idx:idx + size]
+        idx += size
+
         group = Group(activity_id=activity.id, group_number=group_number)
         db.add(group)
         db.flush()

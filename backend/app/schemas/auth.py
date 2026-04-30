@@ -110,6 +110,9 @@ class ActivityCreateRequest(BaseModel):
     title: str
     description: str | None = None
     join_activity: bool = True
+    group_strategy: str = "fixed_group_size"
+    group_param: int = 2
+    remainder_handling: str = "evenly"
 
     @field_validator("title")
     @classmethod
@@ -119,10 +122,34 @@ class ActivityCreateRequest(BaseModel):
             raise ValueError("标题长度 1-100 位")
         return v
 
+    @field_validator("group_strategy")
+    @classmethod
+    def validate_group_strategy(cls, v: str) -> str:
+        if v not in ("fixed_group_size", "fixed_group_count"):
+            raise ValueError("不支持的分组策略")
+        return v
+
+    @field_validator("group_param")
+    @classmethod
+    def validate_group_param(cls, v: int) -> int:
+        if v < 2:
+            raise ValueError("组参数不能小于2")
+        return v
+
+    @field_validator("remainder_handling")
+    @classmethod
+    def validate_remainder_handling(cls, v: str) -> str:
+        if v not in ("evenly", "separate", "rebalance"):
+            raise ValueError("不支持的余数处理方式")
+        return v
+
 
 class ActivityUpdateRequest(BaseModel):
     title: str
     description: str | None = None
+    group_strategy: str = "fixed_group_size"
+    group_param: int = 2
+    remainder_handling: str = "evenly"
 
     @field_validator("title")
     @classmethod
@@ -130,6 +157,27 @@ class ActivityUpdateRequest(BaseModel):
         v = v.strip()
         if len(v) < 1 or len(v) > 100:
             raise ValueError("标题长度 1-100 位")
+        return v
+
+    @field_validator("group_strategy")
+    @classmethod
+    def validate_group_strategy(cls, v: str) -> str:
+        if v not in ("fixed_group_size", "fixed_group_count"):
+            raise ValueError("不支持的分组策略")
+        return v
+
+    @field_validator("group_param")
+    @classmethod
+    def validate_group_param(cls, v: int) -> int:
+        if v < 2:
+            raise ValueError("组参数不能小于2")
+        return v
+
+    @field_validator("remainder_handling")
+    @classmethod
+    def validate_remainder_handling(cls, v: str) -> str:
+        if v not in ("evenly", "separate", "rebalance"):
+            raise ValueError("不支持的余数处理方式")
         return v
 
 
@@ -138,6 +186,9 @@ class ActivityResponse(BaseModel):
     slug: str
     title: str
     description: str | None
+    group_strategy: str
+    group_param: int
+    remainder_handling: str
     creator_nickname: str
     created_at: str
 

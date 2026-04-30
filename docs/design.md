@@ -59,8 +59,13 @@
 | user_id | INT | FK → users.id, NOT NULL, INDEX | 创建者 ID |
 | title | VARCHAR(100) | NOT NULL | 活动标题 |
 | description | TEXT | NULLABLE | 活动描述 |
+| group_strategy | VARCHAR(20) | NOT NULL, DEFAULT 'fixed_group_size' | 分组策略：`fixed_group_size`（每组固定人数）、`fixed_group_count`（固定组数，预留） |
+| group_param | INT | NOT NULL, DEFAULT 2 | 策略参数：`fixed_group_size` 时表示每组人数；`fixed_group_count` 时表示总组数 |
+| remainder_handling | VARCHAR(10) | NOT NULL, DEFAULT 'evenly' | 余数处理：`evenly` 余数分摊到已有组，`separate` 余数单独成组，`rebalance` 单独成组后调匀 |
 | created_at | DATETIME | DEFAULT NOW() | 创建时间 |
 | updated_at | DATETIME | DEFAULT NOW() ON UPDATE NOW() | 更新时间 |
+
+> 未来扩展：可新增 `constraints` JSON 字段存储约束条件（如同性别、异性别等叠加规则）。
 
 ### 2.5 activity_members 表
 
@@ -132,8 +137,11 @@
 | DELETE | `/api/activities/{slug}/groups` | Session | 解除分组（仅创建者） |
 
 `POST /api/activities` 创建活动
-- 请求体：`{title: str, description?: str, join_activity?: bool}`
+- 请求体：`{title: str, description?: str, join_activity?: bool, group_strategy?: str, group_param?: int, remainder_handling?: str}`
 - `join_activity` 默认 `true`，为 `true` 时创建者同时加入活动
+- `group_strategy` 默认 `"fixed_group_size"`，可选 `"fixed_group_size"`（每组固定人数）、`"fixed_group_count"`（固定组数，预留）
+- `group_param` 默认 `2`，最小值 `2`，含义由 `group_strategy` 决定
+- `remainder_handling` 默认 `"evenly"`，可选 `"evenly"`（余数分摊到已有组）、`"separate"`（余数单独成组）、`"rebalance"`（单独成组后调匀）
 - 创建时自动生成 12 位随机 slug，作为活动公网标识
 
 `GET /api/activities?type=created|joined`
@@ -142,7 +150,10 @@
 - 均按创建时间倒序
 
 `GET /api/activities/{slug}`
-- 响应字段：`{id, slug, title, description, creator_nickname, created_at, is_member, is_creator, groups, members}`
+- 响应字段：`{id, slug, title, description, group_strategy, group_param, remainder_handling, creator_nickname, created_at, is_member, is_creator, has_groups, groups, members}`
+- `group_strategy`：分组策略，`"fixed_group_size"` 或 `"fixed_group_count"`
+- `group_param`：策略参数值
+- `remainder_handling`：余数处理方式，`"evenly"`、`"separate"` 或 `"rebalance"`
 - `is_member`：当前用户是否已加入该活动
 - `is_creator`：当前用户是否为该活动创建者
 - `groups`：`[GroupResponse]` 分组列表，未分组时为空数组。每项 `{group_number, members: [MemberItem]}`
@@ -166,9 +177,10 @@
 - 活动已分组时返回 409
 
 `PUT /api/activities/{slug}`
-- 请求体：`{title: str, description?: str}`
+- 请求体：`{title: str, description?: str, group_strategy?: str, group_param?: int, remainder_handling?: str}`
 - 仅活动创建者可更新
 - 非创建者返回 403
+- 活动已分组时返回 409
 - 响应：更新后的 `ActivityResponse`
 
 `DELETE /api/activities/{slug}/members/{user_id}`
@@ -182,9 +194,12 @@
 
 `POST /api/activities/{slug}/groups`
 - 无请求体
-- 仅活动创建者可执行
-- 非创建者返回 403
-- 将当前活动成员随机打乱，按每组 2 人分配，剩余 1 人则单独成组
+- 仅活动创建者可执行，非创建者返回 403
+- 读取活动的 `group_strategy`、`group_param`、`remainder_handling` 配置执行分组
+- `group_strategy = "fixed_group_size"`：成员随机打乱，按 `group_param` 人一组分配
+- `remainder_handling = "evenly"`：减少一组，余数均匀分摊到前面各组（前N组各多1人）
+- `remainder_handling = "separate"`：余数单独成组，前N-1组满员，最后一组人数不足
+- `remainder_handling = "rebalance"`：组数与 separate 相同，但调整组间人数使尽量均衡
 - 响应：`{groups: [GroupResponse]}`，每组含 `group_number` 和 `members` 列表
 
 `DELETE /api/activities/{slug}/groups`

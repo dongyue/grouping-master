@@ -17,6 +17,9 @@ class Activity(Base):
     user_id: Mapped[int] = mapped_column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
     title: Mapped[str] = mapped_column(String(100), nullable=False)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    group_strategy: Mapped[str] = mapped_column(String(20), nullable=False, default="fixed_group_size")
+    group_param: Mapped[int] = mapped_column(Integer, nullable=False, default=2)
+    remainder_handling: Mapped[str] = mapped_column(String(10), nullable=False, default="evenly")
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 

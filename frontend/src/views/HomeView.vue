@@ -4,6 +4,7 @@ import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { createActivity, listActivities } from '../api/activities'
 import { formatDate } from '../utils/date'
+import { remainderHandlingOptions } from '../utils/groupRule'
 
 const router = useRouter()
 const route = useRoute()
@@ -13,6 +14,8 @@ const auth = useAuthStore()
 const title = ref('')
 const description = ref('')
 const joinActivity = ref(true)
+const groupParam = ref(2)
+const remainderHandling = ref('evenly')
 const error = ref('')
 const success = ref('')
 const creating = ref(false)
@@ -58,6 +61,9 @@ async function handleCreate() {
       title: title.value,
       description: description.value || null,
       join_activity: joinActivity.value,
+      group_strategy: 'fixed_group_size',
+      group_param: groupParam.value,
+      remainder_handling: remainderHandling.value,
     })
     createdActivities.value.unshift(res.data)
     if (joinActivity.value) {
@@ -66,6 +72,8 @@ async function handleCreate() {
     title.value = ''
     description.value = ''
     joinActivity.value = true
+    groupParam.value = 2
+    remainderHandling.value = 'evenly'
     success.value = '活动创建成功'
     setTimeout(() => (success.value = ''), 3000)
   } catch (err) {
@@ -102,6 +110,17 @@ function truncate(text) {
           <input v-model="joinActivity" type="checkbox" />
           <span>同时加入活动</span>
         </label>
+      </div>
+      <div class="form-group">
+        <label>分组规则</label>
+        <div class="group-rule-row">
+          <span class="rule-label">每组</span>
+          <input v-model.number="groupParam" type="number" min="2" class="rule-input" />
+          <span class="rule-label">人，不能整除时</span>
+          <select v-model="remainderHandling" class="rule-select">
+            <option v-for="opt in remainderHandlingOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
+          </select>
+        </div>
       </div>
       <button type="submit" class="btn btn-primary" :disabled="creating">
         {{ creating ? '创建中...' : '创建活动' }}
@@ -178,6 +197,29 @@ function truncate(text) {
   margin: 0;
   accent-color: #4f46e5;
   cursor: pointer;
+}
+
+.group-rule-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.rule-label {
+  font-size: 13px;
+  color: #666;
+  white-space: nowrap;
+}
+
+.rule-input {
+  width: 90px !important;
+  text-align: center;
+  padding: 0 8px !important;
+}
+
+.rule-select {
+  width: auto !important;
+  flex: 1;
 }
 
 .activity-section {

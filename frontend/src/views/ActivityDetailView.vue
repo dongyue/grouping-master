@@ -5,6 +5,7 @@ import { useAuthStore } from '../stores/auth'
 import { getActivity, joinActivity, leaveActivity, deleteActivity, kickMember, createGroups, deleteGroups } from '../api/activities'
 import ConfirmModal from '../components/ConfirmModal.vue'
 import { formatDate } from '../utils/date'
+import { remainderHandlingLabel } from '../utils/groupRule'
 
 const uploadsUrl = import.meta.env.VITE_UPLOADS_URL || 'http://localhost:8000'
 
@@ -213,6 +214,12 @@ async function handleUngroup() {
         <p v-if="activity.description" class="description">{{ activity.description }}</p>
         <p v-else class="description" style="color: #bbb;">暂无描述</p>
       </div>
+      <div class="rule-section">
+        <span class="rule-badge">
+          分组规则：每组 {{ activity.group_param }} 人，
+          不能整除时：{{ remainderHandlingLabel[activity.remainder_handling] || activity.remainder_handling }}
+        </span>
+      </div>
       <div class="members-section">
         <h3 class="members-title">
           已加入的成员 {{ activity.members?.length || 0 }} 人<template v-if="activity.has_groups && activity.groups?.length">，共 {{ activity.groups.length }} 组</template>
@@ -349,6 +356,19 @@ async function handleUngroup() {
 
 .desc-section {
   margin-bottom: 24px;
+}
+
+.rule-section {
+  margin-bottom: 24px;
+}
+
+.rule-badge {
+  display: inline-block;
+  padding: 6px 14px;
+  background: #f0eefc;
+  color: #4f46e5;
+  border-radius: 6px;
+  font-size: 13px;
 }
 
 .description {

@@ -120,6 +120,23 @@ main {
   border-color: #4f46e5;
 }
 
+.form-group select {
+  width: 100%;
+  height: 42px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 0 12px;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s;
+  background: #fff;
+  cursor: pointer;
+}
+
+.form-group select:focus {
+  border-color: #4f46e5;
+}
+
 .btn {
   display: block;
   width: 100%;

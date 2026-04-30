@@ -20,7 +20,7 @@
 | `user.py` | `User` 表：id, username, nickname, password_hash, email, avatar_path, 时间戳 |
 | `session.py` | `Session` 表：服务端 session 持久化（id, user_id, data, expires_at） |
 | `password_reset.py` | `PasswordReset` 表：密码重置令牌（token, expires_at, used） |
-| `activity.py` | `Activity` 表：活动（id, slug, user_id FK, title, description, 时间戳），关联 User |
+| `activity.py` | `Activity` 表：活动（id, slug, user_id FK, title, description, group_strategy, group_param, remainder_handling, 时间戳），关联 User |
 | `activity_member.py` | `ActivityMember` 表：活动成员关系（id, activity_id FK, user_id FK, 时间戳），联合唯一约束 |
 | `group.py` | `Group` 表：分组（id, activity_id FK, group_number, 时间戳），关联 GroupMember |
 | `group_member.py` | `GroupMember` 表：分组成员关系（id, group_id FK, user_id FK），联合唯一约束 |
@@ -67,6 +67,7 @@
 | `versions/4373c7646a4b_add_activity_members_table.py` | 新增 activity_members 表 |
 | `versions/d9158a7c8e2f_add_slug_to_activities.py` | activities 表新增 slug 列 |
 | `versions/5a1b2c3d4e5f_add_groups_and_group_members.py` | 新增 groups 表和 group_members 表 |
+| `versions/6b2c3d4e5f6a_add_group_strategy_to_activities.py` | activities 表新增 group_strategy、group_param、remainder_handling 字段 |
 
 ---
 
@@ -100,6 +101,7 @@
 | 文件 | 职责 |
 |------|------|
 | `date.js` | `formatDate` 统一日期格式化为 YYYY-MM-DD |
+| `groupRule.js` | 余数处理方式选项列表与标签映射，供表单和详情页共用 |
 
 ### 通用组件（components/）
 

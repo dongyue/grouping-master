@@ -2,12 +2,15 @@
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { getActivity, updateActivity } from '../api/activities'
+import { remainderHandlingOptions } from '../utils/groupRule'
 
 const route = useRoute()
 const router = useRouter()
 
 const title = ref('')
 const description = ref('')
+const groupParam = ref(2)
+const remainderHandling = ref('evenly')
 const loading = ref(true)
 const saving = ref(false)
 const error = ref('')
@@ -23,6 +26,8 @@ onMounted(async () => {
     }
     title.value = data.title
     description.value = data.description || ''
+    groupParam.value = data.group_param ?? 2
+    remainderHandling.value = data.remainder_handling ?? 'evenly'
   } catch (err) {
     error.value = err.response?.data?.detail || '加载失败'
   } finally {
@@ -37,6 +42,9 @@ async function handleSave() {
     await updateActivity(route.params.slug, {
       title: title.value,
       description: description.value || null,
+      group_strategy: 'fixed_group_size',
+      group_param: groupParam.value,
+      remainder_handling: remainderHandling.value,
     })
     router.push({ name: 'activity-detail', params: { slug: route.params.slug }, query: { updated: '1' } })
   } catch (err) {
@@ -66,6 +74,17 @@ function handleCancel() {
         <div class="form-group">
           <label>活动描述 <span class="optional">(可选)</span></label>
           <textarea v-model="description" rows="4" placeholder="输入活动描述" class="textarea"></textarea>
+        </div>
+        <div class="form-group">
+          <label>分组规则</label>
+          <div class="group-rule-row">
+            <span class="rule-label">每组</span>
+            <input v-model.number="groupParam" type="number" min="2" class="rule-input" />
+            <span class="rule-label">人，不能整除时</span>
+            <select v-model="remainderHandling" class="rule-select">
+              <option v-for="opt in remainderHandlingOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
+            </select>
+          </div>
         </div>
         <div class="actions">
           <button type="submit" class="btn btn-primary" :disabled="saving">
@@ -104,6 +123,29 @@ function handleCancel() {
 
 .actions .btn {
   width: auto;
+  flex: 1;
+}
+
+.group-rule-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.rule-label {
+  font-size: 13px;
+  color: #666;
+  white-space: nowrap;
+}
+
+.rule-input {
+  width: 90px !important;
+  text-align: center;
+  padding: 0 8px !important;
+}
+
+.rule-select {
+  width: auto !important;
   flex: 1;
 }
 </style>
