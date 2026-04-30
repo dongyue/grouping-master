@@ -3,6 +3,7 @@ import { ref, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { createActivity, listActivities } from '../api/activities'
+import { formatDate } from '../utils/date'
 
 const router = useRouter()
 const route = useRoute()
@@ -117,7 +118,7 @@ function truncate(text) {
         <div v-for="a in createdActivities" :key="'created-' + a.id" class="activity-item" @click="router.push(`/activities/${a.slug}`)" style="cursor: pointer;">
           <div class="activity-title">{{ a.title }}</div>
           <div v-if="a.description" class="activity-desc">{{ truncate(a.description) }}</div>
-          <div class="activity-time">{{ a.created_at.slice(0, 10) }}</div>
+          <div class="activity-time">{{ formatDate(a.created_at) }}</div>
         </div>
       </div>
 
@@ -128,7 +129,7 @@ function truncate(text) {
         <div v-for="a in joinedActivities" :key="'joined-' + a.id" class="activity-item" @click="router.push(`/activities/${a.slug}`)" style="cursor: pointer;">
           <div class="activity-title">{{ a.title }}</div>
           <div v-if="a.description" class="activity-desc">{{ truncate(a.description) }}</div>
-          <div class="activity-time">{{ a.created_at.slice(0, 10) }}</div>
+          <div class="activity-time">{{ formatDate(a.created_at) }}</div>
         </div>
       </div>
     </template>

@@ -3,6 +3,10 @@ import { ref, onMounted, onBeforeUnmount, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { getActivity, joinActivity, leaveActivity, deleteActivity, kickMember, createGroups, deleteGroups } from '../api/activities'
+import ConfirmModal from '../components/ConfirmModal.vue'
+import { formatDate } from '../utils/date'
+
+const uploadsUrl = import.meta.env.VITE_UPLOADS_URL || 'http://localhost:8000'
 
 const route = useRoute()
 const router = useRouter()
@@ -28,6 +32,7 @@ const groupSuccess = ref('')
 const frozenMsg = ref('')
 const showMore = ref(false)
 const showKick = ref(false)
+const confirmModal = ref({ show: false, title: '', message: '', onConfirm: null })
 
 const hasMoreItems = computed(() => {
   return activity.value?.is_member || activity.value?.is_creator
@@ -65,6 +70,10 @@ function handleClickOutside(event) {
   if (showMore.value && !event.target.closest('.more-wrapper')) {
     showMore.value = false
   }
+}
+
+function showConfirm(title, message, onConfirm) {
+  confirmModal.value = { show: true, title, message, onConfirm }
 }
 
 function handleCopyLink() {
@@ -108,47 +117,50 @@ async function handleLeave() {
     setTimeout(() => (frozenMsg.value = ''), 2000)
     return
   }
-  if (!confirm('确定要退出此活动吗？')) return
-  leaving.value = true
-  leaveError.value = ''
-  try {
-    await leaveActivity(route.params.slug)
-    activity.value.is_member = false
-    activity.value.members = activity.value.members.filter(m => m.user_id !== auth.user.id)
-    router.push({ name: 'home', query: { left: '1' } })
-  } catch (err) {
-    leaveError.value = err.response?.data?.detail || '退出失败'
-  } finally {
-    leaving.value = false
-  }
+  showConfirm('退出活动', '确定要退出此活动吗？', async () => {
+    leaving.value = true
+    leaveError.value = ''
+    try {
+      await leaveActivity(route.params.slug)
+      activity.value.is_member = false
+      activity.value.members = activity.value.members.filter(m => m.user_id !== auth.user.id)
+      router.push({ name: 'home', query: { left: '1' } })
+    } catch (err) {
+      leaveError.value = err.response?.data?.detail || '退出失败'
+    } finally {
+      leaving.value = false
+    }
+  })
 }
 
 async function handleDelete() {
-  if (!confirm('确定要删除此活动吗？删除后不可恢复。')) return
-  deleting.value = true
-  deleteError.value = ''
-  try {
-    await deleteActivity(route.params.slug)
-    router.push({ name: 'home', query: { deleted: '1' } })
-  } catch (err) {
-    deleteError.value = err.response?.data?.detail || '删除失败'
-  } finally {
-    deleting.value = false
-  }
+  showConfirm('删除活动', '确定要删除此活动吗？删除后不可恢复。', async () => {
+    deleting.value = true
+    deleteError.value = ''
+    try {
+      await deleteActivity(route.params.slug)
+      router.push({ name: 'home', query: { deleted: '1' } })
+    } catch (err) {
+      deleteError.value = err.response?.data?.detail || '删除失败'
+    } finally {
+      deleting.value = false
+    }
+  })
 }
 
 async function handleKick(userId, nickname) {
-  if (!confirm(`确定要将 ${nickname} 踢出此活动吗？`)) return
-  kickingUserId.value = userId
-  kickError.value = ''
-  try {
-    await kickMember(route.params.slug, userId)
-    activity.value.members = activity.value.members.filter(m => m.user_id !== userId)
-  } catch (err) {
-    kickError.value = err.response?.data?.detail || '踢出失败'
-  } finally {
-    kickingUserId.value = null
-  }
+  showConfirm('踢出成员', `确定要将 ${nickname} 踢出此活动吗？`, async () => {
+    kickingUserId.value = userId
+    kickError.value = ''
+    try {
+      await kickMember(route.params.slug, userId)
+      activity.value.members = activity.value.members.filter(m => m.user_id !== userId)
+    } catch (err) {
+      kickError.value = err.response?.data?.detail || '踢出失败'
+    } finally {
+      kickingUserId.value = null
+    }
+  })
 }
 
 async function handleGroup() {
@@ -169,20 +181,21 @@ async function handleGroup() {
 }
 
 async function handleUngroup() {
-  if (!confirm('确定要解除分组吗？')) return
-  grouping.value = true
-  groupError.value = ''
-  try {
-    await deleteGroups(route.params.slug)
-    activity.value.groups = []
-    activity.value.has_groups = false
-    groupSuccess.value = '已解除分组'
-    setTimeout(() => (groupSuccess.value = ''), 2000)
-  } catch (err) {
-    groupError.value = err.response?.data?.detail || '解除分组失败'
-  } finally {
-    grouping.value = false
-  }
+  showConfirm('解除分组', '确定要解除分组吗？', async () => {
+    grouping.value = true
+    groupError.value = ''
+    try {
+      await deleteGroups(route.params.slug)
+      activity.value.groups = []
+      activity.value.has_groups = false
+      groupSuccess.value = '已解除分组'
+      setTimeout(() => (groupSuccess.value = ''), 2000)
+    } catch (err) {
+      groupError.value = err.response?.data?.detail || '解除分组失败'
+    } finally {
+      grouping.value = false
+    }
+  })
 }
 </script>
 
@@ -194,7 +207,7 @@ async function handleUngroup() {
       <h1 class="page-title">{{ activity.title }}</h1>
       <div class="meta">
         <span class="creator">创建者：{{ activity.creator_nickname }}</span>
-        <span class="time">{{ activity.created_at.slice(0, 10) }}</span>
+        <span class="time">{{ formatDate(activity.created_at) }}</span>
       </div>
       <div class="desc-section">
         <p v-if="activity.description" class="description">{{ activity.description }}</p>
@@ -209,7 +222,7 @@ async function handleUngroup() {
             :class="{ active: showKick }"
             @click="showKick = !showKick"
           >
-            {{ showKick ? '管理成员 ✓' : '管理成员' }}
+            {{ showKick ? '完成管理' : '管理成员' }}
           </button>
         </h3>
         <div v-if="activity.has_groups && activity.groups?.length">
@@ -218,7 +231,7 @@ async function handleUngroup() {
             <div class="members-list">
               <div v-for="member in group.members" :key="member.user_id" class="member-item">
                 <div class="member-avatar">
-                  <img v-if="member.avatar_path" :src="`http://localhost:8000/${member.avatar_path}`" />
+                  <img v-if="member.avatar_path" :src="`${uploadsUrl}/${member.avatar_path}`" />
                   <span v-else class="avatar-placeholder">{{ member.nickname[0] }}</span>
                 </div>
                 <span class="member-nickname">{{ member.nickname }}</span>
@@ -229,7 +242,7 @@ async function handleUngroup() {
         <div v-else-if="activity.members?.length" class="members-list">
           <div v-for="member in activity.members" :key="member.user_id" class="member-item">
             <div class="member-avatar">
-              <img v-if="member.avatar_path" :src="`http://localhost:8000/${member.avatar_path}`" />
+              <img v-if="member.avatar_path" :src="`${uploadsUrl}/${member.avatar_path}`" />
               <span v-else class="avatar-placeholder">{{ member.nickname[0] }}</span>
             </div>
             <span class="member-nickname">{{ member.nickname }}</span>
@@ -306,6 +319,13 @@ async function handleUngroup() {
       </div>
     </template>
   </div>
+  <ConfirmModal
+    v-if="confirmModal.show"
+    :title="confirmModal.title"
+    :message="confirmModal.message"
+    @confirm="confirmModal.onConfirm(); confirmModal.show = false"
+    @cancel="confirmModal.show = false"
+  />
 </template>
 
 <style scoped>

@@ -1,9 +1,10 @@
 <script setup>
 import { ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 
 const router = useRouter()
+const route = useRoute()
 const auth = useAuthStore()
 
 const username = ref('')
@@ -16,7 +17,7 @@ async function handleLogin() {
   loading.value = true
   try {
     await auth.login({ username: username.value, password: password.value })
-    router.push('/')
+    router.push(route.query.redirect || '/')
   } catch (err) {
     console.error('登录错误:', err)
     error.value = err.response?.data?.detail || '登录失败，请检查账号密码是否正确'

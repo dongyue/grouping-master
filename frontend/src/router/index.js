@@ -58,6 +58,11 @@ const routes = [
     component: () => import('../views/ChangePasswordView.vue'),
     meta: { requiresAuth: true },
   },
+  {
+    path: '/:pathMatch(.*)*',
+    name: 'not-found',
+    component: () => import('../views/NotFoundView.vue'),
+  },
 ]
 
 const router = createRouter({
@@ -74,7 +79,7 @@ router.beforeEach(async (to, from, next) => {
   }
 
   if (to.meta.requiresAuth && !authStore.isLoggedIn) {
-    return next('/login')
+    return next({ path: '/login', query: { redirect: to.fullPath } })
   }
 
   if (to.meta.guest && authStore.isLoggedIn) {

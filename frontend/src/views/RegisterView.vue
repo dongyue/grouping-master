@@ -1,10 +1,9 @@
 <script setup>
 import { ref } from 'vue'
-import { useRouter } from 'vue-router'
-import { register } from '../api/auth'
-import { useAuthStore } from '../stores/auth'
+import { useRouter, useRoute } from 'vue-router'
 
 const router = useRouter()
+const route = useRoute()
 const auth = useAuthStore()
 
 const form = ref({
@@ -19,6 +18,10 @@ const loading = ref(false)
 
 async function handleRegister() {
   error.value = ''
+  if (form.value.password !== form.value.password_confirm) {
+    error.value = '两次输入的密码不一致'
+    return
+  }
   loading.value = true
   try {
     const data = {
@@ -30,7 +33,7 @@ async function handleRegister() {
     }
     const res = await register(data)
     auth.user = res.data
-    router.push('/')
+    router.push(route.query.redirect || '/')
   } catch (err) {
     console.error('注册错误:', err)
     error.value = err.response?.data?.detail || '注册失败，请稍后重试'

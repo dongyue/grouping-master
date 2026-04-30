@@ -7,6 +7,7 @@ const route = useRoute()
 const router = useRouter()
 
 const password = ref('')
+const passwordConfirm = ref('')
 const error = ref('')
 const success = ref('')
 const loading = ref(false)
@@ -14,6 +15,10 @@ const loading = ref(false)
 async function handleSubmit() {
   error.value = ''
   success.value = ''
+  if (password.value !== passwordConfirm.value) {
+    error.value = '两次输入的密码不一致'
+    return
+  }
   const token = route.query.token
   if (!token) {
     error.value = '缺少重置令牌'
@@ -42,6 +47,10 @@ async function handleSubmit() {
       <div class="form-group">
         <label>新密码</label>
         <input v-model="password" type="password" required placeholder="至少8位" />
+      </div>
+      <div class="form-group">
+        <label>确认新密码</label>
+        <input v-model="passwordConfirm" type="password" required placeholder="再次输入新密码" />
       </div>
       <button type="submit" class="btn btn-primary" :disabled="loading">
         {{ loading ? '重置中...' : '重置密码' }}

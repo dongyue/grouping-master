@@ -77,9 +77,9 @@
 | 文件 | 职责 |
 |------|------|
 | `main.js` | Vue 3 入口：创建 Pinia、Router，挂载 `#app` |
-| `App.vue` | 根组件：顶部导航栏 + `<router-view>` |
-| `style.css` | 全局样式表 |
-| `router/index.js` | 路由表 + `beforeEach` 鉴权守卫（requiresAuth/guest） |
+| `App.vue` | 根组件：顶部导航栏 + `<router-view>` + 全局按钮样式（btn-primary/secondary/warning/danger） |
+| `style.css` | CSS reset 与字体渲染优化 |
+| `router/index.js` | 路由表 + `beforeEach` 鉴权守卫 + 登录重定向 + 404 兜底路由 |
 
 ### API 调用层（api/）
 
@@ -87,13 +87,25 @@
 |------|------|
 | `index.js` | Axios 实例：baseURL、withCredentials、响应/错误拦截器 |
 | `auth.js` | 认证 API：注册/登录/登出/me/改密/忘记密码/重置密码/更新资料/头像/注销 |
-| `activities.js` | 活动 API：createActivity、listActivities、getActivity、joinActivity、leaveActivity、updateActivity、deleteActivity |
+| `activities.js` | 活动 API：createActivity、listActivities、getActivity、joinActivity、leaveActivity、updateActivity、deleteActivity、kickMember、createGroups、deleteGroups |
 
 ### 状态管理（stores/）
 
 | 文件 | 职责 |
 |------|------|
 | `auth.js` | Pinia store：user 状态、isLoggedIn、fetchUser/login/logout |
+
+### 工具函数（utils/）
+
+| 文件 | 职责 |
+|------|------|
+| `date.js` | `formatDate` 统一日期格式化为 YYYY-MM-DD |
+
+### 通用组件（components/）
+
+| 文件 | 职责 |
+|------|------|
+| `ConfirmModal.vue` | 全局确认对话框组件，替代浏览器原生 confirm() |
 
 ### 静态资源（assets/）
 
@@ -106,11 +118,12 @@
 | 文件 | 职责 |
 |------|------|
 | `HomeView.vue` | 首页：活动创建表单 + 我的活动列表（点击可跳转详情） |
-| `ActivityDetailView.vue` | 活动详情页：主行（加入/分组/分享 + 更多 ▼）+ 更多菜单（退出/解除/编辑/删除）+ 成员列表（未分组平铺，已分组按组展示） |
-| `ActivityEditView.vue` | 编辑活动页：修改标题和描述，仅创建者可访问 |
+| `ActivityDetailView.vue` | 活动详情页：主行 + 更多下拉菜单 + 成员列表 + 管理成员开关 + 确认对话框 |
+| `ActivityEditView.vue` | 编辑活动页：修改标题和描述，仅创建者可访问，取消回到详情页 |
 | `LoginView.vue` | 登录页 |
-| `RegisterView.vue` | 注册页 |
+| `RegisterView.vue` | 注册页（前端校验两次密码一致性） |
 | `ForgotPasswordView.vue` | 忘记密码：发送重置邮件 |
-| `ResetPasswordView.vue` | 重置密码：通过 URL token 设置新密码 |
-| `ChangePasswordView.vue` | 修改密码：旧密码+新密码 |
+| `ResetPasswordView.vue` | 重置密码：通过 URL token 设置新密码（含确认密码输入框） |
+| `ChangePasswordView.vue` | 修改密码：旧密码+新密码+确认新密码 |
 | `SettingsView.vue` | 个人设置：修改昵称、上传头像、注销账号 |
+| `NotFoundView.vue` | 404 页面：提示页面不存在，提供返回首页入口 |

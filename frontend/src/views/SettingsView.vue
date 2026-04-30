@@ -3,6 +3,10 @@ import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { updateProfile, uploadAvatar, deleteAccount } from '../api/auth'
 import { useAuthStore } from '../stores/auth'
+import ConfirmModal from '../components/ConfirmModal.vue'
+import { formatDate } from '../utils/date'
+
+const uploadsUrl = import.meta.env.VITE_UPLOADS_URL || 'http://localhost:8000'
 
 const router = useRouter()
 const auth = useAuthStore()
@@ -13,10 +17,11 @@ const success = ref('')
 const saving = ref(false)
 const uploading = ref(false)
 const deleting = ref(false)
+const confirmModal = ref({ show: false, title: '', message: '', onConfirm: null })
 
 const avatarUrl = computed(() => {
   if (auth.user?.avatar_path) {
-    return `http://localhost:8000/${auth.user.avatar_path}`
+    return `${uploadsUrl}/${auth.user.avatar_path}`
   }
   return null
 })
@@ -55,20 +60,24 @@ async function handleAvatarUpload(e) {
 }
 
 async function handleDeleteAccount() {
-  if (!confirm('确定要注销账号吗？此操作不可撤销，所有数据将被永久删除。')) {
-    return
-  }
-  error.value = ''
-  deleting.value = true
-  try {
-    await deleteAccount()
-    auth.user = null
-    router.push('/login')
-  } catch (err) {
-    console.error('注销错误:', err)
-    error.value = err.response?.data?.detail || '注销失败'
-  } finally {
-    deleting.value = false
+  confirmModal.value = {
+    show: true,
+    title: '注销账号',
+    message: '确定要注销账号吗？此操作不可撤销，所有数据将被永久删除。',
+    onConfirm: async () => {
+      error.value = ''
+      deleting.value = true
+      try {
+        await deleteAccount()
+        auth.user = null
+        router.push('/login')
+      } catch (err) {
+        console.error('注销错误:', err)
+        error.value = err.response?.data?.detail || '注销失败'
+      } finally {
+        deleting.value = false
+      }
+    },
   }
 }
 </script>
@@ -112,7 +121,7 @@ async function handleDeleteAccount() {
     </div>
     <div class="info-row">
       <span class="info-label">注册时间</span>
-      <span class="info-value">{{ auth.user?.created_at?.slice(0, 10) }}</span>
+      <span class="info-value">{{ formatDate(auth.user?.created_at) }}</span>
     </div>
 
     <!-- 修改昵称 -->
@@ -132,6 +141,13 @@ async function handleDeleteAccount() {
       {{ deleting ? '注销中...' : '注销账号' }}
     </a>
   </div>
+  <ConfirmModal
+    v-if="confirmModal.show"
+    :title="confirmModal.title"
+    :message="confirmModal.message"
+    @confirm="confirmModal.onConfirm(); confirmModal.show = false"
+    @cancel="confirmModal.show = false"
+  />
 </template>
 
 <style scoped>

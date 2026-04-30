@@ -47,7 +47,7 @@ async function handleSave() {
 }
 
 function handleCancel() {
-  router.back()
+  router.push({ name: 'activity-detail', params: { slug: route.params.slug } })
 }
 </script>
 
