@@ -5,8 +5,11 @@ from app.database import get_db
 from app.models.user import User
 from app.models.activity import Activity
 from app.models.activity_member import ActivityMember
-from app.schemas.auth import ActivityCreateRequest, ActivityUpdateRequest, ActivityResponse, ActivityDetailResponse, MemberItem
+from app.models.group import Group
+from app.models.group_member import GroupMember
+from app.schemas.auth import ActivityCreateRequest, ActivityUpdateRequest, ActivityResponse, ActivityDetailResponse, MemberItem, GroupResponse
 from app.middleware.auth import get_current_user
+import random
 
 router = APIRouter(prefix="/api/activities", tags=["活动"])
 
@@ -109,6 +112,29 @@ def get_activity(
 
     is_creator = activity.user_id == current_user.id
 
+    groups = (
+        db.query(Group)
+        .filter(Group.activity_id == activity.id)
+        .order_by(Group.group_number.asc())
+        .all()
+    )
+
+    groups_data = [
+        GroupResponse(
+            group_number=g.group_number,
+            members=[
+                MemberItem(
+                    user_id=gm.user_id,
+                    nickname=gm.user.nickname,
+                    avatar_path=gm.user.avatar_path,
+                    joined_at="",
+                )
+                for gm in g.members
+            ],
+        )
+        for g in groups
+    ]
+
     return ActivityDetailResponse(
         id=activity.id,
         slug=activity.slug,
@@ -118,7 +144,9 @@ def get_activity(
         created_at=activity.created_at.isoformat(),
         is_member=is_member,
         is_creator=is_creator,
+        has_groups=len(groups_data) > 0,
         members=members_data,
+        groups=groups_data,
     )
 
 
@@ -240,3 +268,57 @@ def delete_activity(
     db.delete(activity)
     db.commit()
     return {"message": "活动已删除"}
+
+
+@router.post("/{slug}/groups")
+def create_groups(
+    slug: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    activity = db.query(Activity).filter(Activity.slug == slug).first()
+    if not activity:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="活动不存在")
+
+    if activity.user_id != current_user.id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="只有活动创建者才能执行分组")
+
+    members = (
+        db.query(ActivityMember)
+        .filter(ActivityMember.activity_id == activity.id)
+        .all()
+    )
+
+    member_user_ids = [m.user_id for m in members]
+    random.shuffle(member_user_ids)
+
+    group_number = 1
+    groups_result = []
+
+    for i in range(0, len(member_user_ids), 2):
+        chunk = member_user_ids[i:i + 2]
+        group = Group(activity_id=activity.id, group_number=group_number)
+        db.add(group)
+        db.flush()
+
+        member_items = []
+        for uid in chunk:
+            gm = GroupMember(group_id=group.id, user_id=uid)
+            db.add(gm)
+            member = db.query(User).filter(User.id == uid).first()
+            member_items.append(
+                MemberItem(
+                    user_id=uid,
+                    nickname=member.nickname,
+                    avatar_path=member.avatar_path,
+                    joined_at="",
+                )
+            )
+
+        groups_result.append(
+            GroupResponse(group_number=group_number, members=member_items)
+        )
+        group_number += 1
+
+    db.commit()
+    return {"groups": groups_result}

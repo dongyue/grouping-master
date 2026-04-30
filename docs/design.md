@@ -73,6 +73,25 @@
 
 > 联合唯一约束：(activity_id, user_id)，防止重复加入
 
+### 2.6 groups 表
+
+| 字段 | 类型 | 约束 | 说明 |
+|------|------|------|------|
+| id | INT | PK, AUTO_INCREMENT | 主键 |
+| activity_id | INT | FK → activities.id, NOT NULL, INDEX | 活动 ID |
+| group_number | INT | NOT NULL | 组号（从 1 开始递增） |
+| created_at | DATETIME | DEFAULT NOW() | 创建时间 |
+
+### 2.7 group_members 表
+
+| 字段 | 类型 | 约束 | 说明 |
+|------|------|------|------|
+| id | INT | PK, AUTO_INCREMENT | 主键 |
+| group_id | INT | FK → groups.id, NOT NULL | 组 ID |
+| user_id | INT | FK → users.id, NOT NULL | 成员 ID |
+
+> 联合唯一约束：(group_id, user_id)，防止重复分配
+
 ## 3. API 设计
 
 ### 3.1 认证接口
@@ -109,6 +128,7 @@
 | POST | `/api/activities/{slug}/leave` | Session | 退出活动 |
 | PUT | `/api/activities/{slug}` | Session | 更新活动（仅创建者） |
 | DELETE | `/api/activities/{slug}/members/{user_id}` | Session | 踢出成员（仅创建者） |
+| POST | `/api/activities/{slug}/groups` | Session | 执行分组（仅创建者） |
 
 `POST /api/activities` 创建活动
 - 请求体：`{title: str, description?: str, join_activity?: bool}`
@@ -121,9 +141,10 @@
 - 均按创建时间倒序
 
 `GET /api/activities/{slug}`
-- 响应字段：`{id, slug, title, description, creator_nickname, created_at, is_member, is_creator, members}`
+- 响应字段：`{id, slug, title, description, creator_nickname, created_at, is_member, is_creator, groups, members}`
 - `is_member`：当前用户是否已加入该活动
 - `is_creator`：当前用户是否为该活动创建者
+- `groups`：`[GroupResponse]` 分组列表，未分组时为空数组。每项 `{group_number, members: [MemberItem]}`
 - `members`：`[MemberItem]` 成员列表，每项 `{user_id, nickname, avatar_path, joined_at}`，按加入时间升序
 
 `POST /api/activities/{slug}/join`
@@ -154,6 +175,13 @@
 - 目标用户不是该活动成员时返回 404
 - 创建者不能踢出自己，返回 400
 - 响应：`{message: "已将该成员移出活动"}`
+
+`POST /api/activities/{slug}/groups`
+- 无请求体
+- 仅活动创建者可执行
+- 非创建者返回 403
+- 将当前活动成员随机打乱，按每组 2 人分配，剩余 1 人则单独成组
+- 响应：`{groups: [GroupResponse]}`，每组含 `group_number` 和 `members` 列表
 
 > 活动列表项响应格式：`{id, slug, title, description, creator_nickname, created_at}`
 
@@ -199,7 +227,7 @@
 | `/forgot-password` | 忘记密码页 | 公开 | 输入邮箱发送重置链接 |
 | `/reset-password` | 重置密码页 | 公开 | ?token=xxx，设置新密码 |
 | `/` | 首页 | 需登录 | 创建活动表单（含「同时加入活动」复选框） + 「我创建的活动」列表 + 「我加入的活动」列表 |
-| `/activities/:slug` | 活动详情页 | 需登录 | 活动完整信息 + 编辑按钮（创建者）+ 分享按钮 + 加入/退出按钮 + 删除按钮 + 踢出成员（创建者可操作） |
+| `/activities/:slug` | 活动详情页 | 需登录 | 活动完整信息 + 编辑按钮（创建者）+ 分组按钮（创建者）+ 分享按钮 + 加入/退出按钮 + 删除按钮 + 踢出成员（创建者可操作）+ 成员列表（未分组时平铺，已分组后按组展示） |
 | `/activities/:slug/edit` | 编辑活动页 | 需登录 | 编辑活动标题和描述，仅创建者可操作，非创建者重定向回详情页 |
 | `/settings` | 设置页 | 需登录 | 头像上传、修改昵称、注销账号入口 |
 | `/settings/change-password` | 修改密码页 | 需登录 | 旧密码 + 新密码表单 |

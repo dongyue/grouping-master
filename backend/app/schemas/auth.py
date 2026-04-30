@@ -156,4 +156,13 @@ class MemberItem(BaseModel):
 class ActivityDetailResponse(ActivityResponse):
     is_member: bool
     is_creator: bool
+    has_groups: bool
     members: list[MemberItem]
+    groups: list["GroupResponse"] = []
+
+
+class GroupResponse(BaseModel):
+    group_number: int
+    members: list[MemberItem]
+
+    model_config = {"from_attributes": True}

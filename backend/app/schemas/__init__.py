@@ -12,6 +12,7 @@ from app.schemas.auth import (
     ActivityResponse,
     ActivityDetailResponse,
     MemberItem,
+    GroupResponse,
 )
 
 __all__ = [
@@ -28,4 +29,5 @@ __all__ = [
     "ActivityResponse",
     "ActivityDetailResponse",
     "MemberItem",
+    "GroupResponse",
 ]

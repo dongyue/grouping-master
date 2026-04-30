@@ -32,3 +32,7 @@ export function updateActivity(slug, data) {
   return api.put(`/activities/${slug}`, data)
 }
 
+export function createGroups(slug) {
+  return api.post(`/activities/${slug}/groups`)
+}
+

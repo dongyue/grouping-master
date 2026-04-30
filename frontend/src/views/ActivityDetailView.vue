@@ -2,7 +2,7 @@
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
-import { getActivity, joinActivity, leaveActivity, deleteActivity, kickMember } from '../api/activities'
+import { getActivity, joinActivity, leaveActivity, deleteActivity, kickMember, createGroups } from '../api/activities'
 
 const route = useRoute()
 const router = useRouter()
@@ -22,6 +22,9 @@ const deleteError = ref('')
 const updated = ref(false)
 const kickingUserId = ref(null)
 const kickError = ref('')
+const grouping = ref(false)
+const groupError = ref('')
+const groupSuccess = ref('')
 
 onMounted(async () => {
   try {
@@ -112,6 +115,23 @@ async function handleKick(userId, nickname) {
     kickingUserId.value = null
   }
 }
+
+async function handleGroup() {
+  grouping.value = true
+  groupError.value = ''
+  groupSuccess.value = ''
+  try {
+    const res = await createGroups(route.params.slug)
+    activity.value.groups = res.data.groups
+    activity.value.has_groups = true
+    groupSuccess.value = '分组完成'
+    setTimeout(() => (groupSuccess.value = ''), 2000)
+  } catch (err) {
+    groupError.value = err.response?.data?.detail || '分组失败'
+  } finally {
+    grouping.value = false
+  }
+}
 </script>
 
 <template>
@@ -129,8 +149,24 @@ async function handleKick(userId, nickname) {
         <p v-else class="description" style="color: #bbb;">暂无描述</p>
       </div>
       <div class="members-section">
-        <h3 class="members-title">已加入的成员（{{ activity.members?.length || 0 }}）</h3>
-        <div v-if="activity.members?.length" class="members-list">
+        <h3 class="members-title">
+          已加入的成员（{{ activity.members?.length || 0 }}）
+        </h3>
+        <div v-if="activity.has_groups && activity.groups?.length">
+          <div v-for="group in activity.groups" :key="group.group_number" class="group-card">
+            <h4 class="group-title">第 {{ group.group_number }} 组（{{ group.members.length }} 人）</h4>
+            <div class="members-list">
+              <div v-for="member in group.members" :key="member.user_id" class="member-item">
+                <div class="member-avatar">
+                  <img v-if="member.avatar_path" :src="`http://localhost:8000/${member.avatar_path}`" />
+                  <span v-else class="avatar-placeholder">{{ member.nickname[0] }}</span>
+                </div>
+                <span class="member-nickname">{{ member.nickname }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div v-else-if="activity.members?.length" class="members-list">
           <div v-for="member in activity.members" :key="member.user_id" class="member-item">
             <div class="member-avatar">
               <img v-if="member.avatar_path" :src="`http://localhost:8000/${member.avatar_path}`" />
@@ -155,12 +191,17 @@ async function handleKick(userId, nickname) {
       <div v-if="leaveError" class="error-msg" style="margin-bottom: 12px;">{{ leaveError }}</div>
       <div v-if="deleteError" class="error-msg" style="margin-bottom: 12px;">{{ deleteError }}</div>
       <div v-if="kickError" class="error-msg" style="margin-bottom: 12px;">{{ kickError }}</div>
+      <div v-if="groupError" class="error-msg" style="margin-bottom: 12px;">{{ groupError }}</div>
+      <div v-if="groupSuccess" class="success-msg" style="margin-bottom: 12px;">{{ groupSuccess }}</div>
       <div class="actions">
         <button v-if="!activity.is_member" class="btn btn-primary" :disabled="joining" @click="handleJoin">
           {{ joining ? '加入中...' : '加入活动' }}
         </button>
         <button v-if="activity.is_member" class="btn btn-secondary" :disabled="leaving" @click="handleLeave">
           {{ leaving ? '退出中...' : '退出活动' }}
+        </button>
+        <button v-if="activity.is_creator && !activity.has_groups" class="btn btn-primary" :disabled="grouping" @click="handleGroup">
+          {{ grouping ? '分组中...' : '开始分组' }}
         </button>
         <button v-if="activity.is_creator" class="btn btn-secondary" @click="router.push({ name: 'activity-edit', params: { slug: route.params.slug } })">
           编辑活动
@@ -304,5 +345,19 @@ async function handleKick(userId, nickname) {
 .btn-kick:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+.group-card {
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin-bottom: 12px;
+}
+
+.group-title {
+  font-size: 13px;
+  color: #555;
+  margin-bottom: 8px;
+  font-weight: 600;
 }
 </style>

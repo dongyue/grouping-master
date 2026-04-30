@@ -22,13 +22,15 @@
 | `password_reset.py` | `PasswordReset` 表：密码重置令牌（token, expires_at, used） |
 | `activity.py` | `Activity` 表：活动（id, slug, user_id FK, title, description, 时间戳），关联 User |
 | `activity_member.py` | `ActivityMember` 表：活动成员关系（id, activity_id FK, user_id FK, 时间戳），联合唯一约束 |
+| `group.py` | `Group` 表：分组（id, activity_id FK, group_number, 时间戳），关联 GroupMember |
+| `group_member.py` | `GroupMember` 表：分组成员关系（id, group_id FK, user_id FK），联合唯一约束 |
 
 ### Pydantic Schema（app/schemas/）
 
 | 文件 | 职责 |
 |------|------|
 | `__init__.py` | 汇总导出所有 schema |
-| `auth.py` | 全部请求/响应校验：注册、登录、改密、重置密码、更新资料、头像、注销、活动 CRUD |
+| `auth.py` | 全部请求/响应校验：注册、登录、改密、重置密码、更新资料、头像、注销、活动 CRUD、分组 |
 
 ### API 路由（app/routers/）
 
@@ -36,7 +38,7 @@
 |------|------|
 | `__init__.py` | 汇总导出路由 |
 | `auth.py` | `/api/auth/*` — 注册/登录/登出/me/改密/忘记密码/重置密码/更新资料/头像/注销账号 |
-| `activities.py` | `/api/activities` — POST 创建、GET 列表、GET `/:slug` 详情、POST `/:slug` 加入/退出、PUT `/:slug` 编辑、DELETE `/:slug` 删除 |
+| `activities.py` | `/api/activities` — POST 创建、GET 列表、GET `/:slug` 详情、POST `/:slug` 加入/退出、PUT `/:slug` 编辑、DELETE `/:slug` 删除、POST `/:slug/groups` 分组 |
 
 ### 业务服务（app/services/）
 
@@ -64,6 +66,7 @@
 | `versions/4ebf2b01b301_add_activities_table.py` | 新增 activities 表 |
 | `versions/4373c7646a4b_add_activity_members_table.py` | 新增 activity_members 表 |
 | `versions/d9158a7c8e2f_add_slug_to_activities.py` | activities 表新增 slug 列 |
+| `versions/5a1b2c3d4e5f_add_groups_and_group_members.py` | 新增 groups 表和 group_members 表 |
 
 ---
 
@@ -103,7 +106,7 @@
 | 文件 | 职责 |
 |------|------|
 | `HomeView.vue` | 首页：活动创建表单 + 我的活动列表（点击可跳转详情） |
-| `ActivityDetailView.vue` | 活动详情页：标题/描述/创建者/时间 + 编辑/分享/加入/退出/删除按钮 |
+| `ActivityDetailView.vue` | 活动详情页：标题/描述/创建者/时间 + 编辑/分组/分享/加入/退出/删除按钮 + 成员列表（未分组时平铺，已分组后按组展示） |
 | `ActivityEditView.vue` | 编辑活动页：修改标题和描述，仅创建者可访问 |
 | `LoginView.vue` | 登录页 |
 | `RegisterView.vue` | 注册页 |
