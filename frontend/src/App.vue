@@ -141,6 +141,25 @@ main {
   background: #4338ca;
 }
 
+.btn-secondary {
+  background: #f3f4f6;
+  color: #555;
+  border: 1px solid #d0d0d0;
+}
+
+.btn-secondary:hover {
+  background: #f5f5f5;
+  border-color: #bbb;
+}
+
+.btn-warning {
+  color: #e6a23c;
+}
+
+.btn-warning:hover {
+  background: #fef5e7;
+}
+
 .btn-danger {
   background: #dc2626;
   color: #fff;

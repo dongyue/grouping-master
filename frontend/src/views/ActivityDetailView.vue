@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onBeforeUnmount, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { getActivity, joinActivity, leaveActivity, deleteActivity, kickMember, createGroups, deleteGroups } from '../api/activities'
@@ -26,6 +26,11 @@ const grouping = ref(false)
 const groupError = ref('')
 const groupSuccess = ref('')
 const frozenMsg = ref('')
+const showMore = ref(false)
+
+const hasMoreItems = computed(() => {
+  return activity.value?.is_member || activity.value?.is_creator
+})
 
 onMounted(async () => {
   try {
@@ -47,7 +52,19 @@ onMounted(async () => {
     router.replace({ query: {} })
     setTimeout(() => (updated.value = false), 3000)
   }
+
+  document.addEventListener('click', handleClickOutside)
 })
+
+onBeforeUnmount(() => {
+  document.removeEventListener('click', handleClickOutside)
+})
+
+function handleClickOutside(event) {
+  if (showMore.value && !event.target.closest('.more-wrapper')) {
+    showMore.value = false
+  }
+}
 
 function handleCopyLink() {
   const url = window.location.origin + router.resolve({ name: 'activity-detail', params: { slug: route.params.slug } }).href
@@ -232,27 +249,51 @@ async function handleUngroup() {
         <button v-if="!activity.is_member" class="btn btn-primary" :class="{ 'btn-disabled': activity.has_groups }" :disabled="joining" @click="handleJoin">
           {{ joining ? '加入中...' : '加入活动' }}
         </button>
-        <button v-if="activity.is_member" class="btn btn-secondary" :class="{ 'btn-disabled': activity.has_groups }" :disabled="leaving" @click="handleLeave">
-          {{ leaving ? '退出中...' : '退出活动' }}
-        </button>
         <button v-if="activity.is_creator && !activity.has_groups" class="btn btn-primary" :disabled="grouping" @click="handleGroup">
           {{ grouping ? '分组中...' : '开始分组' }}
-        </button>
-        <button v-if="activity.is_creator && activity.has_groups" class="btn btn-secondary" :disabled="grouping" @click="handleUngroup">
-          {{ grouping ? '解除中...' : '解除分组' }}
-        </button>
-        <button v-if="activity.is_creator" class="btn btn-secondary" @click="router.push({ name: 'activity-edit', params: { slug: route.params.slug } })">
-          编辑活动
         </button>
         <button class="btn btn-secondary" @click="handleCopyLink" style="white-space: nowrap;">
           {{ copied ? '已复制！' : '分享链接' }}
         </button>
-        <router-link to="/" class="btn btn-secondary" style="text-decoration: none; display: inline-flex; align-items: center; white-space: nowrap;">
-          返回首页
-        </router-link>
-        <button v-if="activity.is_creator" class="btn btn-danger" :disabled="deleting" @click="handleDelete">
-          {{ deleting ? '删除中...' : '删除活动' }}
-        </button>
+        <div v-if="hasMoreItems" class="more-wrapper">
+          <button class="btn btn-secondary" @click="showMore = !showMore">
+            更多 ▾
+          </button>
+          <div v-if="showMore" class="more-menu">
+            <button
+              v-if="activity.is_member"
+              class="btn btn-secondary btn-warning"
+              :class="{ 'btn-disabled': activity.has_groups }"
+              :disabled="leaving"
+              @click="handleLeave(); showMore = false"
+            >
+              {{ leaving ? '退出中...' : '退出活动' }}
+            </button>
+            <button
+              v-if="activity.is_creator && activity.has_groups"
+              class="btn btn-secondary btn-warning"
+              :disabled="grouping"
+              @click="handleUngroup(); showMore = false"
+            >
+              {{ grouping ? '解除中...' : '解除分组' }}
+            </button>
+            <button
+              v-if="activity.is_creator"
+              class="btn btn-secondary"
+              @click="router.push({ name: 'activity-edit', params: { slug: route.params.slug } }); showMore = false"
+            >
+              编辑活动
+            </button>
+            <button
+              v-if="activity.is_creator"
+              class="btn btn-danger"
+              :disabled="deleting"
+              @click="handleDelete(); showMore = false"
+            >
+              {{ deleting ? '删除中...' : '删除活动' }}
+            </button>
+          </div>
+        </div>
       </div>
     </template>
   </div>
@@ -292,6 +333,7 @@ async function handleUngroup() {
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
+  position: relative;
 }
 
 .actions .btn {
@@ -402,6 +444,61 @@ async function handleUngroup() {
 .btn-disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+.more-wrapper {
+  position: relative;
+  display: inline-block;
+}
+
+.more-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 4px;
+  background: #fff;
+  border: 1px solid #eee;
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  padding: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 120px;
+  z-index: 10;
+}
+
+.more-menu .btn {
+  width: 100%;
+  text-align: left;
+  padding: 6px 14px;
+  border: none;
+  background: transparent;
+  font-size: 13px;
+  border-radius: 4px;
+  color: #555;
+}
+
+.more-menu .btn:hover:not(:disabled) {
+  background: #f0f0f0;
+}
+
+.more-menu .btn-danger {
+  color: #e74c3c;
+}
+
+.more-menu .btn-danger:hover:not(:disabled) {
+  background: #fde;
+  color: #e74c3c;
+}
+
+.more-menu .btn-warning {
+  color: #e6a23c;
+}
+
+.more-menu .btn-warning:hover:not(:disabled) {
+  background: #fef5e7;
+  color: #e6a23c;
 }
 
 .warning-msg {
