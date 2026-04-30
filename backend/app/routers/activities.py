@@ -335,3 +335,28 @@ def create_groups(
 
     db.commit()
     return {"groups": groups_result}
+
+
+@router.delete("/{slug}/groups")
+def delete_groups(
+    slug: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    activity = db.query(Activity).filter(Activity.slug == slug).first()
+    if not activity:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="活动不存在")
+
+    if activity.user_id != current_user.id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="只有活动创建者才能解除分组")
+
+    groups = db.query(Group).filter(Group.activity_id == activity.id).all()
+    if not groups:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="该活动尚未分组")
+
+    for group in groups:
+        db.query(GroupMember).filter(GroupMember.group_id == group.id).delete()
+        db.delete(group)
+
+    db.commit()
+    return {"message": "已解除分组"}

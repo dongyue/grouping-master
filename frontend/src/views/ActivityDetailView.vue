@@ -2,7 +2,7 @@
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
-import { getActivity, joinActivity, leaveActivity, deleteActivity, kickMember, createGroups } from '../api/activities'
+import { getActivity, joinActivity, leaveActivity, deleteActivity, kickMember, createGroups, deleteGroups } from '../api/activities'
 
 const route = useRoute()
 const router = useRouter()
@@ -138,6 +138,23 @@ async function handleGroup() {
     grouping.value = false
   }
 }
+
+async function handleUngroup() {
+  if (!confirm('确定要解除分组吗？')) return
+  grouping.value = true
+  groupError.value = ''
+  try {
+    await deleteGroups(route.params.slug)
+    activity.value.groups = []
+    activity.value.has_groups = false
+    groupSuccess.value = '已解除分组'
+    setTimeout(() => (groupSuccess.value = ''), 2000)
+  } catch (err) {
+    groupError.value = err.response?.data?.detail || '解除分组失败'
+  } finally {
+    grouping.value = false
+  }
+}
 </script>
 
 <template>
@@ -208,6 +225,9 @@ async function handleGroup() {
         </button>
         <button v-if="activity.is_creator && !activity.has_groups" class="btn btn-primary" :disabled="grouping" @click="handleGroup">
           {{ grouping ? '分组中...' : '开始分组' }}
+        </button>
+        <button v-if="activity.is_creator && activity.has_groups" class="btn btn-secondary" :disabled="grouping" @click="handleUngroup">
+          {{ grouping ? '解除中...' : '解除分组' }}
         </button>
         <button v-if="activity.is_creator" class="btn btn-secondary" @click="router.push({ name: 'activity-edit', params: { slug: route.params.slug } })">
           编辑活动
