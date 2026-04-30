@@ -12,7 +12,7 @@
 3. 用户确认后 → 编写/更新 `docs/design.md`，给用户确认
 4. 用户确认后 → 编写代码，编写过程中运行 `python3 get_diff.py` 查看变更增量
 5. 用户人工测试验收
- 6. 验收通过后 → commit 所有改动 → 合入 master
+6. 验收通过后 → 更新 `docs/codebase-map.md`（如有文件新增/删除/重命名，或文件职责发生变化）→ commit 所有改动 → 合入 master
 
 ### 文档定位
 
@@ -25,7 +25,7 @@
 - 文档永远描述系统**全量**（当前完整状态），而非仅本次变更
 - 与 master 的差异即反映本次功能的增量内容
 - 新增功能时追加对应章节，重构时更新已有章节
-- 新增/删除/重命名文件时，同步更新 `docs/codebase-map.md`
+- 新增/删除/重命名文件，或文件职责发生变化时，同步更新 `docs/codebase-map.md`
 - 文档不存在则创建
 - 文档中禁止出现「新增」「调整为」「本次变更」等增量描述词。若设计变更了某处，直接写变更后的最终状态，不要单独标记那是变更
 - **注意**：.env 不提交，.env.example 作为模板提交
@@ -66,19 +66,19 @@ npm run dev
 backend/                    # FastAPI 后端
 ├── app/
 │   ├── main.py            # 应用入口，CORS 配置，路由注册
-│   ├── config.py          # 环境变量配置（DB、SMTP、SECRET_KEY 等）
+│   ├── config.py          # 环境变量配置
 │   ├── database.py        # SQLAlchemy 引擎和 session
-│   ├── models/            # 数据库模型（User、Session、PasswordReset）
+│   ├── models/            # ORM 数据库模型
 │   ├── schemas/           # Pydantic 请求/响应校验
 │   ├── routers/           # API 路由
-│   ├── services/          # 业务逻辑（auth、mail）
-│   └── middleware/        # 认证中间件（get_current_user 依赖注入）
+│   ├── services/          # 业务逻辑
+│   └── middleware/        # 中间件（依赖注入、限流等）
 └── alembic/               # 数据库迁移
 
 frontend/                   # Vue 3 前端
 └── src/
     ├── api/               # Axios 封装 + API 调用
-    ├── stores/            # Pinia 状态管理（auth.js）
+    ├── stores/            # Pinia 状态管理
     ├── router/            # Vue Router + 路由守卫
     └── views/             # 页面组件
 ```
