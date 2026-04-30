@@ -25,6 +25,7 @@ const kickError = ref('')
 const grouping = ref(false)
 const groupError = ref('')
 const groupSuccess = ref('')
+const frozenMsg = ref('')
 
 onMounted(async () => {
   try {
@@ -57,6 +58,11 @@ function handleCopyLink() {
 }
 
 async function handleJoin() {
+  if (activity.value.has_groups) {
+    frozenMsg.value = '该活动已分组，无法操作'
+    setTimeout(() => (frozenMsg.value = ''), 2000)
+    return
+  }
   joining.value = true
   joinError.value = ''
   joinSuccess.value = ''
@@ -79,6 +85,11 @@ async function handleJoin() {
 }
 
 async function handleLeave() {
+  if (activity.value.has_groups) {
+    frozenMsg.value = '该活动已分组，无法操作'
+    setTimeout(() => (frozenMsg.value = ''), 2000)
+    return
+  }
   if (!confirm('确定要退出此活动吗？')) return
   leaving.value = true
   leaveError.value = ''
@@ -197,7 +208,7 @@ async function handleUngroup() {
             </div>
             <span class="member-nickname">{{ member.nickname }}</span>
             <button
-              v-if="activity.is_creator && member.user_id !== auth.user.id && !activity.has_groups"
+              v-if="activity.is_creator && member.user_id !== auth.user.id"
               class="btn-kick"
               :disabled="kickingUserId === member.user_id"
               @click="handleKick(member.user_id, member.nickname)"
@@ -216,11 +227,12 @@ async function handleUngroup() {
       <div v-if="kickError" class="error-msg" style="margin-bottom: 12px;">{{ kickError }}</div>
       <div v-if="groupError" class="error-msg" style="margin-bottom: 12px;">{{ groupError }}</div>
       <div v-if="groupSuccess" class="success-msg" style="margin-bottom: 12px;">{{ groupSuccess }}</div>
+      <div v-if="frozenMsg" class="warning-msg" style="margin-bottom: 12px;">{{ frozenMsg }}</div>
       <div class="actions">
-        <button v-if="!activity.is_member && !activity.has_groups" class="btn btn-primary" :disabled="joining" @click="handleJoin">
+        <button v-if="!activity.is_member" class="btn btn-primary" :class="{ 'btn-disabled': activity.has_groups }" :disabled="joining" @click="handleJoin">
           {{ joining ? '加入中...' : '加入活动' }}
         </button>
-        <button v-if="activity.is_member && !activity.has_groups" class="btn btn-secondary" :disabled="leaving" @click="handleLeave">
+        <button v-if="activity.is_member" class="btn btn-secondary" :class="{ 'btn-disabled': activity.has_groups }" :disabled="leaving" @click="handleLeave">
           {{ leaving ? '退出中...' : '退出活动' }}
         </button>
         <button v-if="activity.is_creator && !activity.has_groups" class="btn btn-primary" :disabled="grouping" @click="handleGroup">
@@ -385,5 +397,15 @@ async function handleUngroup() {
   color: #555;
   margin-bottom: 8px;
   font-weight: 600;
+}
+
+.btn-disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.warning-msg {
+  color: #e6a23c;
+  font-size: 13px;
 }
 </style>
