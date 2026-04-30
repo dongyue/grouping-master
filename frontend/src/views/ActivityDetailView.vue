@@ -27,6 +27,7 @@ const groupError = ref('')
 const groupSuccess = ref('')
 const frozenMsg = ref('')
 const showMore = ref(false)
+const showKick = ref(false)
 
 const hasMoreItems = computed(() => {
   return activity.value?.is_member || activity.value?.is_creator
@@ -202,6 +203,14 @@ async function handleUngroup() {
       <div class="members-section">
         <h3 class="members-title">
           已加入的成员 {{ activity.members?.length || 0 }} 人<template v-if="activity.has_groups && activity.groups?.length">，共 {{ activity.groups.length }} 组</template>
+          <button
+            v-if="activity.is_creator && !activity.has_groups"
+            class="btn-toggle-kick"
+            :class="{ active: showKick }"
+            @click="showKick = !showKick"
+          >
+            {{ showKick ? '管理成员 ✓' : '管理成员' }}
+          </button>
         </h3>
         <div v-if="activity.has_groups && activity.groups?.length">
           <div v-for="group in activity.groups" :key="group.group_number" class="group-card">
@@ -225,7 +234,7 @@ async function handleUngroup() {
             </div>
             <span class="member-nickname">{{ member.nickname }}</span>
             <button
-              v-if="activity.is_creator && member.user_id !== auth.user.id"
+              v-if="activity.is_creator && member.user_id !== auth.user.id && showKick"
               class="btn-kick"
               :disabled="kickingUserId === member.user_id"
               @click="handleKick(member.user_id, member.nickname)"
@@ -351,6 +360,30 @@ async function handleUngroup() {
   color: #666;
   margin-bottom: 12px;
   font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-toggle-kick {
+  font-size: 11px;
+  padding: 2px 10px;
+  border: 1px solid #bbb;
+  border-radius: 4px;
+  background: #f3f4f6;
+  color: #666;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-toggle-kick:hover {
+  border-color: #aaa;
+  color: #555;
+}
+
+.btn-toggle-kick.active {
+  border-color: #4f46e5;
+  color: #4f46e5;
 }
 
 .members-list {
