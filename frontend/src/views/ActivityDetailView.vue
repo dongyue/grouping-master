@@ -63,6 +63,12 @@ async function handleJoin() {
   try {
     await joinActivity(route.params.slug)
     activity.value.is_member = true
+    activity.value.members.push({
+      user_id: auth.user.id,
+      nickname: auth.user.nickname,
+      avatar_path: auth.user.avatar_path,
+      joined_at: new Date().toISOString(),
+    })
     joinSuccess.value = '加入成功'
     setTimeout(() => (joinSuccess.value = ''), 2000)
   } catch (err) {
