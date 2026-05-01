@@ -381,8 +381,8 @@ async function handleUngroup() {
 .rule-section {
   margin-bottom: 24px;
   display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
+  flex-direction: column;
+  gap: 6px;
 }
 
 .rule-badge {
