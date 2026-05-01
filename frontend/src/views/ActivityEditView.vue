@@ -4,6 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { getActivity, updateActivity } from '../api/activities'
 import { groupStrategyOptions } from '../utils/groupRule'
 import ConstraintEditor from '../components/ConstraintEditor.vue'
+import { presetAttributes } from '../utils/constraintPresets'
 
 const route = useRoute()
 const router = useRouter()
@@ -33,6 +34,7 @@ onMounted(async () => {
     if (data.constraints && data.constraints.length > 0) {
       constraints.value = data.constraints.map(c => ({
         attribute_name: c.attribute_name || '',
+        attr_custom: !presetAttributes.includes(c.attribute_name),
         allowed_values_raw: (c.allowed_values || []).join('，'),
         constraint_type: c.constraint_type || 'min_diversity',
         constraint_value: c.constraint_value || 1,

@@ -1,13 +1,29 @@
 <script setup>
+import { presetAttributes } from '../utils/constraintPresets'
+
 const constraints = defineModel({ type: Array, default: () => [] })
 
 function addConstraint() {
   constraints.value.push({
     attribute_name: '',
+    attr_custom: false,
     allowed_values_raw: '',
     constraint_type: 'min_diversity',
     constraint_value: 2,
   })
+}
+
+function onAttrSelect(idx, val) {
+  if (val === '__custom__') {
+    constraints.value[idx].attr_custom = true
+    constraints.value[idx].attribute_name = ''
+  } else {
+    constraints.value[idx].attr_custom = false
+    constraints.value[idx].attribute_name = val
+    if (val === '性别') {
+      constraints.value[idx].allowed_values_raw = '男，女'
+    }
+  }
 }
 
 function removeConstraint(index) {
@@ -21,12 +37,17 @@ function getValuesCount(c) {
 
 <template>
   <div class="form-group">
-    <label>多样性限定 <span class="optional">(可选)</span></label>
+    <label>组内多样性限定 <span class="optional">(可选)</span></label>
     <div v-if="constraints.length === 0" class="hint" style="margin-bottom: 8px;">暂未添加限定规则</div>
     <div v-for="(c, idx) in constraints" :key="idx" class="constraint-card">
       <button type="button" class="constraint-remove" @click="removeConstraint(idx)" title="删除此限定">&times;</button>
       <div class="constraint-row">
-        <input v-model="c.attribute_name" type="text" placeholder="属性名（如：性别、部门、区县）" class="constraint-name" />
+        <select v-if="!c.attr_custom" :value="c.attribute_name" @change="onAttrSelect(idx, $event.target.value)" class="constraint-name">
+          <option value="" disabled>选择属性名</option>
+          <option v-for="attr in presetAttributes" :key="attr" :value="attr">{{ attr }}</option>
+          <option value="__custom__">自定义…</option>
+        </select>
+        <input v-else v-model="c.attribute_name" type="text" placeholder="输入自定义属性名" class="constraint-name" />
       </div>
       <div class="constraint-row">
         <input v-model="c.allowed_values_raw" type="text" placeholder="可选值，逗号分隔（如：男，女）" class="constraint-values" />
