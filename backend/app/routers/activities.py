@@ -26,6 +26,7 @@ def create_activity(
         description=body.description.strip() if body.description else None,
         group_strategy=body.group_strategy,
         group_param=body.group_param,
+        constraints=[c.model_dump() for c in body.constraints] if body.constraints else None,
     )
     db.add(activity)
     db.flush()
@@ -42,6 +43,7 @@ def create_activity(
         description=activity.description,
         group_strategy=activity.group_strategy,
         group_param=activity.group_param,
+        constraints=activity.constraints,
         creator_nickname=current_user.nickname,
         created_at=activity.created_at.isoformat(),
     )
@@ -77,6 +79,7 @@ def list_activities(
             description=a.description,
             group_strategy=a.group_strategy,
             group_param=a.group_param,
+            constraints=a.constraints,
             creator_nickname=a.user.nickname,
             created_at=a.created_at.isoformat(),
         )
@@ -151,6 +154,7 @@ def get_activity(
         description=activity.description,
         group_strategy=activity.group_strategy,
         group_param=activity.group_param,
+        constraints=activity.constraints,
         creator_nickname=activity.user.nickname,
         created_at=activity.created_at.isoformat(),
         is_member=is_member,
@@ -231,6 +235,7 @@ def update_activity(
     activity.description = body.description.strip() if body.description else None
     activity.group_strategy = body.group_strategy
     activity.group_param = body.group_param
+    activity.constraints = [c.model_dump() for c in body.constraints] if body.constraints else None
     db.commit()
 
     return ActivityResponse(
@@ -240,6 +245,7 @@ def update_activity(
         description=activity.description,
         group_strategy=activity.group_strategy,
         group_param=activity.group_param,
+        constraints=activity.constraints,
         creator_nickname=activity.user.nickname,
         created_at=activity.created_at.isoformat(),
     )

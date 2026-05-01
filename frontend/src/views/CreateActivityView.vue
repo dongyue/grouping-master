@@ -3,6 +3,7 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { createActivity } from '../api/activities'
 import { groupStrategyOptions } from '../utils/groupRule'
+import ConstraintEditor from '../components/ConstraintEditor.vue'
 
 const router = useRouter()
 
@@ -11,8 +12,19 @@ const description = ref('')
 const joinActivity = ref(true)
 const groupParam = ref(2)
 const groupStrategy = ref('fixed_group_size')
+const constraints = ref([])
 const error = ref('')
 const creating = ref(false)
+
+function buildConstraints() {
+  if (constraints.value.length === 0) return null
+  return constraints.value.map(c => ({
+    attribute_name: c.attribute_name,
+    allowed_values: c.allowed_values_raw.split(/[,，]/).map(s => s.trim()).filter(s => s),
+    constraint_type: c.constraint_type,
+    constraint_value: c.constraint_value,
+  }))
+}
 
 async function handleCreate() {
   error.value = ''
@@ -24,10 +36,12 @@ async function handleCreate() {
       join_activity: joinActivity.value,
       group_strategy: groupStrategy.value,
       group_param: groupParam.value,
+      constraints: buildConstraints(),
     })
     router.push({ name: 'activity-detail', params: { slug: res.data.slug } })
   } catch (err) {
     error.value = err.response?.data?.detail || '创建失败'
+    window.scrollTo({ top: 0, behavior: 'smooth' })
   } finally {
     creating.value = false
   }
@@ -67,8 +81,9 @@ function handleCancel() {
           <input v-model.number="groupParam" type="number" min="2" class="rule-input" />
           <span class="rule-label">{{ groupStrategy === 'fixed_group_count' ? '组' : '人' }}</span>
         </div>
-        <p class="rule-hint">创建后可在活动编辑页中随时修改</p>
       </div>
+      <ConstraintEditor v-model="constraints" />
+      <p class="rule-hint">创建后可在编辑页中修改上述设置</p>
       <div class="actions">
         <button type="submit" class="btn btn-primary" :disabled="creating">
           {{ creating ? '创建中...' : '创建活动' }}
@@ -147,7 +162,7 @@ function handleCancel() {
 }
 
 .rule-hint {
-  margin: 6px 0 0 0;
+  margin: 6px 0 16px 0;
   font-size: 12px;
   color: #aaa;
 }

@@ -114,12 +114,20 @@ class MessageResponse(BaseModel):
     message: str
 
 
+class ConstraintRule(BaseModel):
+    attribute_name: str
+    allowed_values: list[str]
+    constraint_type: str  # "min_diversity" | "max_diversity"
+    constraint_value: int
+
+
 class ActivityCreateRequest(BaseModel):
     title: str
     description: str | None = None
     join_activity: bool = True
     group_strategy: str = "fixed_group_size"
     group_param: int = 2
+    constraints: list[ConstraintRule] | None = None
 
     @field_validator("title")
     @classmethod
@@ -141,6 +149,36 @@ class ActivityCreateRequest(BaseModel):
     def validate_group_param(cls, v: int) -> int:
         if v < 2:
             raise ValueError("组参数不能小于2")
+        return v
+
+    @field_validator("constraints")
+    @classmethod
+    def validate_constraints(cls, v: list | None) -> list | None:
+        if v is None:
+            return v
+        seen_names = set()
+        for rule in v:
+            attr_name = rule.attribute_name.strip()
+            if not attr_name:
+                raise ValueError("属性名不能为空")
+            if attr_name in seen_names:
+                raise ValueError(f"属性名「{attr_name}」已存在，不能重复")
+            seen_names.add(attr_name)
+            n = len(rule.allowed_values)
+            if n < 2:
+                raise ValueError(f"属性「{attr_name}」的枚举值至少需要2个")
+            if rule.constraint_type not in ("min_diversity", "max_diversity"):
+                raise ValueError(f"不支持的限定类型：{rule.constraint_type}")
+            if rule.constraint_type == "min_diversity":
+                if rule.constraint_value < 2:
+                    raise ValueError(f"属性「{attr_name}」的『至少』限定值不能小于2")
+                if rule.constraint_value > n:
+                    raise ValueError(f"属性「{attr_name}」的『至少』限定值({rule.constraint_value})不能大于枚举值数量({n})")
+            else:
+                if rule.constraint_value < 1:
+                    raise ValueError(f"属性「{attr_name}」的『最多』限定值不能小于1")
+                if rule.constraint_value >= n:
+                    raise ValueError(f"属性「{attr_name}」的『最多』限定值({rule.constraint_value})不能达到枚举值数量({n})")
         return v
 
 
@@ -149,6 +187,7 @@ class ActivityUpdateRequest(BaseModel):
     description: str | None = None
     group_strategy: str = "fixed_group_size"
     group_param: int = 2
+    constraints: list[ConstraintRule] | None = None
 
     @field_validator("title")
     @classmethod
@@ -170,6 +209,36 @@ class ActivityUpdateRequest(BaseModel):
     def validate_group_param(cls, v: int) -> int:
         if v < 2:
             raise ValueError("组参数不能小于2")
+        return v
+
+    @field_validator("constraints")
+    @classmethod
+    def validate_constraints(cls, v: list | None) -> list | None:
+        if v is None:
+            return v
+        seen_names = set()
+        for rule in v:
+            attr_name = rule.attribute_name.strip()
+            if not attr_name:
+                raise ValueError("属性名不能为空")
+            if attr_name in seen_names:
+                raise ValueError(f"属性名「{attr_name}」已存在，不能重复")
+            seen_names.add(attr_name)
+            n = len(rule.allowed_values)
+            if n < 2:
+                raise ValueError(f"属性「{attr_name}」的枚举值至少需要2个")
+            if rule.constraint_type not in ("min_diversity", "max_diversity"):
+                raise ValueError(f"不支持的限定类型：{rule.constraint_type}")
+            if rule.constraint_type == "min_diversity":
+                if rule.constraint_value < 2:
+                    raise ValueError(f"属性「{attr_name}」的『至少』限定值不能小于2")
+                if rule.constraint_value > n:
+                    raise ValueError(f"属性「{attr_name}」的『至少』限定值({rule.constraint_value})不能大于枚举值数量({n})")
+            else:
+                if rule.constraint_value < 1:
+                    raise ValueError(f"属性「{attr_name}」的『最多』限定值不能小于1")
+                if rule.constraint_value >= n:
+                    raise ValueError(f"属性「{attr_name}」的『最多』限定值({rule.constraint_value})不能达到枚举值数量({n})")
         return v
 
 
@@ -180,6 +249,7 @@ class ActivityResponse(BaseModel):
     description: str | None
     group_strategy: str
     group_param: int
+    constraints: list | None = None
     creator_nickname: str
     created_at: str
 

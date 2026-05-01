@@ -3,6 +3,7 @@ import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { getActivity, updateActivity } from '../api/activities'
 import { groupStrategyOptions } from '../utils/groupRule'
+import ConstraintEditor from '../components/ConstraintEditor.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -11,6 +12,7 @@ const title = ref('')
 const description = ref('')
 const groupParam = ref(2)
 const groupStrategy = ref('fixed_group_size')
+const constraints = ref([])
 const loading = ref(true)
 const saving = ref(false)
 const error = ref('')
@@ -28,12 +30,30 @@ onMounted(async () => {
     description.value = data.description || ''
     groupParam.value = data.group_param ?? 2
     groupStrategy.value = data.group_strategy ?? 'fixed_group_size'
+    if (data.constraints && data.constraints.length > 0) {
+      constraints.value = data.constraints.map(c => ({
+        attribute_name: c.attribute_name || '',
+        allowed_values_raw: (c.allowed_values || []).join('，'),
+        constraint_type: c.constraint_type || 'min_diversity',
+        constraint_value: c.constraint_value || 1,
+      }))
+    }
   } catch (err) {
     error.value = err.response?.data?.detail || '加载失败'
   } finally {
     loading.value = false
   }
 })
+
+function buildConstraints() {
+  if (constraints.value.length === 0) return null
+  return constraints.value.map(c => ({
+    attribute_name: c.attribute_name,
+    allowed_values: c.allowed_values_raw.split(/[,，]/).map(s => s.trim()).filter(s => s),
+    constraint_type: c.constraint_type,
+    constraint_value: c.constraint_value,
+  }))
+}
 
 async function handleSave() {
   saving.value = true
@@ -44,10 +64,12 @@ async function handleSave() {
       description: description.value || null,
       group_strategy: groupStrategy.value,
       group_param: groupParam.value,
+      constraints: buildConstraints(),
     })
     router.push({ name: 'activity-detail', params: { slug: route.params.slug }, query: { updated: '1' } })
   } catch (err) {
     saveError.value = err.response?.data?.detail || '保存失败'
+    window.scrollTo({ top: 0, behavior: 'smooth' })
   } finally {
     saving.value = false
   }
@@ -85,6 +107,7 @@ function handleCancel() {
             <span class="rule-label">{{ groupStrategy === 'fixed_group_count' ? '组' : '人' }}</span>
           </div>
         </div>
+        <ConstraintEditor v-model="constraints" />
         <div class="actions">
           <button type="submit" class="btn btn-primary" :disabled="saving">
             {{ saving ? '保存中...' : '保存' }}
@@ -150,5 +173,11 @@ function handleCancel() {
 .rule-select {
   min-width: 120px;
   max-width: 200px;
+}
+
+.rule-hint {
+  margin: 6px 0 0 0;
+  font-size: 12px;
+  color: #aaa;
 }
 </style>

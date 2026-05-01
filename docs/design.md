@@ -61,10 +61,9 @@
 | description | TEXT | NULLABLE | 活动描述 |
 | group_strategy | VARCHAR(20) | NOT NULL, DEFAULT 'fixed_group_size' | 分组策略：`fixed_group_size`（固定每组人数）、`fixed_group_count`（固定总组数） |
 | group_param | INT | NOT NULL, DEFAULT 2 | 策略参数：`fixed_group_size` 时表示每组人数；`fixed_group_count` 时表示目标组数 |
+| constraints | JSON | NULLABLE | 多样性限定规则列表，结构见 2.8 |
 | created_at | DATETIME | DEFAULT NOW() | 创建时间 |
 | updated_at | DATETIME | DEFAULT NOW() ON UPDATE NOW() | 更新时间 |
-
-> 未来扩展：可新增 `constraints` JSON 字段存储约束条件（如同性别、异性别等叠加规则）。
 
 ### 2.5 activity_members 表
 
@@ -95,6 +94,28 @@
 | user_id | INT | FK → users.id, NOT NULL | 成员 ID |
 
 > 联合唯一约束：(group_id, user_id)，防止重复分配
+
+### 2.8 constraints 字段结构
+
+activities 表的 `constraints` 字段为 JSON 数组，每项为一条多样性限定规则：
+
+```json
+[
+  {
+    "attribute_name": "性别",
+    "allowed_values": ["男", "女"],
+    "constraint_type": "min_diversity",
+    "constraint_value": 2
+  }
+]
+```
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| `attribute_name` | str | 属性名，同一活动内不可重复 |
+| `allowed_values` | list[str] | 属性值枚举，至少 2 个值 |
+| `constraint_type` | str | `"min_diversity"`（限定最小多样性）或 `"max_diversity"`（限定最大多样性） |
+| `constraint_value` | int | 限定值。限定最小值时满足 2 ≤ value ≤ len(allowed_values)；限定最大值时满足 1 ≤ value ≤ len(allowed_values)-1 |
 
 ## 3. API 设计
 
@@ -143,10 +164,11 @@
 | DELETE | `/api/activities/{slug}/groups` | Session | 解除分组（仅创建者） |
 
 `POST /api/activities` 创建活动
-- 请求体：`{title: str, description?: str, join_activity?: bool, group_strategy?: str, group_param?: int}`
+- 请求体：`{title: str, description?: str, join_activity?: bool, group_strategy?: str, group_param?: int, constraints?: list[ConstraintRule]}`
 - `join_activity` 默认 `true`，为 `true` 时创建者同时加入活动
 - `group_strategy` 默认 `"fixed_group_size"`，可选 `"fixed_group_size"`（固定每组人数）、`"fixed_group_count"`（固定总组数）
 - `group_param` 默认 `2`，最小值 `2`，含义由 `group_strategy` 决定
+- `constraints` 为多样性限定规则列表，可选，不传或传空数组表示不限定
 - 创建时自动生成 12 位随机 slug，作为活动公网标识
 
 `GET /api/activities?type=created|joined`
@@ -155,7 +177,8 @@
 - 均按创建时间倒序
 
 `GET /api/activities/{slug}`
-- 响应字段：`{id, slug, title, description, group_strategy, group_param, creator_nickname, created_at, is_member, is_creator, has_groups, groups, members, ungrouped_members}`
+- 响应字段：`{id, slug, title, description, group_strategy, group_param, constraints, creator_nickname, created_at, is_member, is_creator, has_groups, groups, members, ungrouped_members}`
+- `constraints`：`[ConstraintRule]` 多样性限定规则列表，空数组表示无限定
 - `groups`：`[GroupResponse]` 分组列表，未分组时为空数组。每项 `{group_number, members: [MemberItem]}`
 - `members`：`[MemberItem]` 成员列表，每项 `{user_id, nickname, avatar_path, joined_at}`，按加入时间升序
 - `ungrouped_members`：`[MemberItem]` 尚未分组的成员列表。未分组时为空数组，分组后包含未分配到任何组的成员
@@ -178,7 +201,7 @@
 - 活动已分组时返回 409
 
 `PUT /api/activities/{slug}`
-- 请求体：`{title: str, description?: str, group_strategy?: str, group_param?: int}`
+- 请求体：`{title: str, description?: str, group_strategy?: str, group_param?: int, constraints?: list[ConstraintRule]}`
 - 仅活动创建者可更新
 - 非创建者返回 403
 - 活动已分组时返回 409
@@ -209,7 +232,7 @@
 - 删除该活动下所有分组及成员关系，活动恢复未分组状态
 - 响应：`{message: "已解除分组"}`
 
-> 活动列表项响应格式：`{id, slug, title, description, creator_nickname, created_at}`
+> 活动列表项响应格式：`{id, slug, title, description, group_strategy, group_param, constraints, creator_nickname, created_at}`
 
 ## 4. 安全策略
 
@@ -253,9 +276,9 @@
 | `/forgot-password` | 忘记密码页 | 公开 | 输入邮箱发送重置链接 |
 | `/reset-password` | 重置密码页 | 公开 | ?token=xxx，设置新密码 |
 | `/` | 首页 | 需登录 | 「我创建的活动」列表（含「创建活动」按钮）+「我加入的活动」列表 |
-| `/activities/create` | 创建活动页 | 需登录 | 活动标题、描述、分组规则配置、我作为创建者也要参加 |
+| `/activities/create` | 创建活动页 | 需登录 | 活动标题、描述、分组规则配置、多样性限定规则（0 条到多条，动态添加/删除）、我作为创建者也要参加 |
 | `/activities/:slug` | 活动详情页 | 需登录 | 主行：加入活动 / 开始分组 + 分享链接 + 更多 ▼；更多菜单：退出活动 + 解除分组（创建者）+ 编辑活动（创建者）+ 删除活动（创建者）；成员列表（未分组时平铺，已分组后按组展示，标题显示总人数与组数） |
-| `/activities/:slug/edit` | 编辑活动页 | 需登录 | 编辑活动标题和描述，仅创建者可操作，非创建者重定向回详情页 |
+| `/activities/:slug/edit` | 编辑活动页 | 需登录 | 编辑活动标题、描述、分组规则、多样性限定规则，仅创建者可操作，非创建者重定向回详情页 |
 | `/settings` | 设置页 | 需登录 | 头像上传、修改昵称、注销账号入口 |
 | `/settings/change-password` | 修改密码页 | 需登录 | 旧密码 + 新密码 + 确认新密码表单 |
 

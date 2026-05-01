@@ -1,6 +1,6 @@
 import secrets
 from datetime import datetime
-from sqlalchemy import String, Text, DateTime, ForeignKey, Integer
+from sqlalchemy import String, Text, DateTime, ForeignKey, Integer, JSON
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.database import Base
 
@@ -19,6 +19,7 @@ class Activity(Base):
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
     group_strategy: Mapped[str] = mapped_column(String(20), nullable=False, default="fixed_group_size")
     group_param: Mapped[int] = mapped_column(Integer, nullable=False, default=2)
+    constraints: Mapped[list | None] = mapped_column(JSON, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
