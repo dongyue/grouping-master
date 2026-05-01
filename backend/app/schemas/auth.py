@@ -120,7 +120,6 @@ class ActivityCreateRequest(BaseModel):
     join_activity: bool = True
     group_strategy: str = "fixed_group_size"
     group_param: int = 2
-    remainder_handling: str = "evenly"
 
     @field_validator("title")
     @classmethod
@@ -142,13 +141,6 @@ class ActivityCreateRequest(BaseModel):
     def validate_group_param(cls, v: int) -> int:
         if v < 2:
             raise ValueError("组参数不能小于2")
-        return v
-
-    @field_validator("remainder_handling")
-    @classmethod
-    def validate_remainder_handling(cls, v: str) -> str:
-        if v not in ("evenly", "separate", "rebalance"):
-            raise ValueError("不支持的余数处理方式")
         return v
 
 
@@ -157,7 +149,6 @@ class ActivityUpdateRequest(BaseModel):
     description: str | None = None
     group_strategy: str = "fixed_group_size"
     group_param: int = 2
-    remainder_handling: str = "evenly"
 
     @field_validator("title")
     @classmethod
@@ -179,13 +170,6 @@ class ActivityUpdateRequest(BaseModel):
     def validate_group_param(cls, v: int) -> int:
         if v < 2:
             raise ValueError("组参数不能小于2")
-        return v
-
-    @field_validator("remainder_handling")
-    @classmethod
-    def validate_remainder_handling(cls, v: str) -> str:
-        if v not in ("evenly", "separate", "rebalance"):
-            raise ValueError("不支持的余数处理方式")
         return v
 
 
@@ -196,7 +180,6 @@ class ActivityResponse(BaseModel):
     description: str | None
     group_strategy: str
     group_param: int
-    remainder_handling: str
     creator_nickname: str
     created_at: str
 
@@ -218,6 +201,7 @@ class ActivityDetailResponse(ActivityResponse):
     has_groups: bool
     members: list[MemberItem]
     groups: list["GroupResponse"] = []
+    ungrouped_members: list[MemberItem] = []
 
 
 class GroupResponse(BaseModel):

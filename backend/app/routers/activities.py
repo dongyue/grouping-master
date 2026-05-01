@@ -26,7 +26,6 @@ def create_activity(
         description=body.description.strip() if body.description else None,
         group_strategy=body.group_strategy,
         group_param=body.group_param,
-        remainder_handling=body.remainder_handling,
     )
     db.add(activity)
     db.flush()
@@ -43,7 +42,6 @@ def create_activity(
         description=activity.description,
         group_strategy=activity.group_strategy,
         group_param=activity.group_param,
-        remainder_handling=activity.remainder_handling,
         creator_nickname=current_user.nickname,
         created_at=activity.created_at.isoformat(),
     )
@@ -79,7 +77,6 @@ def list_activities(
             description=a.description,
             group_strategy=a.group_strategy,
             group_param=a.group_param,
-            remainder_handling=a.remainder_handling,
             creator_nickname=a.user.nickname,
             created_at=a.created_at.isoformat(),
         )
@@ -144,6 +141,9 @@ def get_activity(
         for g in groups
     ]
 
+    grouped_user_ids = {gm.user_id for g in groups for gm in g.members}
+    ungrouped_members = [m for m in members_data if m.user_id not in grouped_user_ids]
+
     return ActivityDetailResponse(
         id=activity.id,
         slug=activity.slug,
@@ -151,7 +151,6 @@ def get_activity(
         description=activity.description,
         group_strategy=activity.group_strategy,
         group_param=activity.group_param,
-        remainder_handling=activity.remainder_handling,
         creator_nickname=activity.user.nickname,
         created_at=activity.created_at.isoformat(),
         is_member=is_member,
@@ -159,6 +158,7 @@ def get_activity(
         has_groups=len(groups_data) > 0,
         members=members_data,
         groups=groups_data,
+        ungrouped_members=ungrouped_members,
     )
 
 
@@ -231,7 +231,6 @@ def update_activity(
     activity.description = body.description.strip() if body.description else None
     activity.group_strategy = body.group_strategy
     activity.group_param = body.group_param
-    activity.remainder_handling = body.remainder_handling
     db.commit()
 
     return ActivityResponse(
@@ -241,7 +240,6 @@ def update_activity(
         description=activity.description,
         group_strategy=activity.group_strategy,
         group_param=activity.group_param,
-        remainder_handling=activity.remainder_handling,
         creator_nickname=activity.user.nickname,
         created_at=activity.created_at.isoformat(),
     )
@@ -326,60 +324,58 @@ def create_groups(
     total = len(member_user_ids)
     group_param = activity.group_param
     strategy = activity.group_strategy
-    handling = activity.remainder_handling
 
     if strategy == "fixed_group_count":
         num_groups = min(group_param, total)
         base_size = total // num_groups
-        remainder = total % num_groups
     elif strategy == "fixed_group_size":
-        if handling == "evenly" and total >= group_param:
-            num_groups = total // group_param
-            base_size = total // num_groups
-            remainder = total % num_groups
-        elif handling == "rebalance":
-            num_groups = (total + group_param - 1) // group_param
-            base_size = total // num_groups
-            remainder = total % num_groups
-        else:  # separate
-            num_groups = (total + group_param - 1) // group_param
-            base_size = group_param
-            remainder = 0
+        num_groups = total // group_param
+        base_size = group_param
 
-    group_number = 1
     groups_result = []
+    ungrouped_users = []
     idx = 0
 
-    for g in range(num_groups):
-        size = base_size + (1 if g < remainder else 0)
-        chunk = member_user_ids[idx:idx + size]
-        idx += size
+    if num_groups > 0:
+        for g in range(num_groups):
+            chunk = member_user_ids[idx:idx + base_size]
+            idx += base_size
 
-        group = Group(activity_id=activity.id, group_number=group_number)
-        db.add(group)
-        db.flush()
+            group = Group(activity_id=activity.id, group_number=g + 1)
+            db.add(group)
+            db.flush()
 
-        member_items = []
-        for uid in chunk:
-            gm = GroupMember(group_id=group.id, user_id=uid)
-            db.add(gm)
-            member = db.query(User).filter(User.id == uid).first()
-            member_items.append(
-                MemberItem(
-                    user_id=uid,
-                    nickname=member.nickname,
-                    avatar_path=member.avatar_path,
-                    joined_at="",
+            member_items = []
+            for uid in chunk:
+                gm = GroupMember(group_id=group.id, user_id=uid)
+                db.add(gm)
+                member = db.query(User).filter(User.id == uid).first()
+                member_items.append(
+                    MemberItem(
+                        user_id=uid,
+                        nickname=member.nickname,
+                        avatar_path=member.avatar_path,
+                        joined_at="",
+                    )
                 )
+
+            groups_result.append(
+                GroupResponse(group_number=g + 1, members=member_items)
             )
 
-        groups_result.append(
-            GroupResponse(group_number=group_number, members=member_items)
+    for uid in member_user_ids[idx:]:
+        member = db.query(User).filter(User.id == uid).first()
+        ungrouped_users.append(
+            MemberItem(
+                user_id=uid,
+                nickname=member.nickname,
+                avatar_path=member.avatar_path,
+                joined_at="",
+            )
         )
-        group_number += 1
 
     db.commit()
-    return {"groups": groups_result}
+    return {"groups": groups_result, "ungrouped_members": ungrouped_users}
 
 
 @router.delete("/{slug}/groups")

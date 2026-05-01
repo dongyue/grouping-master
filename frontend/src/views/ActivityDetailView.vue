@@ -5,7 +5,6 @@ import { useAuthStore } from '../stores/auth'
 import { getActivity, joinActivity, leaveActivity, deleteActivity, kickMember, createGroups, deleteGroups } from '../api/activities'
 import ConfirmModal from '../components/ConfirmModal.vue'
 import { formatDate } from '../utils/date'
-import { remainderHandlingLabel } from '../utils/groupRule'
 
 const uploadsUrl = import.meta.env.VITE_UPLOADS_URL || 'http://localhost:8000'
 
@@ -171,6 +170,7 @@ async function handleGroup() {
   try {
     const res = await createGroups(route.params.slug)
     activity.value.groups = res.data.groups
+    activity.value.ungrouped_members = res.data.ungrouped_members
     activity.value.has_groups = true
     groupSuccess.value = '分组完成'
     setTimeout(() => (groupSuccess.value = ''), 2000)
@@ -188,6 +188,7 @@ async function handleUngroup() {
     try {
       await deleteGroups(route.params.slug)
       activity.value.groups = []
+      activity.value.ungrouped_members = []
       activity.value.has_groups = false
       groupSuccess.value = '已解除分组'
       setTimeout(() => (groupSuccess.value = ''), 2000)
@@ -216,11 +217,10 @@ async function handleUngroup() {
       </div>
       <div class="rule-section">
         <span class="rule-badge" v-if="activity.group_strategy === 'fixed_group_count'">
-          分组规则：共分 {{ activity.group_param }} 组，不能整除时：尽可能平均分配
+          分组规则：共分 {{ activity.group_param }} 组
         </span>
         <span class="rule-badge" v-else>
-          分组规则：每组 {{ activity.group_param }} 人，
-          不能整除时：{{ remainderHandlingLabel[activity.remainder_handling] || activity.remainder_handling }}
+          分组规则：每组 {{ activity.group_param }} 人
         </span>
       </div>
       <div class="members-section">
@@ -240,6 +240,18 @@ async function handleUngroup() {
             <h4 class="group-title">第 {{ group.group_number }} 组 {{ group.members.length }} 人</h4>
             <div class="members-list">
               <div v-for="member in group.members" :key="member.user_id" class="member-item">
+                <div class="member-avatar">
+                  <img v-if="member.avatar_path" :src="`${uploadsUrl}/${member.avatar_path}`" />
+                  <span v-else class="avatar-placeholder">{{ member.nickname[0] }}</span>
+                </div>
+                <span class="member-nickname">{{ member.nickname }}</span>
+              </div>
+            </div>
+          </div>
+          <div v-if="activity.ungrouped_members?.length" class="group-card ungrouped-card">
+            <h4 class="group-title">尚未分组 {{ activity.ungrouped_members.length }} 人</h4>
+            <div class="members-list">
+              <div v-for="member in activity.ungrouped_members" :key="member.user_id" class="member-item">
                 <div class="member-avatar">
                   <img v-if="member.avatar_path" :src="`${uploadsUrl}/${member.avatar_path}`" />
                   <span v-else class="avatar-placeholder">{{ member.nickname[0] }}</span>
@@ -515,6 +527,11 @@ async function handleUngroup() {
   color: #555;
   margin-bottom: 8px;
   font-weight: 600;
+}
+
+.ungrouped-card {
+  background: #fef9e7;
+  border: 1px dashed #e6a23c;
 }
 
 .btn-disabled {

@@ -2,7 +2,7 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { createActivity } from '../api/activities'
-import { groupStrategyOptions, remainderHandlingOptions } from '../utils/groupRule'
+import { groupStrategyOptions } from '../utils/groupRule'
 
 const router = useRouter()
 
@@ -11,7 +11,6 @@ const description = ref('')
 const joinActivity = ref(true)
 const groupParam = ref(2)
 const groupStrategy = ref('fixed_group_size')
-const remainderHandling = ref('evenly')
 const error = ref('')
 const creating = ref(false)
 
@@ -25,7 +24,6 @@ async function handleCreate() {
       join_activity: joinActivity.value,
       group_strategy: groupStrategy.value,
       group_param: groupParam.value,
-      remainder_handling: remainderHandling.value,
     })
     router.push({ name: 'activity-detail', params: { slug: res.data.slug } })
   } catch (err) {
@@ -68,15 +66,6 @@ function handleCancel() {
           <span class="rule-label">{{ groupStrategy === 'fixed_group_count' ? '，共' : '，每组' }}</span>
           <input v-model.number="groupParam" type="number" min="2" class="rule-input" />
           <span class="rule-label">{{ groupStrategy === 'fixed_group_count' ? '组' : '人' }}</span>
-        </div>
-        <div v-if="groupStrategy === 'fixed_group_size'" class="group-rule-row rule-extra">
-          <span class="rule-label">不能整除时</span>
-          <select v-model="remainderHandling" class="rule-select">
-            <option v-for="opt in remainderHandlingOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
-          </select>
-        </div>
-        <div v-else class="group-rule-row rule-extra">
-          <span class="rule-label">不能整除时，尽可能平均分配</span>
         </div>
         <p class="rule-hint">创建后可在活动编辑页中随时修改</p>
       </div>
