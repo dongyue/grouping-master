@@ -38,17 +38,6 @@ const hasMoreItems = computed(() => {
   return activity.value?.is_member || activity.value?.is_creator
 })
 
-const constraintSummary = computed(() => {
-  const constraints = activity.value?.constraints
-  if (!constraints || constraints.length === 0) return ''
-  if (constraints.length === 1) {
-    const c = constraints[0]
-    const type = c.constraint_type === 'min_diversity' ? '至少' : '最多'
-    return `组内限定：每组${type}${c.constraint_value}种${c.attribute_name}`
-  }
-  return `组内限定：${constraints.length} 条规则`
-})
-
 onMounted(async () => {
   try {
     const res = await getActivity(route.params.slug)
@@ -233,7 +222,11 @@ async function handleUngroup() {
         <span class="rule-badge" v-else>
           分组规则：每组 {{ activity.group_param }} 人
         </span>
-        <span class="rule-badge" v-if="constraintSummary">{{ constraintSummary }}</span>
+        <template v-if="activity.constraints?.length">
+          <span class="rule-badge" v-for="(c, idx) in activity.constraints" :key="idx">
+            组内限定：每组{{ c.constraint_type === 'min_diversity' ? '至少' : '最多' }}{{ c.constraint_value }}种{{ c.attribute_name }}
+          </span>
+        </template>
       </div>
       <div class="members-section">
         <h3 class="members-title">
