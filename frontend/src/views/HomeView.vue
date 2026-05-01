@@ -4,7 +4,7 @@ import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { createActivity, listActivities } from '../api/activities'
 import { formatDate } from '../utils/date'
-import { remainderHandlingOptions } from '../utils/groupRule'
+import { groupStrategyOptions, remainderHandlingOptions } from '../utils/groupRule'
 
 const router = useRouter()
 const route = useRoute()
@@ -15,6 +15,7 @@ const title = ref('')
 const description = ref('')
 const joinActivity = ref(true)
 const groupParam = ref(2)
+const groupStrategy = ref('fixed_group_size')
 const remainderHandling = ref('evenly')
 const error = ref('')
 const success = ref('')
@@ -61,7 +62,7 @@ async function handleCreate() {
       title: title.value,
       description: description.value || null,
       join_activity: joinActivity.value,
-      group_strategy: 'fixed_group_size',
+      group_strategy: groupStrategy.value,
       group_param: groupParam.value,
       remainder_handling: remainderHandling.value,
     })
@@ -72,6 +73,7 @@ async function handleCreate() {
     title.value = ''
     description.value = ''
     joinActivity.value = true
+    groupStrategy.value = 'fixed_group_size'
     groupParam.value = 2
     remainderHandling.value = 'evenly'
     success.value = '活动创建成功'
@@ -108,19 +110,29 @@ function truncate(text) {
       <div class="form-group checkbox-group">
         <label class="checkbox-label">
           <input v-model="joinActivity" type="checkbox" />
-          <span>同时加入活动</span>
+          <span>我作为创建者也要参加</span>
         </label>
       </div>
       <div class="form-group">
         <label>分组规则</label>
         <div class="group-rule-row">
-          <span class="rule-label">每组</span>
+          <select v-model="groupStrategy" class="rule-select">
+            <option v-for="opt in groupStrategyOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
+          </select>
+          <span class="rule-label">{{ groupStrategy === 'fixed_group_count' ? '，共' : '，每组' }}</span>
           <input v-model.number="groupParam" type="number" min="2" class="rule-input" />
-          <span class="rule-label">人，不能整除时</span>
+          <span class="rule-label">{{ groupStrategy === 'fixed_group_count' ? '组' : '人' }}</span>
+        </div>
+        <div v-if="groupStrategy === 'fixed_group_size'" class="group-rule-row rule-extra">
+          <span class="rule-label">不能整除时</span>
           <select v-model="remainderHandling" class="rule-select">
             <option v-for="opt in remainderHandlingOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
           </select>
         </div>
+        <div v-else class="group-rule-row rule-extra">
+          <span class="rule-label">不能整除时，尽可能平均分配</span>
+        </div>
+        <p class="rule-hint">创建后可在活动编辑页中随时修改</p>
       </div>
       <button type="submit" class="btn btn-primary" :disabled="creating">
         {{ creating ? '创建中...' : '创建活动' }}
@@ -205,6 +217,10 @@ function truncate(text) {
   gap: 8px;
 }
 
+.rule-extra {
+  margin-top: 8px;
+}
+
 .rule-label {
   font-size: 13px;
   color: #666;
@@ -212,14 +228,20 @@ function truncate(text) {
 }
 
 .rule-input {
-  width: 90px !important;
+  width: 80px !important;
   text-align: center;
   padding: 0 8px !important;
 }
 
 .rule-select {
-  width: auto !important;
-  flex: 1;
+  min-width: 120px;
+  max-width: 200px;
+}
+
+.rule-hint {
+  margin: 6px 0 0 0;
+  font-size: 12px;
+  color: #aaa;
 }
 
 .activity-section {

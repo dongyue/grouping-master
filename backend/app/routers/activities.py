@@ -325,20 +325,26 @@ def create_groups(
 
     total = len(member_user_ids)
     group_param = activity.group_param
+    strategy = activity.group_strategy
     handling = activity.remainder_handling
 
-    if handling == "evenly" and total >= group_param:
-        num_groups = total // group_param
+    if strategy == "fixed_group_count":
+        num_groups = min(group_param, total)
         base_size = total // num_groups
         remainder = total % num_groups
-    elif handling == "rebalance":
-        num_groups = (total + group_param - 1) // group_param
-        base_size = total // num_groups
-        remainder = total % num_groups
-    else:  # separate
-        num_groups = (total + group_param - 1) // group_param
-        base_size = group_param
-        remainder = 0
+    elif strategy == "fixed_group_size":
+        if handling == "evenly" and total >= group_param:
+            num_groups = total // group_param
+            base_size = total // num_groups
+            remainder = total % num_groups
+        elif handling == "rebalance":
+            num_groups = (total + group_param - 1) // group_param
+            base_size = total // num_groups
+            remainder = total % num_groups
+        else:  # separate
+            num_groups = (total + group_param - 1) // group_param
+            base_size = group_param
+            remainder = 0
 
     group_number = 1
     groups_result = []

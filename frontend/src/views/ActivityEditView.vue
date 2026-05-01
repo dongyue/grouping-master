@@ -2,7 +2,7 @@
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { getActivity, updateActivity } from '../api/activities'
-import { remainderHandlingOptions } from '../utils/groupRule'
+import { groupStrategyOptions, remainderHandlingOptions } from '../utils/groupRule'
 
 const route = useRoute()
 const router = useRouter()
@@ -10,6 +10,7 @@ const router = useRouter()
 const title = ref('')
 const description = ref('')
 const groupParam = ref(2)
+const groupStrategy = ref('fixed_group_size')
 const remainderHandling = ref('evenly')
 const loading = ref(true)
 const saving = ref(false)
@@ -27,6 +28,7 @@ onMounted(async () => {
     title.value = data.title
     description.value = data.description || ''
     groupParam.value = data.group_param ?? 2
+    groupStrategy.value = data.group_strategy ?? 'fixed_group_size'
     remainderHandling.value = data.remainder_handling ?? 'evenly'
   } catch (err) {
     error.value = err.response?.data?.detail || '加载失败'
@@ -42,7 +44,7 @@ async function handleSave() {
     await updateActivity(route.params.slug, {
       title: title.value,
       description: description.value || null,
-      group_strategy: 'fixed_group_size',
+      group_strategy: groupStrategy.value,
       group_param: groupParam.value,
       remainder_handling: remainderHandling.value,
     })
@@ -78,12 +80,21 @@ function handleCancel() {
         <div class="form-group">
           <label>分组规则</label>
           <div class="group-rule-row">
-            <span class="rule-label">每组</span>
+            <select v-model="groupStrategy" class="rule-select">
+              <option v-for="opt in groupStrategyOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
+            </select>
+            <span class="rule-label">{{ groupStrategy === 'fixed_group_count' ? '，共' : '，每组' }}</span>
             <input v-model.number="groupParam" type="number" min="2" class="rule-input" />
-            <span class="rule-label">人，不能整除时</span>
+            <span class="rule-label">{{ groupStrategy === 'fixed_group_count' ? '组' : '人' }}</span>
+          </div>
+          <div v-if="groupStrategy === 'fixed_group_size'" class="group-rule-row rule-extra">
+            <span class="rule-label">不能整除时</span>
             <select v-model="remainderHandling" class="rule-select">
               <option v-for="opt in remainderHandlingOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
             </select>
+          </div>
+          <div v-else class="group-rule-row rule-extra">
+            <span class="rule-label">不能整除时，尽可能平均分配</span>
           </div>
         </div>
         <div class="actions">
@@ -132,6 +143,10 @@ function handleCancel() {
   gap: 8px;
 }
 
+.rule-extra {
+  margin-top: 8px;
+}
+
 .rule-label {
   font-size: 13px;
   color: #666;
@@ -139,13 +154,13 @@ function handleCancel() {
 }
 
 .rule-input {
-  width: 90px !important;
+  width: 80px !important;
   text-align: center;
   padding: 0 8px !important;
 }
 
 .rule-select {
-  width: auto !important;
-  flex: 1;
+  min-width: 120px;
+  max-width: 200px;
 }
 </style>

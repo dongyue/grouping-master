@@ -59,8 +59,8 @@
 | user_id | INT | FK → users.id, NOT NULL, INDEX | 创建者 ID |
 | title | VARCHAR(100) | NOT NULL | 活动标题 |
 | description | TEXT | NULLABLE | 活动描述 |
-| group_strategy | VARCHAR(20) | NOT NULL, DEFAULT 'fixed_group_size' | 分组策略：`fixed_group_size`（每组固定人数）、`fixed_group_count`（固定组数，预留） |
-| group_param | INT | NOT NULL, DEFAULT 2 | 策略参数：`fixed_group_size` 时表示每组人数；`fixed_group_count` 时表示总组数 |
+| group_strategy | VARCHAR(20) | NOT NULL, DEFAULT 'fixed_group_size' | 分组策略：`fixed_group_size`（固定每组人数）、`fixed_group_count`（固定总组数） |
+| group_param | INT | NOT NULL, DEFAULT 2 | 策略参数：`fixed_group_size` 时表示每组人数；`fixed_group_count` 时表示目标组数 |
 | remainder_handling | VARCHAR(10) | NOT NULL, DEFAULT 'evenly' | 余数处理：`evenly` 余数分摊到已有组，`separate` 余数单独成组，`rebalance` 单独成组后调匀 |
 | created_at | DATETIME | DEFAULT NOW() | 创建时间 |
 | updated_at | DATETIME | DEFAULT NOW() ON UPDATE NOW() | 更新时间 |
@@ -146,9 +146,9 @@
 `POST /api/activities` 创建活动
 - 请求体：`{title: str, description?: str, join_activity?: bool, group_strategy?: str, group_param?: int, remainder_handling?: str}`
 - `join_activity` 默认 `true`，为 `true` 时创建者同时加入活动
-- `group_strategy` 默认 `"fixed_group_size"`，可选 `"fixed_group_size"`（每组固定人数）、`"fixed_group_count"`（固定组数，预留）
+- `group_strategy` 默认 `"fixed_group_size"`，可选 `"fixed_group_size"`（固定每组人数）、`"fixed_group_count"`（固定总组数）
 - `group_param` 默认 `2`，最小值 `2`，含义由 `group_strategy` 决定
-- `remainder_handling` 默认 `"evenly"`，可选 `"evenly"`（余数分摊到已有组）、`"separate"`（余数单独成组）、`"rebalance"`（单独成组后调匀）
+- `remainder_handling` 默认 `"evenly"`，可选 `"evenly"`（余数分摊到已有组）、`"separate"`（余数单独成组）、`"rebalance"`（单独成组后调匀）。仅 `fixed_group_size` 策略生效
 - 创建时自动生成 12 位随机 slug，作为活动公网标识
 
 `GET /api/activities?type=created|joined`
@@ -207,6 +207,7 @@
 - `remainder_handling = "evenly"`：减少一组，余数均匀分摊到前面各组（前N组各多1人）
 - `remainder_handling = "separate"`：余数单独成组，前N-1组满员，最后一组人数不足
 - `remainder_handling = "rebalance"`：组数与 separate 相同，但调整组间人数使尽量均衡
+- `group_strategy = "fixed_group_count"`：成员随机打乱，尽可能平均分配到 `group_param` 组。每组至少 1 人（若人数不足组数则按实际人数分组）。例：7 人 3 组 → 3、2、2
 - 响应：`{groups: [GroupResponse]}`，每组含 `group_number` 和 `members` 列表
 
 `DELETE /api/activities/{slug}/groups`

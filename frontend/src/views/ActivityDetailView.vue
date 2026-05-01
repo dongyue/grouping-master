@@ -215,7 +215,10 @@ async function handleUngroup() {
         <p v-else class="description" style="color: #bbb;">暂无描述</p>
       </div>
       <div class="rule-section">
-        <span class="rule-badge">
+        <span class="rule-badge" v-if="activity.group_strategy === 'fixed_group_count'">
+          分组规则：共分 {{ activity.group_param }} 组，不能整除时：尽可能平均分配
+        </span>
+        <span class="rule-badge" v-else>
           分组规则：每组 {{ activity.group_param }} 人，
           不能整除时：{{ remainderHandlingLabel[activity.remainder_handling] || activity.remainder_handling }}
         </span>
