@@ -1,25 +1,13 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { useAuthStore } from '../stores/auth'
-import { createActivity, listActivities } from '../api/activities'
+import { listActivities } from '../api/activities'
 import { formatDate } from '../utils/date'
-import { groupStrategyOptions, remainderHandlingOptions } from '../utils/groupRule'
 
 const router = useRouter()
 const route = useRoute()
 
-const auth = useAuthStore()
-
-const title = ref('')
-const description = ref('')
-const joinActivity = ref(true)
-const groupParam = ref(2)
-const groupStrategy = ref('fixed_group_size')
-const remainderHandling = ref('evenly')
-const error = ref('')
 const success = ref('')
-const creating = ref(false)
 const createdActivities = ref([])
 const joinedActivities = ref([])
 const loading = ref(true)
@@ -53,39 +41,6 @@ onMounted(() => {
   }
 })
 
-async function handleCreate() {
-  error.value = ''
-  success.value = ''
-  creating.value = true
-  try {
-    const res = await createActivity({
-      title: title.value,
-      description: description.value || null,
-      join_activity: joinActivity.value,
-      group_strategy: groupStrategy.value,
-      group_param: groupParam.value,
-      remainder_handling: remainderHandling.value,
-    })
-    createdActivities.value.unshift(res.data)
-    if (joinActivity.value) {
-      joinedActivities.value.unshift(res.data)
-    }
-    title.value = ''
-    description.value = ''
-    joinActivity.value = true
-    groupStrategy.value = 'fixed_group_size'
-    groupParam.value = 2
-    remainderHandling.value = 'evenly'
-    success.value = '活动创建成功'
-    setTimeout(() => (success.value = ''), 3000)
-  } catch (err) {
-    console.error('创建活动错误:', err)
-    error.value = err.response?.data?.detail || '创建失败'
-  } finally {
-    creating.value = false
-  }
-}
-
 function truncate(text) {
   return text.length > 50 ? text.slice(0, 50) + '...' : text
 }
@@ -93,58 +48,17 @@ function truncate(text) {
 
 <template>
   <div class="page-card">
-    <div v-if="error" class="error-msg">{{ error }}</div>
     <div v-if="success" class="success-msg">{{ success }}</div>
-
-    <!-- 创建活动表单 -->
-    <form @submit.prevent="handleCreate" class="create-form">
-      <h2 class="section-title">创建活动</h2>
-      <div class="form-group">
-        <label>活动标题 *</label>
-        <input v-model="title" type="text" required placeholder="输入活动标题" />
-      </div>
-      <div class="form-group">
-        <label>活动描述 <span class="optional">(可选)</span></label>
-        <textarea v-model="description" rows="3" placeholder="输入活动描述" class="textarea"></textarea>
-      </div>
-      <div class="form-group checkbox-group">
-        <label class="checkbox-label">
-          <input v-model="joinActivity" type="checkbox" />
-          <span>我作为创建者也要参加</span>
-        </label>
-      </div>
-      <div class="form-group">
-        <label>分组规则</label>
-        <div class="group-rule-row">
-          <select v-model="groupStrategy" class="rule-select">
-            <option v-for="opt in groupStrategyOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
-          </select>
-          <span class="rule-label">{{ groupStrategy === 'fixed_group_count' ? '，共' : '，每组' }}</span>
-          <input v-model.number="groupParam" type="number" min="2" class="rule-input" />
-          <span class="rule-label">{{ groupStrategy === 'fixed_group_count' ? '组' : '人' }}</span>
-        </div>
-        <div v-if="groupStrategy === 'fixed_group_size'" class="group-rule-row rule-extra">
-          <span class="rule-label">不能整除时</span>
-          <select v-model="remainderHandling" class="rule-select">
-            <option v-for="opt in remainderHandlingOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
-          </select>
-        </div>
-        <div v-else class="group-rule-row rule-extra">
-          <span class="rule-label">不能整除时，尽可能平均分配</span>
-        </div>
-        <p class="rule-hint">创建后可在活动编辑页中随时修改</p>
-      </div>
-      <button type="submit" class="btn btn-primary" :disabled="creating">
-        {{ creating ? '创建中...' : '创建活动' }}
-      </button>
-    </form>
 
     <div v-if="loading" style="text-align: center; color: #999; padding: 20px;">加载中...</div>
 
     <template v-else>
       <!-- 我创建的活动 -->
       <div class="activity-section">
-        <h2 class="section-title">我创建的活动</h2>
+        <div class="section-header">
+          <h2 class="section-title">我创建的活动</h2>
+          <button class="btn btn-primary btn-sm" @click="router.push({ name: 'activity-create' })">创建活动</button>
+        </div>
         <div v-if="createdActivities.length === 0" class="empty-hint">暂无</div>
         <div v-for="a in createdActivities" :key="'created-' + a.id" class="activity-item" @click="router.push(`/activities/${a.slug}`)" style="cursor: pointer;">
           <div class="activity-title">{{ a.title }}</div>
@@ -155,7 +69,9 @@ function truncate(text) {
 
       <!-- 我加入的活动 -->
       <div class="activity-section">
-        <h2 class="section-title">我加入的活动</h2>
+        <div class="section-header">
+          <h2 class="section-title">我加入的活动</h2>
+        </div>
         <div v-if="joinedActivities.length === 0" class="empty-hint">暂无</div>
         <div v-for="a in joinedActivities" :key="'joined-' + a.id" class="activity-item" @click="router.push(`/activities/${a.slug}`)" style="cursor: pointer;">
           <div class="activity-title">{{ a.title }}</div>
@@ -168,93 +84,31 @@ function truncate(text) {
 </template>
 
 <style scoped>
-.create-form {
-  padding-bottom: 20px;
-  border-bottom: 1px solid #f0f0f0;
-  margin-bottom: 20px;
-}
-
-.textarea {
-  width: 100%;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  padding: 10px 12px;
-  font-size: 14px;
-  outline: none;
-  resize: vertical;
-  font-family: inherit;
-  transition: border-color 0.2s;
-}
-
-.textarea:focus {
-  border-color: #4f46e5;
-}
-
-.checkbox-group {
-  margin-bottom: 12px;
-}
-
-.checkbox-label {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  cursor: pointer;
-  font-size: 14px;
-  color: #555;
-}
-
-.checkbox-label input[type="checkbox"] {
-  width: 15px;
-  height: 15px;
-  margin: 0;
-  accent-color: #4f46e5;
-  cursor: pointer;
-}
-
-.group-rule-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.rule-extra {
-  margin-top: 8px;
-}
-
-.rule-label {
-  font-size: 13px;
-  color: #666;
-  white-space: nowrap;
-}
-
-.rule-input {
-  width: 80px !important;
-  text-align: center;
-  padding: 0 8px !important;
-}
-
-.rule-select {
-  min-width: 120px;
-  max-width: 200px;
-}
-
-.rule-hint {
-  margin: 6px 0 0 0;
-  font-size: 12px;
-  color: #aaa;
-}
-
 .activity-section {
   margin-bottom: 24px;
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 2px solid #4f46e5;
+  padding-bottom: 8px;
+  margin-bottom: 12px;
 }
 
 .section-title {
   font-size: 16px;
   font-weight: 600;
   color: #333;
-  margin-bottom: 12px;
-  padding-bottom: 8px;
-  border-bottom: 2px solid #4f46e5;
+  margin: 0;
+}
+
+.btn-sm {
+  padding: 4px 14px;
+  font-size: 13px;
+  width: auto;
+  display: inline-block;
 }
 
 .empty-hint {

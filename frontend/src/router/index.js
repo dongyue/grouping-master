@@ -35,6 +35,12 @@ const routes = [
     redirect: '/',
   },
   {
+    path: '/activities/create',
+    name: 'activity-create',
+    component: () => import('../views/CreateActivityView.vue'),
+    meta: { requiresAuth: true },
+  },
+  {
     path: '/activities/:slug/edit',
     name: 'activity-edit',
     component: () => import('../views/ActivityEditView.vue'),
