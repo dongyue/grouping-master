@@ -98,8 +98,9 @@ function handleCancel() {
           <label>活动描述 <span class="optional">(可选)</span></label>
           <textarea v-model="description" rows="4" placeholder="输入活动描述" class="textarea"></textarea>
         </div>
+        <h3 class="section-heading">分组规则</h3>
         <div class="form-group">
-          <label>分组规则</label>
+          <label>分组方式</label>
           <div class="group-rule-row">
             <select v-model="groupStrategy" class="rule-select">
               <option v-for="opt in groupStrategyOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
@@ -138,6 +139,13 @@ function handleCancel() {
 
 .textarea:focus {
   border-color: #4f46e5;
+}
+
+.section-heading {
+  font-size: 15px;
+  font-weight: 600;
+  color: #333;
+  margin: 20px 0 10px 0;
 }
 
 .actions {

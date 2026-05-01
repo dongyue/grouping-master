@@ -71,8 +71,9 @@ function handleCancel() {
           <span>我作为创建者也要参加</span>
         </label>
       </div>
+      <h3 class="section-heading">分组规则</h3>
       <div class="form-group">
-        <label>分组规则</label>
+        <label>分组方式</label>
         <div class="group-rule-row">
           <select v-model="groupStrategy" class="rule-select">
             <option v-for="opt in groupStrategyOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
@@ -142,6 +143,13 @@ function handleCancel() {
 
 .rule-extra {
   margin-top: 8px;
+}
+
+.section-heading {
+  font-size: 15px;
+  font-weight: 600;
+  color: #333;
+  margin: 20px 0 10px 0;
 }
 
 .rule-label {

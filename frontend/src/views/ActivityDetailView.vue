@@ -215,12 +215,13 @@ async function handleUngroup() {
         <p v-if="activity.description" class="description">{{ activity.description }}</p>
         <p v-else class="description" style="color: #bbb;">暂无描述</p>
       </div>
+      <h3 class="rule-heading">分组规则</h3>
       <div class="rule-section">
         <span class="rule-badge" v-if="activity.group_strategy === 'fixed_group_count'">
-          分组规则：共分 {{ activity.group_param }} 组
+          分组方式：共分 {{ activity.group_param }} 组
         </span>
         <span class="rule-badge" v-else>
-          分组规则：每组 {{ activity.group_param }} 人
+          分组方式：每组 {{ activity.group_param }} 人
         </span>
         <template v-if="activity.constraints?.length">
           <span class="rule-badge" v-for="(c, idx) in activity.constraints" :key="idx">
@@ -376,6 +377,13 @@ async function handleUngroup() {
 
 .desc-section {
   margin-bottom: 24px;
+}
+
+.rule-heading {
+  font-size: 15px;
+  font-weight: 600;
+  color: #333;
+  margin: 0 0 10px 0;
 }
 
 .rule-section {

@@ -106,9 +106,9 @@
 | `groupRule.js` | 分组策略选项列表与标签映射，供表单和详情页共用 |
 | `constraintPresets.js` | 组内多样性限定预设属性名列表，供 ConstraintEditor 和编辑页回显共用 |
 | `ConstraintEditor.vue` | 组内多样性限定规则编辑器：下拉选择/自定义属性名、动态增删规则、自动填入枚举值、校验限定值范围，供创建/编辑活动页复用 |
-| `CreateActivityView.vue` | 创建活动页：活动标题、描述、分组规则配置、组内多样性限定规则、创建者参加复选框 |
-| `ActivityDetailView.vue` | 活动详情页：主行 + 更多下拉菜单 + 分组规则与组内多样性限定展示 + 成员列表 + 分组展示 + 尚未分组展示 + 管理成员开关 + 确认对话框 |
-| `ActivityEditView.vue` | 编辑活动页：修改标题、描述、分组规则、组内多样性限定规则，仅创建者可访问，取消回到详情页 |
+| `CreateActivityView.vue` | 创建活动页：活动标题、描述、「分组规则」区域（分组方式配置 + 组内多样性限定）、创建者参加复选框 |
+| `ActivityDetailView.vue` | 活动详情页：主行 + 更多下拉菜单 + 「分组规则」标题下分组方式与多样性限定展示 + 成员列表 + 分组展示 + 尚未分组展示 + 管理成员开关 + 确认对话框 |
+| `ActivityEditView.vue` | 编辑活动页：修改标题、描述、「分组规则」区域（分组方式配置 + 组内多样性限定），仅创建者可访问，取消回到详情页 |
 | `LoginView.vue` | 登录页 |
 | `RegisterView.vue` | 注册页（通过 API 获取密码要求配置，决定表单是否显示密码字段） |
 | `ForgotPasswordView.vue` | 忘记密码：发送重置邮件 |
