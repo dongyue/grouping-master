@@ -227,7 +227,7 @@ activities 表的 `constraints` 字段为 JSON 数组，每项为一条多样性
 - `constraints`：`[ConstraintRule]` 多样性限定规则列表，空数组表示无限定
 - `groups`：`[GroupResponse]` 分组列表，未分组时为空数组。每项 `{group_number, members: [MemberItem]}`，组内成员同样包含 `attributes` 字段
 - `members`：`[MemberItem]` 成员列表，每项 `{user_id, nickname, avatar_path, joined_at, attributes, attribute_warnings}`，其中 `attributes` 为 `Record<string, string>`，`attribute_warnings` 为 `list[str]`（不合规警告信息，合规时为空数组），按加入时间升序
-- `ungrouped_members`：`[MemberItem]` 尚未分组的成员列表。未分组时为空数组，分组后包含未分配到任何组的成员
+- `ungrouped_members`：`[MemberItem]` 落单的成员列表。未分组时为空数组，分组后包含未分配到任何组的成员
 
 `POST /api/activities/{slug}/join`
 - 请求体：`JoinActivityRequest {attribute_values?: Record<string, string>}`
@@ -268,8 +268,8 @@ activities 表的 `constraints` 字段为 JSON 数组，每项为一条多样性
 - 仅活动创建者可执行，非创建者返回 403
 - 若已分组，先清除已有分组及组成员数据，再重新分组
 - 读取活动的 `group_strategy`、`group_param` 配置执行分组
-- `group_strategy = "fixed_group_size"`：成员随机打乱，按 `group_param` 人一组分配。若不能整除，最后不足一组的人数归入「尚未分组」不分配
-- `group_strategy = "fixed_group_count"`：成员随机打乱，尽可能平均分配到 `group_param` 组（每组 `floor(总人数/组数)` 人）。余数归入「尚未分组」
+- `group_strategy = "fixed_group_size"`：成员随机打乱，按 `group_param` 人一组分配。若不能整除，最后不足一组的人数归入「落单」不分配
+- `group_strategy = "fixed_group_count"`：成员随机打乱，尽可能平均分配到 `group_param` 组（每组 `floor(总人数/组数)` 人）。余数归入「落单」
 - 响应：`{groups: [GroupResponse], ungrouped_members: [MemberItem]}`
 
 `DELETE /api/activities/{slug}/groups`
@@ -291,7 +291,7 @@ activities 表的 `constraints` 字段为 JSON 数组，每项为一条多样性
   - `seed`：随机种子（用于复现分组结果）
   - `shuffle_order`：[user_id] 打乱前的成员顺序
   - `groups`：[{group_number, members: [{user_id, nickname}]}] 分组结果
-  - `ungrouped`：[{user_id, nickname}] 尚未分组成员
+  - `ungrouped`：[{user_id, nickname}] 落单成员
 
 > 活动列表项响应格式：`{id, slug, title, description, group_strategy, group_param, constraints, creator_nickname, created_at}`
 
@@ -395,5 +395,5 @@ activities 表的 `constraints` 字段为 JSON 数组，每项为一条多样性
 ### 6.8 操作日志页
 - 新建 `ActivityLogsView.vue`，按时间倒序展示日志列表
 - 每条日志显示：操作人昵称、操作内容描述、操作时间
-- 分组类型日志额外显示「展开详情」按钮，点击展开结构化快照（分组规则快照、成员列表、分组结果、尚未分组列表）
+- 分组类型日志额外显示「展开详情」按钮，点击展开结构化快照（分组规则快照、成员列表、分组结果、落单列表）
 - 日志页面仅活动创建者可访问，非创建者重定向回详情页

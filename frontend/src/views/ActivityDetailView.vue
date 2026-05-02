@@ -328,7 +328,7 @@ async function handleUngroup() {
             </div>
           </div>
           <div v-if="activity.ungrouped_members?.length" class="group-card ungrouped-card" :class="{ 'my-group': activity.ungrouped_members.some(m => m.user_id === auth.user.id) }">
-            <h4 class="group-title">尚未分组 {{ activity.ungrouped_members.length }} 人</h4>
+            <h4 class="group-title">落单 {{ activity.ungrouped_members.length }} 人</h4>
             <div class="members-list">
               <MemberItem
                 v-for="member in activity.ungrouped_members"

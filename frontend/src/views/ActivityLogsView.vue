@@ -118,7 +118,7 @@ const actionLabels = {
                 第 {{ g.group_number }} 组：{{ g.members.map(m => m.nickname).join('、') }}
               </div>
               <div v-if="log.detail.ungrouped?.length" class="group-result ungrouped">
-                尚未分组：{{ log.detail.ungrouped.map(m => m.nickname).join('、') }}
+                落单：{{ log.detail.ungrouped.map(m => m.nickname).join('、') }}
               </div>
             </div>
           </div>
