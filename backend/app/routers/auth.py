@@ -30,6 +30,28 @@ rate_limiter = RateLimiter()
 router = APIRouter(prefix="/api/auth", tags=["认证"])
 
 
+def _make_auth_response(user, session_id: str, status_code: int = status.HTTP_200_OK):
+    response = JSONResponse(
+        status_code=status_code,
+        content={
+            "id": user.id,
+            "username": user.username,
+            "nickname": user.nickname,
+            "email": user.email,
+            "avatar_path": user.avatar_path,
+            "created_at": user.created_at.isoformat(),
+        },
+    )
+    response.set_cookie(
+        key="session_id",
+        value=session_id,
+        max_age=SESSION_EXPIRE_DAYS * 24 * 3600,
+        httponly=True,
+        samesite="lax",
+    )
+    return response
+
+
 @router.get("/config")
 def get_config():
     return {"require_password": REQUIRE_PASSWORD}
@@ -49,25 +71,7 @@ def register(body: RegisterRequest, db: Session = Depends(get_db), rate: None = 
     user = auth_service.create_user(db, body.username, body.nickname, body.password, body.email)
     session_id = auth_service.create_session(db, user.id)
 
-    response = JSONResponse(
-        status_code=status.HTTP_201_CREATED,
-        content={
-            "id": user.id,
-            "username": user.username,
-            "nickname": user.nickname,
-            "email": user.email,
-            "avatar_path": user.avatar_path,
-            "created_at": user.created_at.isoformat(),
-        },
-    )
-    response.set_cookie(
-        key="session_id",
-        value=session_id,
-        max_age=SESSION_EXPIRE_DAYS * 24 * 3600,
-        httponly=True,
-        samesite="lax",
-    )
-    return response
+    return _make_auth_response(user, session_id, status_code=status.HTTP_201_CREATED)
 
 
 @router.post("/login", response_model=UserResponse)
@@ -78,24 +82,7 @@ def login(body: LoginRequest, db: Session = Depends(get_db), rate: None = Depend
 
     session_id = auth_service.create_session(db, user.id)
 
-    response = JSONResponse(
-        content={
-            "id": user.id,
-            "username": user.username,
-            "nickname": user.nickname,
-            "email": user.email,
-            "avatar_path": user.avatar_path,
-            "created_at": user.created_at.isoformat(),
-        },
-    )
-    response.set_cookie(
-        key="session_id",
-        value=session_id,
-        max_age=SESSION_EXPIRE_DAYS * 24 * 3600,
-        httponly=True,
-        samesite="lax",
-    )
-    return response
+    return _make_auth_response(user, session_id)
 
 
 @router.post("/logout", response_model=MessageResponse)
