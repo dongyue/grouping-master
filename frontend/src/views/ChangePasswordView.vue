@@ -23,6 +23,7 @@ async function handleChangePassword() {
     await changePassword({
       old_password: oldPassword.value,
       new_password: newPassword.value,
+      new_password_confirm: newPasswordConfirm.value,
     })
     success.value = '密码修改成功'
     oldPassword.value = ''

@@ -24,14 +24,14 @@
 | `activity_member.py` | `ActivityMember` 表：活动成员关系（id, activity_id FK, user_id FK, 时间戳），联合唯一约束 |
 | `group.py` | `Group` 表：分组（id, activity_id FK, group_number, 时间戳），关联 GroupMember |
 | `group_member.py` | `GroupMember` 表：分组成员关系（id, group_id FK, user_id FK），联合唯一约束 |
-| `member_attribute.py` | `MemberAttribute` 表：成员属性值（id, member_id FK, attribute_name, attribute_value），联合唯一约束，ON DELETE CASCADE |
+| `member_attribute.py` | `MemberAttribute` 表：成员属性值（id, member_id FK, attribute_name, attribute_value），联合唯一约束，ON DELETE CASCADE，通过 backref `attributes` 反向关联 ActivityMember |
 
 ### Pydantic Schema（app/schemas/）
 
 | 文件 | 职责 |
 |------|------|
 | `__init__.py` | 汇总导出所有 schema |
-| `auth.py` | 全部请求/响应校验：注册、登录、改密、重置密码、更新资料、头像、注销、活动 CRUD、分组、组内多样性限定规则 |
+| `auth.py` | 全部请求/响应校验：注册、登录、改密、重置密码、更新资料、头像、注销、创建活动、更新活动、加入活动（含属性值）、活动列表、活动详情、成员列表、分组结果、组内多样性限定规则 |
 
 ### API 路由（app/routers/）
 

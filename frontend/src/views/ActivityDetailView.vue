@@ -244,14 +244,14 @@ async function handleUngroup() {
           <span class="rule-badge" v-for="(c, idx) in activity.constraints" :key="idx">
             组内限定：每组{{ c.constraint_type === 'min_diversity' ? '至少' : '最多' }}{{ c.constraint_value }}种{{ c.attribute_name }}
           </span>
-  <AttributeSelector
-    v-if="showAttributeSelector"
-    :constraints="activity.constraints"
-    :submitting="attributeSubmitting"
-    @confirm="handleAttributeConfirm"
-    @cancel="showAttributeSelector = false"
-  />
-</template>
+        </template>
+        <AttributeSelector
+          v-if="showAttributeSelector"
+          :constraints="activity.constraints"
+          :submitting="attributeSubmitting"
+          @confirm="handleAttributeConfirm"
+          @cancel="showAttributeSelector = false"
+        />
       </div>
       <div class="members-section">
         <h3 class="members-title">

@@ -61,6 +61,7 @@ class LoginRequest(BaseModel):
 class ChangePasswordRequest(BaseModel):
     old_password: str
     new_password: str
+    new_password_confirm: str
 
     @field_validator("new_password")
     @classmethod
@@ -68,6 +69,12 @@ class ChangePasswordRequest(BaseModel):
         if len(v) < 8:
             raise ValueError("密码长度至少8位")
         return v
+
+    @model_validator(mode="after")
+    def validate_password_confirm(self):
+        if self.new_password != self.new_password_confirm:
+            raise ValueError("两次输入的新密码不一致")
+        return self
 
 
 class ForgotPasswordRequest(BaseModel):

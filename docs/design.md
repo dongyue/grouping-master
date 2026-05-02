@@ -195,7 +195,7 @@ activities 表的 `constraints` 字段为 JSON 数组，每项为一条多样性
 - `ungrouped_members`：`[MemberItem]` 尚未分组的成员列表。未分组时为空数组，分组后包含未分配到任何组的成员
 
 `POST /api/activities/{slug}/join`
-- 请求体：`{attribute_values?: Record<string, string>}`
+- 请求体：`JoinActivityRequest {attribute_values?: Record<string, string>}`
 - 活动有约束规则时，`attribute_values` 必填，须包含全部属性名，每个值须在对应属性的允许值列表内
 - 活动无约束规则时，`attribute_values` 可省略或为 `null`，直接加入
 - 用户已加入时返回 409
@@ -289,7 +289,7 @@ activities 表的 `constraints` 字段为 JSON 数组，每项为一条多样性
 | `/forgot-password` | 忘记密码页 | 公开 | 输入邮箱发送重置链接 |
 | `/reset-password` | 重置密码页 | 公开 | ?token=xxx，设置新密码 |
 | `/` | 首页 | 需登录 | 「我创建的活动」列表（含「创建活动」按钮）+「我加入的活动」列表 |
-| `/activities/create` | 创建活动页 | 需登录 | 活动标题、描述、「分组规则」区域（含分组方式配置、组内多样性限定规则）、我作为创建者也要参加 |
+| `/activities/create` | 创建活动页 | 需登录 | 活动标题、描述、「我作为创建者也要参加」复选框（默认勾选）、「分组规则」区域（含分组方式配置、组内多样性限定规则） |
 | `/activities/:slug` | 活动详情页 | 需登录 | 主行：加入活动（未加入用户）/ 开始分组（创建者，未分组时）+ 分享链接 + 更多 ▼；更多菜单：退出活动（已加入成员）+ 重新分组（创建者，已分组时）+ 解除分组（创建者，已分组时）+ 编辑活动（创建者）+ 删除活动（创建者）；「分组规则」标题下展示分组方式与逐条多样性限定；成员列表（未分组时平铺，已分组后按组展示，标题显示总人数与组数） |
 | `/activities/:slug/edit` | 编辑活动页 | 需登录 | 编辑活动标题、描述、「分组规则」区域（含分组方式配置、组内多样性限定规则），仅创建者可操作，非创建者重定向回详情页 |
 | `/settings` | 设置页 | 需登录 | 头像上传、修改昵称、注销账号入口 |
@@ -313,9 +313,10 @@ activities 表的 `constraints` 字段为 JSON 数组，每项为一条多样性
 - 路由守卫 `beforeEach` 中将目标路径存为 `redirect` query 参数
 - 登录页/注册页在登录/注册成功后跳转回 `redirect` 目标
 
-### 6.5 前端环境变量与代理
-- API 基地址通过 `.env` 变量 `VITE_API_BASE_URL` 配置，头像地址通过拼接
-- Vite 开发服务器配置代理 `/api` → 后端，生产环境由构建工具注入
+### 6.5 前端环境变量
+- API 基地址通过 `.env` 变量 `VITE_API_BASE_URL` 配置（默认 `/api`），头像资源地址通过 `.env` 变量 `VITE_UPLOADS_URL` 配置
+- Vite 开发服务器配置代理 `/api` → `http://localhost:8000`，避免跨域问题
+- 前端 Axios 通过 `withCredentials: true` 携带 Cookie
 
 ### 6.6 组内多样性限定编辑器
 - 新建 `ConstraintEditor.vue`，封装组内多样性限定规则的增删改 UI
