@@ -226,4 +226,70 @@ main {
   color: #aaa;
   font-weight: 400;
 }
+
+.textarea {
+  width: 100%;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 14px;
+  outline: none;
+  resize: vertical;
+  font-family: inherit;
+  transition: border-color 0.2s;
+}
+
+.textarea:focus {
+  border-color: #4f46e5;
+}
+
+.section-heading {
+  font-size: 15px;
+  font-weight: 600;
+  color: #333;
+  margin: 20px 0 10px 0;
+}
+
+.group-rule-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.rule-label {
+  font-size: 13px;
+  color: #666;
+  white-space: nowrap;
+}
+
+.rule-input {
+  width: 80px !important;
+  text-align: center;
+  padding: 0 8px !important;
+}
+
+.rule-select {
+  min-width: 120px;
+  max-width: 200px;
+}
+
+.rule-extra {
+  margin-top: 8px;
+}
+
+.rule-hint {
+  margin: 6px 0 16px 0;
+  font-size: 12px;
+  color: #aaa;
+}
+
+.actions {
+  display: flex;
+  gap: 12px;
+}
+
+.actions .btn {
+  width: auto;
+  flex: 1;
+}
 </style>
