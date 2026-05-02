@@ -39,7 +39,7 @@
 |------|------|
 | `__init__.py` | 汇总导出路由 |
 | `auth.py` | `/api/auth/*` — 注册/登录/登出/me/改密/忘记密码/重置密码/更新资料/头像/注销账号 |
-| `activities.py` | `/api/activities` — POST 创建、GET 列表、GET `/:slug` 详情、POST `/:slug` 加入/退出、PUT `/:slug` 编辑、DELETE `/:slug` 删除、POST `/:slug/groups` 分组 |
+| `activities.py` | `/api/activities` — POST 创建、GET 列表、GET `/:slug` 详情、POST `/:slug` 加入/退出、PUT `/:slug` 编辑、DELETE `/:slug` 删除、DELETE `/:slug/members/:user_id` 踢出成员、POST `/:slug/groups` 分组（含重新分组）、DELETE `/:slug/groups` 解除分组 |
 
 ### 业务服务（app/services/）
 
@@ -107,10 +107,22 @@
 | `date.js` | `formatDate` 统一日期格式化为 YYYY-MM-DD |
 | `groupRule.js` | 分组策略选项列表与标签映射，供表单和详情页共用 |
 | `constraintPresets.js` | 组内多样性限定预设属性名列表，供 ConstraintEditor 和编辑页回显共用 |
+
+### 通用组件（components/）
+
+| 文件 | 职责 |
+|------|------|
 | `ConstraintEditor.vue` | 组内多样性限定规则编辑器：下拉选择/自定义属性名、动态增删规则、自动填入枚举值、校验限定值范围，供创建/编辑活动页复用 |
 | `AttributeSelector.vue` | 属性选择弹框：成员加入活动时选择各属性的值，以弹框形式展示，全部必填，供详情页加入流程复用 |
+| `ConfirmModal.vue` | 确认对话框组件，供退出活动、删除活动、踢出成员、解除分组、注销账号等危险操作确认复用 |
+
+### 页面组件（views/）
+
+| 文件 | 职责 |
+|------|------|
+| `HomeView.vue` | 首页：「我创建的活动」列表（含「创建活动」按钮入口）+「我加入的活动」列表，按创建时间倒序 |
 | `CreateActivityView.vue` | 创建活动页：活动标题、描述、「分组规则」区域（分组方式配置 + 组内多样性限定）、创建者参加复选框 |
-| `ActivityDetailView.vue` | 活动详情页：主行 + 更多下拉菜单 + 「分组规则」标题下分组方式与多样性限定展示 + 成员列表 + 分组展示 + 尚未分组展示 + 管理成员开关 + 确认对话框 |
+| `ActivityDetailView.vue` | 活动详情页：操作按钮（加入活动/开始分组 + 分享链接 + 更多▼）+ 分组规则展示 + 成员列表（分组/尚未分组/平铺三视图）+ 踢出成员（管理成员开关）+ 属性选择弹框 + 确认对话框；重新分组/解除分组/编辑/删除在更多菜单中 |
 | `ActivityEditView.vue` | 编辑活动页：修改标题、描述、「分组规则」区域（分组方式配置 + 组内多样性限定），仅创建者可访问，取消回到详情页 |
 | `LoginView.vue` | 登录页 |
 | `RegisterView.vue` | 注册页（通过 API 获取密码要求配置，决定表单是否显示密码字段） |

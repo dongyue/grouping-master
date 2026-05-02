@@ -174,9 +174,6 @@ def join_activity(
     if not activity:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="活动不存在")
 
-    if _activity_has_groups(db, activity.id):
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="该活动已分组，无法加入")
-
     existing = db.query(ActivityMember).filter(
         ActivityMember.activity_id == activity.id,
         ActivityMember.user_id == current_user.id,
@@ -228,15 +225,19 @@ def leave_activity(
     if not activity:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="活动不存在")
 
-    if _activity_has_groups(db, activity.id):
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="该活动已分组，无法退出")
-
     membership = db.query(ActivityMember).filter(
         ActivityMember.activity_id == activity.id,
         ActivityMember.user_id == current_user.id,
     ).first()
     if not membership:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="您尚未加入该活动")
+
+    groups = db.query(Group).filter(Group.activity_id == activity.id).all()
+    for g in groups:
+        db.query(GroupMember).filter(
+            GroupMember.group_id == g.id,
+            GroupMember.user_id == current_user.id,
+        ).delete()
 
     db.delete(membership)
     db.commit()
@@ -288,9 +289,6 @@ def kick_member(
     if not activity:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="活动不存在")
 
-    if _activity_has_groups(db, activity.id):
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="该活动已分组，无法踢出成员")
-
     if activity.user_id != current_user.id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="只有活动创建者才能踢出成员")
 
@@ -303,6 +301,13 @@ def kick_member(
     ).first()
     if not membership:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="该用户不是本活动成员")
+
+    groups = db.query(Group).filter(Group.activity_id == activity.id).all()
+    for g in groups:
+        db.query(GroupMember).filter(
+            GroupMember.group_id == g.id,
+            GroupMember.user_id == user_id,
+        ).delete()
 
     db.delete(membership)
     db.commit()
@@ -343,6 +348,12 @@ def create_groups(
 
     if activity.user_id != current_user.id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="只有活动创建者才能执行分组")
+
+    if _activity_has_groups(db, activity.id):
+        groups = db.query(Group).filter(Group.activity_id == activity.id).all()
+        for g in groups:
+            db.query(GroupMember).filter(GroupMember.group_id == g.id).delete()
+            db.delete(g)
 
     members = (
         db.query(ActivityMember)

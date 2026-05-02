@@ -199,7 +199,6 @@ activities 表的 `constraints` 字段为 JSON 数组，每项为一条多样性
 - 活动有约束规则时，`attribute_values` 必填，须包含全部属性名，每个值须在对应属性的允许值列表内
 - 活动无约束规则时，`attribute_values` 可省略或为 `null`，直接加入
 - 用户已加入时返回 409
-- 活动已分组时返回 409
 - 响应：`{message: "加入成功"}`
 
 `DELETE /api/activities/{slug}`
@@ -212,13 +211,12 @@ activities 表的 `constraints` 字段为 JSON 数组，每项为一条多样性
 `POST /api/activities/{slug}/leave`
 - 无请求体
 - 用户未加入活动时返回 409
-- 活动已分组时返回 409
+- 若已分组，同步删除该成员在各组中的记录
 
 `PUT /api/activities/{slug}`
 - 请求体：`{title: str, description?: str, group_strategy?: str, group_param?: int, constraints?: list[ConstraintRule]}`
 - 仅活动创建者可更新
 - 非创建者返回 403
-- 活动已分组时返回 409
 - 响应：更新后的 `ActivityResponse`
 
 `DELETE /api/activities/{slug}/members/{user_id}`
@@ -227,12 +225,13 @@ activities 表的 `constraints` 字段为 JSON 数组，每项为一条多样性
 - 非创建者返回 403
 - 目标用户不是该活动成员时返回 404
 - 创建者不能踢出自己，返回 400
-- 活动已分组时返回 409
+- 若已分组，同步删除该成员在各组中的记录
 - 响应：`{message: "已将该成员移出活动"}`
 
 `POST /api/activities/{slug}/groups`
 - 无请求体
 - 仅活动创建者可执行，非创建者返回 403
+- 若已分组，先清除已有分组及组成员数据，再重新分组
 - 读取活动的 `group_strategy`、`group_param` 配置执行分组
 - `group_strategy = "fixed_group_size"`：成员随机打乱，按 `group_param` 人一组分配。若不能整除，最后不足一组的人数归入「尚未分组」不分配
 - `group_strategy = "fixed_group_count"`：成员随机打乱，尽可能平均分配到 `group_param` 组（每组 `floor(总人数/组数)` 人）。余数归入「尚未分组」
@@ -291,7 +290,7 @@ activities 表的 `constraints` 字段为 JSON 数组，每项为一条多样性
 | `/reset-password` | 重置密码页 | 公开 | ?token=xxx，设置新密码 |
 | `/` | 首页 | 需登录 | 「我创建的活动」列表（含「创建活动」按钮）+「我加入的活动」列表 |
 | `/activities/create` | 创建活动页 | 需登录 | 活动标题、描述、「分组规则」区域（含分组方式配置、组内多样性限定规则）、我作为创建者也要参加 |
-| `/activities/:slug` | 活动详情页 | 需登录 | 主行：加入活动 / 开始分组 + 分享链接 + 更多 ▼；更多菜单：退出活动 + 解除分组（创建者）+ 编辑活动（创建者）+ 删除活动（创建者）；「分组规则」标题下展示分组方式与逐条多样性限定；成员列表（未分组时平铺，已分组后按组展示，标题显示总人数与组数） |
+| `/activities/:slug` | 活动详情页 | 需登录 | 主行：加入活动（未加入用户）/ 开始分组（创建者，未分组时）+ 分享链接 + 更多 ▼；更多菜单：退出活动（已加入成员）+ 重新分组（创建者，已分组时）+ 解除分组（创建者，已分组时）+ 编辑活动（创建者）+ 删除活动（创建者）；「分组规则」标题下展示分组方式与逐条多样性限定；成员列表（未分组时平铺，已分组后按组展示，标题显示总人数与组数） |
 | `/activities/:slug/edit` | 编辑活动页 | 需登录 | 编辑活动标题、描述、「分组规则」区域（含分组方式配置、组内多样性限定规则），仅创建者可操作，非创建者重定向回详情页 |
 | `/settings` | 设置页 | 需登录 | 头像上传、修改昵称、注销账号入口 |
 | `/settings/change-password` | 修改密码页 | 需登录 | 旧密码 + 新密码 + 确认新密码表单 |

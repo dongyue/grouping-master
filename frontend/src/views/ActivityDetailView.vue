@@ -30,7 +30,6 @@ const kickError = ref('')
 const grouping = ref(false)
 const groupError = ref('')
 const groupSuccess = ref('')
-const frozenMsg = ref('')
 const showMore = ref(false)
 const showKick = ref(false)
 const confirmModal = ref({ show: false, title: '', message: '', onConfirm: null })
@@ -96,12 +95,14 @@ function handleCopyLink() {
   })
 }
 
+async function refetchActivity() {
+  try {
+    const res = await getActivity(route.params.slug)
+    activity.value = res.data
+  } catch {} // silently ignore refetch failures
+}
+
 async function handleJoin() {
-  if (activity.value.has_groups) {
-    frozenMsg.value = '该活动已分组，无法操作'
-    setTimeout(() => (frozenMsg.value = ''), 2000)
-    return
-  }
   if (activity.value.constraints?.length) {
     showAttributeSelector.value = true
     return
@@ -111,14 +112,7 @@ async function handleJoin() {
   joinSuccess.value = ''
   try {
     await joinActivity(route.params.slug)
-    activity.value.is_member = true
-    activity.value.members.push({
-      user_id: auth.user.id,
-      nickname: auth.user.nickname,
-      avatar_path: auth.user.avatar_path,
-      joined_at: new Date().toISOString(),
-      attributes: {},
-    })
+    await refetchActivity()
     joinSuccess.value = '加入成功'
     setTimeout(() => (joinSuccess.value = ''), 2000)
   } catch (err) {
@@ -135,14 +129,7 @@ async function handleAttributeConfirm(attributeValues) {
   joinSuccess.value = ''
   try {
     await joinActivity(route.params.slug, attributeValues)
-    activity.value.is_member = true
-    activity.value.members.push({
-      user_id: auth.user.id,
-      nickname: auth.user.nickname,
-      avatar_path: auth.user.avatar_path,
-      joined_at: new Date().toISOString(),
-      attributes: attributeValues,
-    })
+    await refetchActivity()
     joinSuccess.value = '加入成功'
     setTimeout(() => (joinSuccess.value = ''), 2000)
   } catch (err) {
@@ -153,18 +140,11 @@ async function handleAttributeConfirm(attributeValues) {
 }
 
 async function handleLeave() {
-  if (activity.value.has_groups) {
-    frozenMsg.value = '该活动已分组，无法操作'
-    setTimeout(() => (frozenMsg.value = ''), 2000)
-    return
-  }
   showConfirm('退出活动', '确定要退出此活动吗？', async () => {
     leaving.value = true
     leaveError.value = ''
     try {
       await leaveActivity(route.params.slug)
-      activity.value.is_member = false
-      activity.value.members = activity.value.members.filter(m => m.user_id !== auth.user.id)
       router.push({ name: 'home', query: { left: '1' } })
     } catch (err) {
       leaveError.value = err.response?.data?.detail || '退出失败'
@@ -195,7 +175,7 @@ async function handleKick(userId, nickname) {
     kickError.value = ''
     try {
       await kickMember(route.params.slug, userId)
-      activity.value.members = activity.value.members.filter(m => m.user_id !== userId)
+      await refetchActivity()
     } catch (err) {
       kickError.value = err.response?.data?.detail || '踢出失败'
     } finally {
@@ -209,10 +189,8 @@ async function handleGroup() {
   groupError.value = ''
   groupSuccess.value = ''
   try {
-    const res = await createGroups(route.params.slug)
-    activity.value.groups = res.data.groups
-    activity.value.ungrouped_members = res.data.ungrouped_members
-    activity.value.has_groups = true
+    await createGroups(route.params.slug)
+    await refetchActivity()
     groupSuccess.value = '分组完成'
     setTimeout(() => (groupSuccess.value = ''), 2000)
   } catch (err) {
@@ -228,9 +206,7 @@ async function handleUngroup() {
     groupError.value = ''
     try {
       await deleteGroups(route.params.slug)
-      activity.value.groups = []
-      activity.value.ungrouped_members = []
-      activity.value.has_groups = false
+      await refetchActivity()
       groupSuccess.value = '已解除分组'
       setTimeout(() => (groupSuccess.value = ''), 2000)
     } catch (err) {
@@ -281,7 +257,7 @@ async function handleUngroup() {
         <h3 class="members-title">
           已加入的成员 {{ activity.members?.length || 0 }} 人<template v-if="activity.has_groups && activity.groups?.length">，共 {{ activity.groups.length }} 组</template>
           <button
-            v-if="activity.is_creator && !activity.has_groups"
+            v-if="activity.is_creator"
             class="btn-toggle-kick"
             :class="{ active: showKick }"
             @click="showKick = !showKick"
@@ -299,6 +275,14 @@ async function handleUngroup() {
                   <span v-else class="avatar-placeholder">{{ member.nickname[0] }}</span>
                 </div>
                 <span class="member-nickname">{{ member.nickname }}</span>
+                <button
+                  v-if="activity.is_creator && member.user_id !== auth.user.id && showKick"
+                  class="btn-kick"
+                  :disabled="kickingUserId === member.user_id"
+                  @click="handleKick(member.user_id, member.nickname)"
+                >
+                  {{ kickingUserId === member.user_id ? '踢出中...' : '踢出' }}
+                </button>
               </div>
             </div>
           </div>
@@ -311,6 +295,14 @@ async function handleUngroup() {
                   <span v-else class="avatar-placeholder">{{ member.nickname[0] }}</span>
                 </div>
                 <span class="member-nickname">{{ member.nickname }}</span>
+                <button
+                  v-if="activity.is_creator && member.user_id !== auth.user.id && showKick"
+                  class="btn-kick"
+                  :disabled="kickingUserId === member.user_id"
+                  @click="handleKick(member.user_id, member.nickname)"
+                >
+                  {{ kickingUserId === member.user_id ? '踢出中...' : '踢出' }}
+                </button>
               </div>
             </div>
           </div>
@@ -342,9 +334,8 @@ async function handleUngroup() {
       <div v-if="kickError" class="error-msg" style="margin-bottom: 12px;">{{ kickError }}</div>
       <div v-if="groupError" class="error-msg" style="margin-bottom: 12px;">{{ groupError }}</div>
       <div v-if="groupSuccess" class="success-msg" style="margin-bottom: 12px;">{{ groupSuccess }}</div>
-      <div v-if="frozenMsg" class="warning-msg" style="margin-bottom: 12px;">{{ frozenMsg }}</div>
       <div class="actions">
-        <button v-if="!activity.is_member" class="btn btn-primary" :class="{ 'btn-disabled': activity.has_groups }" :disabled="joining" @click="handleJoin">
+        <button v-if="!activity.is_member" class="btn btn-primary" :disabled="joining" @click="handleJoin">
           {{ joining ? '加入中...' : '加入活动' }}
         </button>
         <button v-if="activity.is_creator && !activity.has_groups" class="btn btn-primary" :disabled="grouping" @click="handleGroup">
@@ -361,7 +352,6 @@ async function handleUngroup() {
             <button
               v-if="activity.is_member"
               class="btn btn-secondary btn-warning"
-              :class="{ 'btn-disabled': activity.has_groups }"
               :disabled="leaving"
               @click="handleLeave(); showMore = false"
             >
@@ -374,6 +364,14 @@ async function handleUngroup() {
               @click="handleUngroup(); showMore = false"
             >
               {{ grouping ? '解除中...' : '解除分组' }}
+            </button>
+            <button
+              v-if="activity.is_creator && activity.has_groups"
+              class="btn btn-secondary"
+              :disabled="grouping"
+              @click="handleGroup(); showMore = false"
+            >
+              {{ grouping ? '分组中...' : '重新分组' }}
             </button>
             <button
               v-if="activity.is_creator"
