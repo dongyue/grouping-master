@@ -272,6 +272,7 @@ class MemberItem(BaseModel):
     avatar_path: str | None
     joined_at: str
     attributes: dict[str, str] = {}
+    attribute_warnings: list[str] = []
 
     model_config = {"from_attributes": True}
 

@@ -278,6 +278,7 @@ async function handleUngroup() {
                 <span v-if="member.attributes && Object.keys(member.attributes).length" class="member-attrs">
                   <span v-for="(val, key) in member.attributes" :key="key" class="attr-tag">{{ val }}</span>
                 </span>
+                <span v-if="member.attribute_warnings?.length" class="warn-icon" :title="member.attribute_warnings.join('\n')">&#9888;</span>
                 <button
                   v-if="activity.is_creator && member.user_id !== auth.user.id && showKick"
                   class="btn-kick"
@@ -301,6 +302,7 @@ async function handleUngroup() {
                 <span v-if="member.attributes && Object.keys(member.attributes).length" class="member-attrs">
                   <span v-for="(val, key) in member.attributes" :key="key" class="attr-tag">{{ val }}</span>
                 </span>
+                <span v-if="member.attribute_warnings?.length" class="warn-icon" :title="member.attribute_warnings.join('\n')">&#9888;</span>
                 <button
                   v-if="activity.is_creator && member.user_id !== auth.user.id && showKick"
                   class="btn-kick"
@@ -323,6 +325,7 @@ async function handleUngroup() {
             <span v-if="member.attributes && Object.keys(member.attributes).length" class="member-attrs">
               <span v-for="(val, key) in member.attributes" :key="key" class="attr-tag">{{ val }}</span>
             </span>
+            <span v-if="member.attribute_warnings?.length" class="warn-icon" :title="member.attribute_warnings.join('\n')">&#9888;</span>
             <button
               v-if="activity.is_creator && member.user_id !== auth.user.id && showKick"
               class="btn-kick"
@@ -584,6 +587,13 @@ async function handleUngroup() {
   background: #f0f0f0;
   color: #888;
   border-radius: 3px;
+}
+
+.warn-icon {
+  font-size: 14px;
+  color: #e63946;
+  cursor: help;
+  flex-shrink: 0;
 }
 
 .members-empty {

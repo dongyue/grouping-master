@@ -17,6 +17,21 @@ import json
 router = APIRouter(prefix="/api/activities", tags=["活动"])
 
 
+def _get_warnings(constraints: list | None, attrs: dict[str, str]) -> list[str]:
+    warnings = []
+    if not constraints:
+        return warnings
+    for c in constraints:
+        name = c["attribute_name"]
+        allowed = c["allowed_values"]
+        value = attrs.get(name)
+        if value is None:
+            warnings.append(f"缺少属性「{name}」")
+        elif value not in allowed:
+            warnings.append(f"「{name}」=「{value}」不在允许范围")
+    return warnings
+
+
 def _add_log(db: Session, activity_id: int, user_id: int, action_type: str, content: str, detail: dict | None = None):
     log = ActivityLog(
         activity_id=activity_id,
@@ -130,6 +145,11 @@ def get_activity(
         for m in members
     ]
 
+    constraints = activity.constraints
+    for item in members_data:
+        item.attribute_warnings = _get_warnings(constraints, item.attributes)
+    warnings_map = {m.user_id: m.attribute_warnings for m in members_data}
+
     is_creator = activity.user_id == current_user.id
 
     groups = (
@@ -151,6 +171,7 @@ def get_activity(
                     avatar_path=gm.user.avatar_path,
                     joined_at="",
                     attributes={attr.attribute_name: attr.attribute_value for attr in member_attrs_map.get(gm.user_id, [])},
+                    attribute_warnings=warnings_map.get(gm.user_id, []),
                 )
                 for gm in g.members
             ],
