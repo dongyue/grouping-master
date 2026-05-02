@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models.user import User
+from app.models.user_attribute import UserAttribute
 from app.schemas.auth import (
     RegisterRequest,
     LoginRequest,
@@ -15,6 +16,8 @@ from app.schemas.auth import (
     UpdateProfileRequest,
     UserResponse,
     MessageResponse,
+    UserAttributesResponse,
+    UpdateUserAttributesRequest,
 )
 from app.services import auth as auth_service
 from app.middleware.auth import get_current_user
@@ -226,3 +229,25 @@ def delete_account(
     response = JSONResponse(content={"message": "账号已注销"})
     response.delete_cookie(key="session_id")
     return response
+
+
+@router.get("/attributes", response_model=UserAttributesResponse)
+def get_user_attributes(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    attrs = db.query(UserAttribute).filter(UserAttribute.user_id == current_user.id).all()
+    return UserAttributesResponse(attributes={a.attribute_name: a.attribute_value for a in attrs})
+
+
+@router.put("/attributes", response_model=UserAttributesResponse)
+def update_user_attributes(
+    body: UpdateUserAttributesRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    db.query(UserAttribute).filter(UserAttribute.user_id == current_user.id).delete()
+    for name, value in body.attributes.items():
+        db.add(UserAttribute(user_id=current_user.id, attribute_name=name.strip(), attribute_value=value.strip()))
+    db.commit()
+    return UserAttributesResponse(attributes=body.attributes)

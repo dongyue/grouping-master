@@ -45,3 +45,11 @@ export function uploadAvatar(file) {
 export function deleteAccount() {
   return api.delete('/auth/account')
 }
+
+export function getUserAttributes() {
+  return api.get('/auth/attributes')
+}
+
+export function saveUserAttributes(attributes) {
+  return api.put('/auth/attributes', { attributes })
+}

@@ -302,3 +302,11 @@ class ActivityLogResponse(BaseModel):
     created_at: str
 
     model_config = {"from_attributes": True}
+
+
+class UserAttributesResponse(BaseModel):
+    attributes: dict[str, str]
+
+
+class UpdateUserAttributesRequest(BaseModel):
+    attributes: dict[str, str]

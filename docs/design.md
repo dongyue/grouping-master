@@ -107,7 +107,18 @@
 > 联合唯一约束：(member_id, attribute_name)，每个成员的每个属性只能有一个值
 > member_id 设置 ON DELETE CASCADE：成员退出/被踢出时属性值同步删除
 
-### 2.9 activity_logs 表
+### 2.9 user_attributes 表
+
+| 字段 | 类型 | 约束 | 说明 |
+|------|------|------|------|
+| id | INT | PK, AUTO_INCREMENT | 主键 |
+| user_id | INT | FK → users.id, NOT NULL, INDEX | 用户 ID |
+| attribute_name | VARCHAR(100) | NOT NULL | 属性名 |
+| attribute_value | VARCHAR(100) | NOT NULL | 属性值 |
+
+> 联合唯一约束：(user_id, attribute_name)，每个用户的每个属性只能有一个值
+
+### 2.10 activity_logs 表
 
 | 字段 | 类型 | 约束 | 说明 |
 |------|------|------|------|
@@ -119,7 +130,7 @@
 | detail | JSON | NULLABLE | 结构化详情数据（分组操作时记录快照） |
 | created_at | DATETIME | DEFAULT NOW() | 操作时间 |
 
-### 2.10 constraints 字段结构
+### 2.11 constraints 字段结构
 
 activities 表的 `constraints` 字段为 JSON 数组，每项为一条多样性限定规则：
 
@@ -158,6 +169,16 @@ activities 表的 `constraints` 字段为 JSON 数组，每项为一条多样性
 | PUT | `/api/auth/profile` | Session | 更新个人资料 |
 | POST | `/api/auth/avatar` | Session | 上传头像 |
 | DELETE | `/api/auth/account` | Session | 注销账号 |
+| GET | `/api/auth/attributes` | Session | 获取个人属性值 |
+| PUT | `/api/auth/attributes` | Session | 更新个人属性值（全量覆盖） |
+
+`GET /api/auth/attributes`
+- 响应：`{attributes: Record<string, string>}`，用户保存的所有属性名值对
+
+`PUT /api/auth/attributes`
+- 请求体：`{attributes: Record<string, string>}`
+- 全量覆盖：提交的即最终状态，空对象 `{}` 表示清空全部个人属性值
+- 响应：`{attributes: Record<string, string>}`
 
 **认证机制**
 
@@ -328,7 +349,7 @@ activities 表的 `constraints` 字段为 JSON 数组，每项为一条多样性
 | `/activities/:slug` | 活动详情页 | 需登录 | 主行：加入活动（未加入用户）/ 开始分组（创建者，未分组时）+ 分享链接 + 更多 ▼；更多菜单：退出活动（已加入成员）+ 重新分组（创建者，已分组时）+ 解除分组（创建者，已分组时）+ 编辑活动（创建者）+ 查看日志（创建者）+ 删除活动（创建者）；「分组规则」标题下展示分组方式与逐条多样性限定；成员列表（未分组时平铺，已分组后按组展示，标题显示总人数与组数）；当前用户条目高亮，已分组时所在组整体高亮 |
 | `/activities/:slug/logs` | 操作日志页 | 需登录 | 展示该活动所有操作日志，按时间倒序；分组日志可展开查看快照详情；仅创建者可访问，非创建者重定向到活动详情页 |
 | `/activities/:slug/edit` | 编辑活动页 | 需登录 | 编辑活动标题、描述、「分组规则」区域（含分组方式配置、组内多样性限定规则），仅创建者可操作，非创建者重定向回详情页 |
-| `/settings` | 设置页 | 需登录 | 头像上传、修改昵称、注销账号入口 |
+| `/settings` | 设置页 | 需登录 | 头像上传、修改昵称、「我的信息」属性管理、注销账号入口 |
 | `/settings/change-password` | 修改密码页 | 需登录 | 旧密码 + 新密码 + 确认新密码表单 |
 
 ## 6. 前端工具与组件
@@ -366,6 +387,7 @@ activities 表的 `constraints` 字段为 JSON 数组，每项为一条多样性
 - 接收活动的 `constraints` 数组，为每条规则渲染控件：
   - 属性名作为标签，属性值通过下拉选择（选项为对应的 `allowed_values`）
 - 接收 `initialValues` prop（`Record<string, string>`，可选），预填已有属性值；已有值不在当前枚举值中时视为未填写
+- 接收 `userAttributes` prop（`Record<string, string>`，可选），当某属性无预填值时从中查找匹配值作为补充预填
 - 所有属性均为必填，提交前校验
 - 提交时以 `Record<string, string>` 格式向接口传递
 - 供活动详情页加入流程和编辑属性两个场景复用

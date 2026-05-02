@@ -9,6 +9,7 @@ from app.models.member_attribute import MemberAttribute
 from app.models.group import Group
 from app.models.group_member import GroupMember
 from app.models.activity_log import ActivityLog
+from app.models.user_attribute import UserAttribute
 from app.schemas.auth import ActivityCreateRequest, ActivityUpdateRequest, JoinActivityRequest, ActivityResponse, ActivityDetailResponse, MemberItem, GroupResponse, ActivityLogResponse
 from app.middleware.auth import get_current_user
 import random
@@ -41,6 +42,18 @@ def _add_log(db: Session, activity_id: int, user_id: int, action_type: str, cont
         detail=json.dumps(detail, ensure_ascii=False) if detail else None,
     )
     db.add(log)
+
+
+def _sync_user_attributes(db: Session, user_id: int, attribute_values: dict[str, str]):
+    for name, value in attribute_values.items():
+        existing = db.query(UserAttribute).filter(
+            UserAttribute.user_id == user_id,
+            UserAttribute.attribute_name == name,
+        ).first()
+        if existing:
+            existing.attribute_value = value
+        else:
+            db.add(UserAttribute(user_id=user_id, attribute_name=name, attribute_value=value))
 
 
 @router.post("", response_model=ActivityResponse, status_code=status.HTTP_201_CREATED)
@@ -250,6 +263,8 @@ def join_activity(
             db.add(MemberAttribute(member_id=member.id, attribute_name=attr_name, attribute_value=attr_value))
 
     _add_log(db, activity.id, current_user.id, "join", f"{current_user.nickname} 加入了活动")
+    if body.attribute_values:
+        _sync_user_attributes(db, current_user.id, body.attribute_values)
     db.commit()
     return {"message": "加入成功"}
 
@@ -300,6 +315,7 @@ def update_member_attributes(
         db.add(MemberAttribute(member_id=membership.id, attribute_name=attr_name, attribute_value=attr_value))
 
     _add_log(db, activity.id, current_user.id, "edit", f"{current_user.nickname} 更新了自己在活动中的属性值")
+    _sync_user_attributes(db, current_user.id, body.attribute_values)
     db.commit()
     return {"message": "属性已更新"}
 

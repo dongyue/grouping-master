@@ -5,6 +5,7 @@ const props = defineProps({
   constraints: { type: Array, required: true },
   submitting: { type: Boolean, default: false },
   initialValues: { type: Object, default: () => ({}) },
+  userAttributes: { type: Object, default: () => ({}) },
   confirmLabel: { type: String, default: '确认加入' },
 })
 
@@ -12,7 +13,10 @@ const emit = defineEmits(['confirm', 'cancel'])
 
 const initValues = {}
 for (const c of props.constraints) {
-  const val = props.initialValues[c.attribute_name]
+  let val = props.initialValues[c.attribute_name]
+  if (!val || !c.allowed_values.includes(val)) {
+    val = props.userAttributes[c.attribute_name]
+  }
   if (val && c.allowed_values.includes(val)) {
     initValues[c.attribute_name] = val
   }

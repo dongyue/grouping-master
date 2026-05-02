@@ -1,7 +1,7 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { updateProfile, uploadAvatar, deleteAccount } from '../api/auth'
+import { updateProfile, uploadAvatar, deleteAccount, getUserAttributes, saveUserAttributes } from '../api/auth'
 import { useAuthStore } from '../stores/auth'
 import ConfirmModal from '../components/ConfirmModal.vue'
 import { formatDate } from '../utils/date'
@@ -18,6 +18,19 @@ const saving = ref(false)
 const uploading = ref(false)
 const deleting = ref(false)
 const confirmModal = ref({ show: false, title: '', message: '', onConfirm: null })
+const userAttrs = ref({})
+const newAttrName = ref('')
+const newAttrValue = ref('')
+const attrSaving = ref(false)
+const showHelp = ref(false)
+
+import { onMounted } from 'vue'
+onMounted(async () => {
+  try {
+    const res = await getUserAttributes()
+    userAttrs.value = res.data.attributes
+  } catch {}
+})
 
 const avatarUrl = computed(() => {
   if (auth.user?.avatar_path) {
@@ -80,6 +93,38 @@ async function handleDeleteAccount() {
     },
   }
 }
+
+function addAttr() {
+  if (!newAttrName.value.trim() || !newAttrValue.value.trim()) return
+  const name = newAttrName.value.trim()
+  if (userAttrs.value[name] !== undefined && name !== newAttrName.value) return
+  userAttrs.value = { ...userAttrs.value, [name]: newAttrValue.value.trim() }
+  newAttrName.value = ''
+  newAttrValue.value = ''
+  saveAttrs()
+}
+
+function updateAttr(name, value) {
+  userAttrs.value = { ...userAttrs.value, [name]: value }
+  saveAttrs()
+}
+
+function deleteAttr(name) {
+  const updated = { ...userAttrs.value }
+  delete updated[name]
+  userAttrs.value = updated
+  saveAttrs()
+}
+
+async function saveAttrs() {
+  attrSaving.value = true
+  try {
+    await saveUserAttributes(userAttrs.value)
+    const res = await getUserAttributes()
+    userAttrs.value = res.data.attributes
+  } catch {}
+  attrSaving.value = false
+}
 </script>
 
 <template>
@@ -134,6 +179,25 @@ async function handleDeleteAccount() {
         {{ saving ? '保存中...' : '保存' }}
       </button>
     </form>
+
+    <div class="form-group">
+      <label>我的信息 <a href="#" @click.prevent="showHelp = !showHelp" class="help-link">&#x24D8;</a></label>
+      <div v-if="showHelp" class="help-box">
+        这里存储你的个人默认值。参加活动时，如果某个属性还没填且这里已有值、又在该活动的选项中，就会自动预填。在活动中提交的属性值也会自动回存到这里，省得下次再输入。
+      </div>
+      <div class="attr-list">
+        <div v-for="(val, name) in userAttrs" :key="name" class="attr-row">
+          <input :value="name" disabled class="attr-name-disabled" />
+          <input :value="val" @input="updateAttr(name, $event.target.value)" class="attr-value-input" />
+          <button type="button" class="btn-attr-remove" @click="deleteAttr(name)">&times;</button>
+        </div>
+        <div class="attr-row attr-new">
+          <input v-model="newAttrName" type="text" placeholder="属性名" class="attr-name-input" />
+          <input v-model="newAttrValue" type="text" placeholder="属性值" class="attr-value-input" />
+          <button type="button" class="btn-attr-add" @click="addAttr" :disabled="attrSaving">添加</button>
+        </div>
+      </div>
+    </div>
 
     <!-- 修改密码 -->
     <a href="/settings/change-password" @click.prevent="router.push('/settings/change-password')" class="link-item">修改密码</a>
@@ -196,5 +260,96 @@ async function handleDeleteAccount() {
 .link-danger.disabled {
   opacity: 0.5;
   pointer-events: none;
+}
+
+.attr-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.attr-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.attr-name-disabled,
+.attr-name-input {
+  width: 120px;
+  height: 34px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  padding: 0 10px;
+  font-size: 13px;
+  outline: none;
+  flex-shrink: 0;
+}
+
+.attr-name-disabled {
+  background: #f5f5f5;
+  color: #999;
+}
+
+.attr-value-input {
+  width: 120px;
+  height: 34px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  padding: 0 10px;
+  font-size: 13px;
+  outline: none;
+  flex: 1;
+}
+
+.attr-value-input:focus,
+.attr-name-input:focus {
+  border-color: #4f46e5;
+}
+
+.btn-attr-remove {
+  border: none;
+  background: none;
+  color: #dc2626;
+  font-size: 18px;
+  cursor: pointer;
+  padding: 0 4px;
+}
+
+.btn-attr-add {
+  height: 34px;
+  padding: 0 16px;
+  border: 1px solid #4f46e5;
+  border-radius: 6px;
+  background: #4f46e5;
+  color: #fff;
+  font-size: 13px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.btn-attr-add:hover {
+  background: #3730a3;
+}
+
+.help-link {
+  font-size: 14px;
+  color: #999;
+  text-decoration: none;
+}
+
+.help-link:hover {
+  color: #4f46e5;
+}
+
+.help-box {
+  font-size: 12px;
+  color: #888;
+  line-height: 1.8;
+  padding: 10px 14px;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  margin-bottom: 8px;
 }
 </style>

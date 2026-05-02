@@ -16,6 +16,8 @@ from app.schemas.auth import (
     MemberItem,
     GroupResponse,
     ActivityLogResponse,
+    UserAttributesResponse,
+    UpdateUserAttributesRequest,
 )
 
 __all__ = [
@@ -36,4 +38,6 @@ __all__ = [
     "MemberItem",
     "GroupResponse",
     "ActivityLogResponse",
+    "UserAttributesResponse",
+    "UpdateUserAttributesRequest",
 ]

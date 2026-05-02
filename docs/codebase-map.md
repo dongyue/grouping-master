@@ -26,20 +26,21 @@
 | `group_member.py` | `GroupMember` 表：分组成员关系（id, group_id FK, user_id FK），联合唯一约束 |
 | `member_attribute.py` | `MemberAttribute` 表：成员属性值（id, member_id FK, attribute_name, attribute_value），联合唯一约束，ON DELETE CASCADE，通过 backref `attributes` 反向关联 ActivityMember |
 | `activity_log.py` | `ActivityLog` 表：活动操作日志（id, activity_id FK, user_id FK, action_type, content, detail JSON, created_at） |
+| `user_attribute.py` | `UserAttribute` 表：用户个人属性值（id, user_id FK, attribute_name, attribute_value），联合唯一约束 |
 
 ### Pydantic Schema（app/schemas/）
 
 | 文件 | 职责 |
 |------|------|
 | `__init__.py` | 汇总导出所有 schema |
-| `auth.py` | 全部请求/响应校验：注册、登录、改密、重置密码、更新资料、头像、注销、创建活动、更新活动、加入活动（含属性值）、活动列表、活动详情、成员列表、分组结果、组内多样性限定规则、操作日志响应 |
+| `auth.py` | 全部请求/响应校验：注册、登录、改密、重置密码、更新资料、头像、注销、创建活动、更新活动、加入活动（含属性值）、活动列表、活动详情、成员列表、分组结果、组内多样性限定规则、操作日志响应、个人属性 |
 
 ### API 路由（app/routers/）
 
 | 文件 | 职责 |
 |------|------|
 | `__init__.py` | 汇总导出路由 |
-| `auth.py` | `/api/auth/*` — 注册/登录/登出/me/改密/忘记密码/重置密码/更新资料/头像/注销账号 |
+| `auth.py` | `/api/auth/*` — 注册/登录/登出/me/改密/忘记密码/重置密码/更新资料/头像/注销账号/获取个人属性/更新个人属性 |
 | `activities.py` | `/api/activities` — POST 创建、GET 列表、GET `/:slug` 详情、POST `/:slug` 加入/退出、PUT `/:slug` 编辑、DELETE `/:slug` 删除、DELETE `/:slug/members/:user_id` 踢出成员、POST `/:slug/groups` 分组（含重新分组）、DELETE `/:slug/groups` 解除分组、GET `/:slug/logs` 操作日志 |
 
 ### 业务服务（app/services/）
@@ -74,6 +75,7 @@
 | `versions/8d4e5f6a7b8c_add_constraints_to_activities.py` | activities 表新增 constraints JSON 字段 |
 | `versions/9e5f6a7b8c9d_add_member_attributes_table.py` | 新增 member_attributes 表 |
 | `versions/a0f5b6c7d8e9_add_activity_logs_table.py` | 新增 activity_logs 表 |
+| `versions/b1c6d7e8f9a0_add_user_attributes_table.py` | 新增 user_attributes 表 |
 
 ---
 
@@ -93,7 +95,7 @@
 | 文件 | 职责 |
 |------|------|
 | `index.js` | Axios 实例：baseURL、withCredentials、响应/错误拦截器 |
-| `auth.js` | 认证 API：注册/登录/登出/me/改密/忘记密码/重置密码/更新资料/头像/注销 |
+| `auth.js` | 认证 API：注册/登录/登出/me/改密/忘记密码/重置密码/更新资料/头像/注销/获取个人属性/更新个人属性 |
 | `activities.js` | 活动 API：createActivity、listActivities、getActivity、joinActivity、leaveActivity、updateActivity、deleteActivity、kickMember、createGroups、deleteGroups、getActivityLogs |
 
 ### 状态管理（stores/）
@@ -132,6 +134,6 @@
 | `ForgotPasswordView.vue` | 忘记密码：发送重置邮件 |
 | `ResetPasswordView.vue` | 重置密码：通过 URL token 设置新密码（含确认密码输入框） |
 | `ChangePasswordView.vue` | 修改密码：旧密码+新密码+确认新密码 |
-| `SettingsView.vue` | 个人设置：修改昵称、上传头像、注销账号 |
+| `SettingsView.vue` | 个人设置：修改昵称、上传头像、注销账号/获取个人属性/更新个人属性 |
 | `NotFoundView.vue` | 404 页面：提示页面不存在，提供返回首页入口 |
 | `ActivityLogsView.vue` | 操作日志页：展示该活动所有操作日志，按时间倒序；分组日志可展开查看快照详情；仅创建者可访问 |

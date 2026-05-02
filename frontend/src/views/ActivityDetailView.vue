@@ -3,6 +3,7 @@ import { ref, onMounted, onBeforeUnmount, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { getActivity, joinActivity, leaveActivity, deleteActivity, kickMember, createGroups, deleteGroups, updateAttributes } from '../api/activities'
+import { getUserAttributes } from '../api/auth'
 import ConfirmModal from '../components/ConfirmModal.vue'
 import AttributeSelector from '../components/AttributeSelector.vue'
 import MemberItem from '../components/MemberItem.vue'
@@ -38,6 +39,7 @@ const showAttributeSelector = ref(false)
 const attributeSubmitting = ref(false)
 const editAttrValues = ref({})
 const editAttrLabel = ref('确认')
+const userAttributes = ref({})
 
 const hasMoreItems = computed(() => {
   return activity.value?.is_member || activity.value?.is_creator
@@ -57,6 +59,11 @@ onMounted(async () => {
   } finally {
     loading.value = false
   }
+
+  try {
+    const attrRes = await getUserAttributes()
+    userAttributes.value = attrRes.data.attributes
+  } catch {} // silently ignore
 
   if (route.query.updated === '1') {
     updated.value = true
@@ -283,6 +290,7 @@ async function handleUngroup() {
           :constraints="activity.constraints"
           :submitting="attributeSubmitting"
           :initial-values="editAttrValues"
+          :user-attributes="userAttributes"
           :confirm-label="editAttrLabel"
           @confirm="Object.keys(editAttrValues).length ? handleAttrEditConfirm($event) : handleAttributeConfirm($event)"
           @cancel="handleAttrCancel"
