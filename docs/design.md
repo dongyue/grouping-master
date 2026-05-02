@@ -95,7 +95,19 @@
 
 > 联合唯一约束：(group_id, user_id)，防止重复分配
 
-### 2.8 constraints 字段结构
+### 2.8 member_attributes 表
+
+| 字段 | 类型 | 约束 | 说明 |
+|------|------|------|------|
+| id | INT | PK, AUTO_INCREMENT | 主键 |
+| member_id | INT | FK → activity_members.id, NOT NULL, ON DELETE CASCADE | 成员记录 ID |
+| attribute_name | VARCHAR(100) | NOT NULL | 属性名 |
+| attribute_value | VARCHAR(100) | NOT NULL | 属性值 |
+
+> 联合唯一约束：(member_id, attribute_name)，每个成员的每个属性只能有一个值
+> member_id 设置 ON DELETE CASCADE：成员退出/被踢出时属性值同步删除
+
+### 2.9 constraints 字段结构
 
 activities 表的 `constraints` 字段为 JSON 数组，每项为一条多样性限定规则：
 
@@ -164,8 +176,7 @@ activities 表的 `constraints` 字段为 JSON 数组，每项为一条多样性
 | DELETE | `/api/activities/{slug}/groups` | Session | 解除分组（仅创建者） |
 
 `POST /api/activities` 创建活动
-- 请求体：`{title: str, description?: str, join_activity?: bool, group_strategy?: str, group_param?: int, constraints?: list[ConstraintRule]}`
-- `join_activity` 默认 `true`，为 `true` 时创建者同时加入活动
+- 请求体：`{title: str, description?: str, group_strategy?: str, group_param?: int, constraints?: list[ConstraintRule]}`
 - `group_strategy` 默认 `"fixed_group_size"`，可选 `"fixed_group_size"`（固定每组人数）、`"fixed_group_count"`（固定总组数）
 - `group_param` 默认 `2`，最小值 `2`，含义由 `group_strategy` 决定
 - `constraints` 为多样性限定规则列表，可选，不传或传空数组表示不限定
@@ -180,13 +191,16 @@ activities 表的 `constraints` 字段为 JSON 数组，每项为一条多样性
 - 响应字段：`{id, slug, title, description, group_strategy, group_param, constraints, creator_nickname, created_at, is_member, is_creator, has_groups, groups, members, ungrouped_members}`
 - `constraints`：`[ConstraintRule]` 多样性限定规则列表，空数组表示无限定
 - `groups`：`[GroupResponse]` 分组列表，未分组时为空数组。每项 `{group_number, members: [MemberItem]}`
-- `members`：`[MemberItem]` 成员列表，每项 `{user_id, nickname, avatar_path, joined_at}`，按加入时间升序
+- `members`：`[MemberItem]` 成员列表，每项 `{user_id, nickname, avatar_path, joined_at, attributes}`，其中 `attributes` 为 `Record<string, string>`，按加入时间升序
 - `ungrouped_members`：`[MemberItem]` 尚未分组的成员列表。未分组时为空数组，分组后包含未分配到任何组的成员
 
 `POST /api/activities/{slug}/join`
-- 无请求体
+- 请求体：`{attribute_values?: Record<string, string>}`
+- 活动有约束规则时，`attribute_values` 必填，须包含全部属性名，每个值须在对应属性的允许值列表内
+- 活动无约束规则时，`attribute_values` 可省略或为 `null`，直接加入
 - 用户已加入时返回 409
 - 活动已分组时返回 409
+- 响应：`{message: "加入成功"}`
 
 `DELETE /api/activities/{slug}`
 - 仅活动创建者可删除
@@ -310,3 +324,11 @@ activities 表的 `constraints` 字段为 JSON 数组，每项为一条多样性
 - 选择「性别」时自动填入枚举值「男，女」
 - 限定值输入框根据 constrained_type 动态限制 min/max
 - 供创建活动页和编辑活动页复用
+
+### 6.7 属性选择弹框
+- 新建 `AttributeSelector.vue`，以弹框形式展示，供成员加入活动时选择各属性值
+- 接收活动的 `constraints` 数组，为每条规则渲染控件：
+  - 属性名作为标签，属性值通过下拉选择（选项为对应的 `allowed_values`）
+- 所有属性均为必填，提交前校验
+- 提交时以 `Record<string, string>` 格式向 join 接口传递
+- 供活动详情页和创建活动后的加入流程复用

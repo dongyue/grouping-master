@@ -124,7 +124,6 @@ class ConstraintRule(BaseModel):
 class ActivityCreateRequest(BaseModel):
     title: str
     description: str | None = None
-    join_activity: bool = True
     group_strategy: str = "fixed_group_size"
     group_param: int = 2
     constraints: list[ConstraintRule] | None = None
@@ -242,6 +241,10 @@ class ActivityUpdateRequest(BaseModel):
         return v
 
 
+class JoinActivityRequest(BaseModel):
+    attribute_values: dict[str, str] | None = None
+
+
 class ActivityResponse(BaseModel):
     id: int
     slug: str
@@ -261,6 +264,7 @@ class MemberItem(BaseModel):
     nickname: str
     avatar_path: str | None
     joined_at: str
+    attributes: dict[str, str] = {}
 
     model_config = {"from_attributes": True}
 

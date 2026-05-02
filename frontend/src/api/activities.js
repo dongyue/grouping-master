@@ -12,8 +12,8 @@ export function getActivity(slug) {
   return api.get(`/activities/${slug}`)
 }
 
-export function joinActivity(slug) {
-  return api.post(`/activities/${slug}/join`)
+export function joinActivity(slug, attributeValues = null) {
+  return api.post(`/activities/${slug}/join`, { attribute_values: attributeValues })
 }
 
 export function leaveActivity(slug) {

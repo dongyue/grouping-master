@@ -5,9 +5,10 @@ from app.database import get_db
 from app.models.user import User
 from app.models.activity import Activity
 from app.models.activity_member import ActivityMember
+from app.models.member_attribute import MemberAttribute
 from app.models.group import Group
 from app.models.group_member import GroupMember
-from app.schemas.auth import ActivityCreateRequest, ActivityUpdateRequest, ActivityResponse, ActivityDetailResponse, MemberItem, GroupResponse
+from app.schemas.auth import ActivityCreateRequest, ActivityUpdateRequest, JoinActivityRequest, ActivityResponse, ActivityDetailResponse, MemberItem, GroupResponse
 from app.middleware.auth import get_current_user
 import random
 
@@ -30,11 +31,6 @@ def create_activity(
     )
     db.add(activity)
     db.flush()
-
-    if body.join_activity:
-        member = ActivityMember(activity_id=activity.id, user_id=current_user.id)
-        db.add(member)
-
     db.commit()
     return ActivityResponse(
         id=activity.id,
@@ -115,6 +111,7 @@ def get_activity(
             nickname=m.user.nickname,
             avatar_path=m.user.avatar_path,
             joined_at=m.created_at.isoformat(),
+            attributes={attr.attribute_name: attr.attribute_value for attr in m.attributes},
         )
         for m in members
     ]
@@ -169,6 +166,7 @@ def get_activity(
 @router.post("/{slug}/join")
 def join_activity(
     slug: str,
+    body: JoinActivityRequest = JoinActivityRequest(),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -186,8 +184,36 @@ def join_activity(
     if existing:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="您已加入该活动")
 
+    constraints = activity.constraints or []
+
+    if constraints:
+        if not body.attribute_values:
+            raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="请提供属性值")
+
+        attr_map = {c["attribute_name"]: c["allowed_values"] for c in constraints}
+        provided = set(body.attribute_values.keys())
+        required = set(attr_map.keys())
+
+        if provided != required:
+            missing = required - provided
+            extra = provided - required
+            if missing:
+                raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=f"缺少属性值：{', '.join(sorted(missing))}")
+            if extra:
+                raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=f"未知属性：{', '.join(sorted(extra))}")
+
+        for attr_name, attr_value in body.attribute_values.items():
+            if attr_value not in attr_map[attr_name]:
+                raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=f"属性「{attr_name}」的值「{attr_value}」不在允许范围")
+
     member = ActivityMember(activity_id=activity.id, user_id=current_user.id)
     db.add(member)
+    db.flush()
+
+    if constraints:
+        for attr_name, attr_value in body.attribute_values.items():
+            db.add(MemberAttribute(member_id=member.id, attribute_name=attr_name, attribute_value=attr_value))
+
     db.commit()
     return {"message": "加入成功"}
 

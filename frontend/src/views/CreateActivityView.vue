@@ -33,12 +33,12 @@ async function handleCreate() {
     const res = await createActivity({
       title: title.value,
       description: description.value || null,
-      join_activity: joinActivity.value,
       group_strategy: groupStrategy.value,
       group_param: groupParam.value,
       constraints: buildConstraints(),
     })
-    router.push({ name: 'activity-detail', params: { slug: res.data.slug } })
+    const query = joinActivity.value ? { autojoin: '1' } : {}
+    router.push({ name: 'activity-detail', params: { slug: res.data.slug }, query })
   } catch (err) {
     error.value = err.response?.data?.detail || '创建失败'
     window.scrollTo({ top: 0, behavior: 'smooth' })

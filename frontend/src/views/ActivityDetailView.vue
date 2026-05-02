@@ -4,6 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { getActivity, joinActivity, leaveActivity, deleteActivity, kickMember, createGroups, deleteGroups } from '../api/activities'
 import ConfirmModal from '../components/ConfirmModal.vue'
+import AttributeSelector from '../components/AttributeSelector.vue'
 import { formatDate } from '../utils/date'
 
 const uploadsUrl = import.meta.env.VITE_UPLOADS_URL || 'http://localhost:8000'
@@ -33,6 +34,8 @@ const frozenMsg = ref('')
 const showMore = ref(false)
 const showKick = ref(false)
 const confirmModal = ref({ show: false, title: '', message: '', onConfirm: null })
+const showAttributeSelector = ref(false)
+const attributeSubmitting = ref(false)
 
 const hasMoreItems = computed(() => {
   return activity.value?.is_member || activity.value?.is_creator
@@ -57,6 +60,15 @@ onMounted(async () => {
     updated.value = true
     router.replace({ query: {} })
     setTimeout(() => (updated.value = false), 3000)
+  }
+
+  if (route.query.autojoin === '1') {
+    router.replace({ query: {} })
+    if (activity.value.constraints?.length) {
+      showAttributeSelector.value = true
+    } else {
+      handleJoin()
+    }
   }
 
   document.addEventListener('click', handleClickOutside)
@@ -90,6 +102,10 @@ async function handleJoin() {
     setTimeout(() => (frozenMsg.value = ''), 2000)
     return
   }
+  if (activity.value.constraints?.length) {
+    showAttributeSelector.value = true
+    return
+  }
   joining.value = true
   joinError.value = ''
   joinSuccess.value = ''
@@ -101,6 +117,7 @@ async function handleJoin() {
       nickname: auth.user.nickname,
       avatar_path: auth.user.avatar_path,
       joined_at: new Date().toISOString(),
+      attributes: {},
     })
     joinSuccess.value = '加入成功'
     setTimeout(() => (joinSuccess.value = ''), 2000)
@@ -108,6 +125,30 @@ async function handleJoin() {
     joinError.value = err.response?.data?.detail || '加入失败'
   } finally {
     joining.value = false
+  }
+}
+
+async function handleAttributeConfirm(attributeValues) {
+  showAttributeSelector.value = false
+  attributeSubmitting.value = true
+  joinError.value = ''
+  joinSuccess.value = ''
+  try {
+    await joinActivity(route.params.slug, attributeValues)
+    activity.value.is_member = true
+    activity.value.members.push({
+      user_id: auth.user.id,
+      nickname: auth.user.nickname,
+      avatar_path: auth.user.avatar_path,
+      joined_at: new Date().toISOString(),
+      attributes: attributeValues,
+    })
+    joinSuccess.value = '加入成功'
+    setTimeout(() => (joinSuccess.value = ''), 2000)
+  } catch (err) {
+    joinError.value = err.response?.data?.detail || '加入失败'
+  } finally {
+    attributeSubmitting.value = false
   }
 }
 
@@ -227,7 +268,14 @@ async function handleUngroup() {
           <span class="rule-badge" v-for="(c, idx) in activity.constraints" :key="idx">
             组内限定：每组{{ c.constraint_type === 'min_diversity' ? '至少' : '最多' }}{{ c.constraint_value }}种{{ c.attribute_name }}
           </span>
-        </template>
+  <AttributeSelector
+    v-if="showAttributeSelector"
+    :constraints="activity.constraints"
+    :submitting="attributeSubmitting"
+    @confirm="handleAttributeConfirm"
+    @cancel="showAttributeSelector = false"
+  />
+</template>
       </div>
       <div class="members-section">
         <h3 class="members-title">
