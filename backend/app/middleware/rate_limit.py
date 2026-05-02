@@ -7,6 +7,7 @@ class RateLimiter:
         self.max_requests = max_requests
         self.window_seconds = window_seconds
         self._store: dict[str, tuple[float, int]] = {}
+        self._call_count = 0
 
     def _get_key(self, request: Request) -> str:
         ip = (
@@ -15,6 +16,14 @@ class RateLimiter:
             or (request.client.host if request.client else "unknown")
         )
         return f"{ip}:{request.url.path}"
+
+    def _cleanup_expired(self, now: float):
+        expired_keys = [
+            k for k, (ws, _) in self._store.items()
+            if now - ws > self.window_seconds
+        ]
+        for k in expired_keys:
+            del self._store[k]
 
     async def __call__(self, request: Request):
         now = time.time()
@@ -32,3 +41,7 @@ class RateLimiter:
             )
 
         self._store[key] = (window_start, count + 1)
+
+        self._call_count += 1
+        if self._call_count % 100 == 0:
+            self._cleanup_expired(now)

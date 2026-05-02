@@ -1,4 +1,5 @@
 from pydantic import BaseModel, EmailStr, field_validator, model_validator
+from typing import Literal
 import re
 
 
@@ -124,7 +125,7 @@ class MessageResponse(BaseModel):
 class ConstraintRule(BaseModel):
     attribute_name: str
     allowed_values: list[str]
-    constraint_type: str  # "min_diversity" | "max_diversity"
+    constraint_type: Literal["min_diversity", "max_diversity"]
     constraint_value: int
 
 
@@ -173,8 +174,7 @@ class ActivityCreateRequest(BaseModel):
             n = len(rule.allowed_values)
             if n < 2:
                 raise ValueError(f"属性「{attr_name}」的枚举值至少需要2个")
-            if rule.constraint_type not in ("min_diversity", "max_diversity"):
-                raise ValueError(f"不支持的限定类型：{rule.constraint_type}")
+
             if rule.constraint_type == "min_diversity":
                 if rule.constraint_value < 2:
                     raise ValueError(f"属性「{attr_name}」的『至少』限定值不能小于2")
@@ -233,8 +233,7 @@ class ActivityUpdateRequest(BaseModel):
             n = len(rule.allowed_values)
             if n < 2:
                 raise ValueError(f"属性「{attr_name}」的枚举值至少需要2个")
-            if rule.constraint_type not in ("min_diversity", "max_diversity"):
-                raise ValueError(f"不支持的限定类型：{rule.constraint_type}")
+
             if rule.constraint_type == "min_diversity":
                 if rule.constraint_value < 2:
                     raise ValueError(f"属性「{attr_name}」的『至少』限定值不能小于2")
