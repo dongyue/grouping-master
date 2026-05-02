@@ -127,7 +127,7 @@
 | user_id | INT | FK → users.id, NOT NULL | 操作人 ID |
 | action_type | VARCHAR(30) | NOT NULL | 操作类型（create/edit/join/leave/kick/group/ungroup） |
 | content | TEXT | NOT NULL | 操作内容描述 |
-| detail | JSON | NULLABLE | 结构化详情数据（分组操作时记录快照） |
+| detail | TEXT | NULLABLE | 结构化详情数据（JSON 字符串），分组操作时记录快照 |
 | created_at | DATETIME | DEFAULT NOW() | 操作时间 |
 
 ### 2.11 constraints 字段结构
@@ -152,9 +152,60 @@ activities 表的 `constraints` 字段为 JSON 数组，每项为一条多样性
 | `constraint_type` | str | `"min_diversity"`（限定最小多样性）或 `"max_diversity"`（限定最大多样性） |
 | `constraint_value` | int | 限定值。限定最小值时满足 2 ≤ value ≤ len(allowed_values)；限定最大值时满足 1 ≤ value ≤ len(allowed_values)-1 |
 
+### 2.12 索引策略
+
+| 表 | 索引字段 | 用途 |
+|------|------|------|
+| users | username (UNIQUE) | 账号名唯一性 + 登录查询 |
+| users | email (UNIQUE) | 邮箱唯一性 + 找回密码查询 |
+| sessions | user_id | 按用户查找 session |
+| password_resets | token (UNIQUE) | 重置链接验证 |
+| activities | slug (UNIQUE) | URL 公网标识查找 |
+| activities | user_id | 按创建者列出活动 |
+| activity_members | (activity_id, user_id) (UNIQUE) | 防止重复加入 |
+| groups | activity_id | 按活动查找所有分组 |
+| group_members | (group_id, user_id) (UNIQUE) | 防止重复分配 |
+| member_attributes | (member_id, attribute_name) (UNIQUE) | 每个属性唯一值 |
+| user_attributes | (user_id, attribute_name) (UNIQUE) | 每个属性唯一值 |
+| activity_logs | activity_id | 按活动查询日志 |
+
+### 2.13 级联删除关系
+
+| 主表 | 关联表 | 删除行为 |
+|------|------|------|
+| users | sessions (user_id FK) | ON DELETE CASCADE — 删用户时清 session |
+| users | password_resets (user_id FK) | ON DELETE CASCADE — 删用户时清重置令牌 |
+| users | user_attributes (user_id FK) | ON DELETE CASCADE — 删用户时清个人属性 |
+| users | activities (user_id FK) | ON DELETE CASCADE — 删用户时清其创建的活动 |
+| users | activity_members (user_id FK) | ON DELETE CASCADE — 删用户时清其成员关系 |
+| users | group_members (user_id FK) | ON DELETE CASCADE — 删用户时清其分组关系 |
+| activities | activity_members (activity_id FK) | ON DELETE CASCADE — 删活动时清成员关系 |
+| activities | groups (activity_id FK) | ON DELETE CASCADE — 删活动时清分组 |
+| activities | activity_logs (activity_id FK) | ON DELETE CASCADE — 删活动时清日志 |
+| groups | group_members (group_id FK) | ON DELETE CASCADE — 删分组时清组成员 |
+| activity_members | member_attributes (member_id FK) | ON DELETE CASCADE — 删成员关系时清其属性值 |
+
 ## 3. API 设计
 
-### 3.1 认证接口
+### 3.1 错误响应格式
+
+所有 API 错误响应遵循统一格式：
+
+```json
+{ "detail": "人类可读的错误描述" }
+```
+
+| HTTP 状态码 | 含义 | 示例 |
+|------|------|------|
+| 400 | 请求参数校验失败 | 密码错误、创建者不能踢出自己 |
+| 401 | 未登录或会话过期 | Session 无效或已过期 |
+| 403 | 鉴权通过但无权限 | 非创建者编辑/删除活动 |
+| 404 | 资源不存在 | 活动不存在、用户不是成员 |
+| 409 | 资源冲突 | 账号名/邮箱已注册、重复加入 |
+| 422 | 业务校验失败 | 属性值不在允许范围、缺少必填属性 |
+| 429 | 速率限制 | 同 IP 请求过频 |
+
+### 3.2 认证接口
 
 | 方法 | 路径 | 鉴权 | 说明 |
 |------|------|------|------|
@@ -193,7 +244,7 @@ activities 表的 `constraints` 字段为 JSON 数组，每项为一条多样性
 - `true`（默认）：密码必填，至少 8 位
 - `false`（调试用）：密码可选，不填密码的用户登录时无需密码
 
-### 3.2 活动接口
+### 3.3 活动接口
 
 | 方法 | 路径 | 鉴权 | 说明 |
 |------|------|------|------|
