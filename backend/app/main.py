@@ -3,7 +3,7 @@ import logging
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from app.routers import auth_router, activities_router
+from app.routers import auth_router, activities_router, members_router, groups_router, logs_router
 from app.config import FRONTEND_URL, UPLOAD_DIR
 
 # 给 uvicorn 日志加上时间戳
@@ -26,7 +26,10 @@ app.add_middleware(
 )
 
 app.include_router(auth_router)
-app.include_router(activities_router)
+app.include_router(activities_router, prefix="/api/activities")
+app.include_router(members_router, prefix="/api/activities")
+app.include_router(groups_router, prefix="/api/activities")
+app.include_router(logs_router, prefix="/api/activities")
 
 if os.path.exists(UPLOAD_DIR):
     app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
