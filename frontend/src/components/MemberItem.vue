@@ -13,7 +13,7 @@ const emit = defineEmits(['edit', 'kick'])
 </script>
 
 <template>
-  <div class="member-item" :class="{ me: member.user_id === currentUserId }">
+  <div class="member-item" :class="{ 'is-me': member.user_id === currentUserId }">
     <div class="member-avatar">
       <img v-if="member.avatar_path" :src="`${uploadsUrl}/${member.avatar_path}`" />
       <span v-else class="avatar-placeholder">{{ member.nickname[0] }}</span>
@@ -45,7 +45,7 @@ const emit = defineEmits(['edit', 'kick'])
   border-radius: 8px;
 }
 
-.member-item.me {
+.member-item.is-me {
   background: #ede9fe;
   outline: 2px solid #a78bfa;
 }

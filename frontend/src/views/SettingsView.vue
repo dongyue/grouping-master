@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { updateProfile, uploadAvatar, deleteAccount, getUserAttributes, saveUserAttributes } from '../api/auth'
 import { useAuthStore } from '../stores/auth'
@@ -23,8 +23,6 @@ const newAttrName = ref('')
 const newAttrValue = ref('')
 const attrSaving = ref(false)
 const showHelp = ref(false)
-
-import { onMounted } from 'vue'
 onMounted(async () => {
   try {
     const res = await getUserAttributes()

@@ -2,7 +2,7 @@
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { getActivityLogs, getActivity } from '../api/activities'
-import { formatDate } from '../utils/date'
+import { formatDate, formatDateTime } from '../utils/date'
 
 const route = useRoute()
 const router = useRouter()
@@ -11,7 +11,7 @@ const loading = ref(true)
 const error = ref('')
 const logs = ref([])
 const activity = ref(null)
-const expandedIds = ref(new Set())
+const expandedIds = ref({})
 
 onMounted(async () => {
   try {
@@ -37,10 +37,9 @@ onMounted(async () => {
 })
 
 function toggleExpand(logId) {
-  if (expandedIds.value.has(logId)) {
-    expandedIds.value.delete(logId)
-  } else {
-    expandedIds.value.add(logId)
+  expandedIds.value = {
+    ...expandedIds.value,
+    [logId]: !expandedIds.value[logId],
   }
 }
 
@@ -76,14 +75,14 @@ const actionLabels = {
           <span class="log-type" :class="'type-' + log.action_type">
             {{ actionLabels[log.action_type] || log.action_type }}
           </span>
-          <span class="log-time">{{ formatDate(log.created_at) }} {{ new Date(log.created_at).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) }}</span>
+          <span class="log-time">{{ formatDateTime(log.created_at) }}</span>
         </div>
         <p class="log-content">{{ log.content }}</p>
         <div v-if="log.action_type === 'group' && log.detail" class="log-detail-wrapper">
           <button class="btn-expand" @click="toggleExpand(log.id)">
-            {{ expandedIds.has(log.id) ? '收起详情 ▲' : '展开详情 ▼' }}
+            {{ expandedIds[log.id] ? '收起详情 ▲' : '展开详情 ▼' }}
           </button>
-          <div v-if="expandedIds.has(log.id)" class="log-detail">
+          <div v-if="expandedIds[log.id]" class="log-detail">
             <div class="detail-section">
               <h5>分组规则快照</h5>
               <div class="detail-line">
