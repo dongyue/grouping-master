@@ -1,4 +1,5 @@
 <script setup>
+import { watch } from 'vue'
 import { presetAttributes } from '../utils/constraintPresets'
 
 const constraints = defineModel({ type: Array, default: () => [] })
@@ -12,6 +13,21 @@ function addConstraint() {
     constraint_value: 2,
   })
 }
+
+function clampValue(c) {
+  const n = getValuesCount(c)
+  if (c.constraint_type === 'min_diversity') {
+    if (c.constraint_value < 2) c.constraint_value = 2
+    if (c.constraint_value > n) c.constraint_value = n
+  } else {
+    if (c.constraint_value < 1) c.constraint_value = 1
+    if (c.constraint_value >= n) c.constraint_value = Math.max(n - 1, 1)
+  }
+}
+
+watch(constraints, () => {
+  constraints.value.forEach(c => clampValue(c))
+}, { deep: true })
 
 function onAttrSelect(idx, val) {
   if (val === '__custom__') {
