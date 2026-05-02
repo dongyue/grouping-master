@@ -275,6 +275,9 @@ async function handleUngroup() {
                   <span v-else class="avatar-placeholder">{{ member.nickname[0] }}</span>
                 </div>
                 <span class="member-nickname">{{ member.nickname }}</span>
+                <span v-if="member.attributes && Object.keys(member.attributes).length" class="member-attrs">
+                  <span v-for="(val, key) in member.attributes" :key="key" class="attr-tag">{{ val }}</span>
+                </span>
                 <button
                   v-if="activity.is_creator && member.user_id !== auth.user.id && showKick"
                   class="btn-kick"
@@ -295,6 +298,9 @@ async function handleUngroup() {
                   <span v-else class="avatar-placeholder">{{ member.nickname[0] }}</span>
                 </div>
                 <span class="member-nickname">{{ member.nickname }}</span>
+                <span v-if="member.attributes && Object.keys(member.attributes).length" class="member-attrs">
+                  <span v-for="(val, key) in member.attributes" :key="key" class="attr-tag">{{ val }}</span>
+                </span>
                 <button
                   v-if="activity.is_creator && member.user_id !== auth.user.id && showKick"
                   class="btn-kick"
@@ -314,6 +320,9 @@ async function handleUngroup() {
               <span v-else class="avatar-placeholder">{{ member.nickname[0] }}</span>
             </div>
             <span class="member-nickname">{{ member.nickname }}</span>
+            <span v-if="member.attributes && Object.keys(member.attributes).length" class="member-attrs">
+              <span v-for="(val, key) in member.attributes" :key="key" class="attr-tag">{{ val }}</span>
+            </span>
             <button
               v-if="activity.is_creator && member.user_id !== auth.user.id && showKick"
               class="btn-kick"
@@ -560,6 +569,21 @@ async function handleUngroup() {
 .member-nickname {
   font-size: 13px;
   color: #333;
+}
+
+.member-attrs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-left: auto;
+}
+
+.attr-tag {
+  font-size: 11px;
+  padding: 1px 6px;
+  background: #f0f0f0;
+  color: #888;
+  border-radius: 3px;
 }
 
 .members-empty {

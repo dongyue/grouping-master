@@ -203,7 +203,7 @@ activities 表的 `constraints` 字段为 JSON 数组，每项为一条多样性
 `GET /api/activities/{slug}`
 - 响应字段：`{id, slug, title, description, group_strategy, group_param, constraints, creator_nickname, created_at, is_member, is_creator, has_groups, groups, members, ungrouped_members}`
 - `constraints`：`[ConstraintRule]` 多样性限定规则列表，空数组表示无限定
-- `groups`：`[GroupResponse]` 分组列表，未分组时为空数组。每项 `{group_number, members: [MemberItem]}`
+- `groups`：`[GroupResponse]` 分组列表，未分组时为空数组。每项 `{group_number, members: [MemberItem]}`，组内成员同样包含 `attributes` 字段
 - `members`：`[MemberItem]` 成员列表，每项 `{user_id, nickname, avatar_path, joined_at, attributes}`，其中 `attributes` 为 `Record<string, string>`，按加入时间升序
 - `ungrouped_members`：`[MemberItem]` 尚未分组的成员列表。未分组时为空数组，分组后包含未分配到任何组的成员
 

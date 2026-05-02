@@ -139,6 +139,8 @@ def get_activity(
         .all()
     )
 
+    member_attrs_map = {m.user_id: m.attributes for m in members}
+
     groups_data = [
         GroupResponse(
             group_number=g.group_number,
@@ -148,6 +150,7 @@ def get_activity(
                     nickname=gm.user.nickname,
                     avatar_path=gm.user.avatar_path,
                     joined_at="",
+                    attributes={attr.attribute_name: attr.attribute_value for attr in member_attrs_map.get(gm.user_id, [])},
                 )
                 for gm in g.members
             ],
