@@ -8,11 +8,24 @@ from app.models.activity_member import ActivityMember
 from app.models.member_attribute import MemberAttribute
 from app.models.group import Group
 from app.models.group_member import GroupMember
-from app.schemas.auth import ActivityCreateRequest, ActivityUpdateRequest, JoinActivityRequest, ActivityResponse, ActivityDetailResponse, MemberItem, GroupResponse
+from app.models.activity_log import ActivityLog
+from app.schemas.auth import ActivityCreateRequest, ActivityUpdateRequest, JoinActivityRequest, ActivityResponse, ActivityDetailResponse, MemberItem, GroupResponse, ActivityLogResponse
 from app.middleware.auth import get_current_user
 import random
+import json
 
 router = APIRouter(prefix="/api/activities", tags=["活动"])
+
+
+def _add_log(db: Session, activity_id: int, user_id: int, action_type: str, content: str, detail: dict | None = None):
+    log = ActivityLog(
+        activity_id=activity_id,
+        user_id=user_id,
+        action_type=action_type,
+        content=content,
+        detail=json.dumps(detail, ensure_ascii=False) if detail else None,
+    )
+    db.add(log)
 
 
 @router.post("", response_model=ActivityResponse, status_code=status.HTTP_201_CREATED)
@@ -31,6 +44,7 @@ def create_activity(
     )
     db.add(activity)
     db.flush()
+    _add_log(db, activity.id, current_user.id, "create", f"{current_user.nickname} 创建了活动")
     db.commit()
     return ActivityResponse(
         id=activity.id,
@@ -211,6 +225,7 @@ def join_activity(
         for attr_name, attr_value in body.attribute_values.items():
             db.add(MemberAttribute(member_id=member.id, attribute_name=attr_name, attribute_value=attr_value))
 
+    _add_log(db, activity.id, current_user.id, "join", f"{current_user.nickname} 加入了活动")
     db.commit()
     return {"message": "加入成功"}
 
@@ -240,6 +255,7 @@ def leave_activity(
         ).delete()
 
     db.delete(membership)
+    _add_log(db, activity.id, current_user.id, "leave", f"{current_user.nickname} 退出了活动")
     db.commit()
     return {"message": "已退出活动"}
 
@@ -258,11 +274,24 @@ def update_activity(
     if activity.user_id != current_user.id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="只有活动创建者才能编辑活动")
 
+    changes = []
+    if activity.title != body.title.strip():
+        changes.append(f"标题由「{activity.title}」改为「{body.title.strip()}」")
+    if (activity.description or "") != (body.description or "").strip():
+        old_desc = activity.description or "(空)"
+        new_desc = body.description.strip() if body.description else "(空)"
+        changes.append("修改了描述")
+
     activity.title = body.title.strip()
     activity.description = body.description.strip() if body.description else None
     activity.group_strategy = body.group_strategy
     activity.group_param = body.group_param
     activity.constraints = [c.model_dump() for c in body.constraints] if body.constraints else None
+
+    content = f"{current_user.nickname} 编辑了活动"
+    if changes:
+        content += "：" + "；".join(changes)
+    _add_log(db, activity.id, current_user.id, "edit", content)
     db.commit()
 
     return ActivityResponse(
@@ -302,6 +331,8 @@ def kick_member(
     if not membership:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="该用户不是本活动成员")
 
+    kicked_user = db.query(User).filter(User.id == user_id).first()
+
     groups = db.query(Group).filter(Group.activity_id == activity.id).all()
     for g in groups:
         db.query(GroupMember).filter(
@@ -310,6 +341,7 @@ def kick_member(
         ).delete()
 
     db.delete(membership)
+    _add_log(db, activity.id, current_user.id, "kick", f"{current_user.nickname} 将 {kicked_user.nickname} 踢出了活动")
     db.commit()
     return {"message": "已将该成员移出活动"}
 
@@ -349,7 +381,8 @@ def create_groups(
     if activity.user_id != current_user.id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="只有活动创建者才能执行分组")
 
-    if _activity_has_groups(db, activity.id):
+    was_regroup = _activity_has_groups(db, activity.id)
+    if was_regroup:
         groups = db.query(Group).filter(Group.activity_id == activity.id).all()
         for g in groups:
             db.query(GroupMember).filter(GroupMember.group_id == g.id).delete()
@@ -361,8 +394,23 @@ def create_groups(
         .all()
     )
 
+    members_for_log = []
+    for m in members:
+        member_attrs = {
+            attr.attribute_name: attr.attribute_value
+            for attr in m.attributes
+        }
+        members_for_log.append({
+            "user_id": m.user_id,
+            "nickname": m.user.nickname,
+            "attributes": member_attrs,
+        })
+
     member_user_ids = [m.user_id for m in members]
-    random.shuffle(member_user_ids)
+    member_order_before_shuffle = list(member_user_ids)
+    seed = random.randint(0, 2**31 - 1)
+    rng = random.Random(seed)
+    rng.shuffle(member_user_ids)
 
     total = len(member_user_ids)
     group_param = activity.group_param
@@ -417,6 +465,30 @@ def create_groups(
             )
         )
 
+    detail = {
+        "activity_snapshot": {
+            "group_strategy": activity.group_strategy,
+            "group_param": activity.group_param,
+            "constraints": activity.constraints,
+        },
+        "members": members_for_log,
+        "seed": seed,
+        "shuffle_order": member_order_before_shuffle,
+        "groups": [
+            {
+                "group_number": g.group_number,
+                "members": [{"user_id": m.user_id, "nickname": m.nickname} for m in g.members],
+            }
+            for g in groups_result
+        ],
+        "ungrouped": [
+            {"user_id": m.user_id, "nickname": m.nickname}
+            for m in ungrouped_users
+        ],
+    }
+
+    action_label = "重新分组" if was_regroup else "执行分组"
+    _add_log(db, activity.id, current_user.id, "group", f"{current_user.nickname} {action_label}", detail)
     db.commit()
     return {"groups": groups_result, "ungrouped_members": ungrouped_users}
 
@@ -442,5 +514,39 @@ def delete_groups(
         db.query(GroupMember).filter(GroupMember.group_id == group.id).delete()
         db.delete(group)
 
+    _add_log(db, activity.id, current_user.id, "ungroup", f"{current_user.nickname} 解除了分组")
     db.commit()
     return {"message": "已解除分组"}
+
+
+@router.get("/{slug}/logs", response_model=list[ActivityLogResponse])
+def get_activity_logs(
+    slug: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    activity = db.query(Activity).filter(Activity.slug == slug).first()
+    if not activity:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="活动不存在")
+
+    if activity.user_id != current_user.id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="只有活动创建者才能查看日志")
+
+    logs = (
+        db.query(ActivityLog)
+        .filter(ActivityLog.activity_id == activity.id)
+        .order_by(ActivityLog.created_at.desc())
+        .all()
+    )
+
+    return [
+        ActivityLogResponse(
+            id=log.id,
+            user_nickname=log.user.nickname,
+            action_type=log.action_type,
+            content=log.content,
+            detail=json.loads(log.detail) if log.detail else None,
+            created_at=log.created_at.isoformat(),
+        )
+        for log in logs
+    ]

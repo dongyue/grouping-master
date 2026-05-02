@@ -40,3 +40,7 @@ export function deleteGroups(slug) {
   return api.delete(`/activities/${slug}/groups`)
 }
 
+export function getActivityLogs(slug) {
+  return api.get(`/activities/${slug}/logs`)
+}
+

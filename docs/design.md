@@ -107,7 +107,19 @@
 > 联合唯一约束：(member_id, attribute_name)，每个成员的每个属性只能有一个值
 > member_id 设置 ON DELETE CASCADE：成员退出/被踢出时属性值同步删除
 
-### 2.9 constraints 字段结构
+### 2.9 activity_logs 表
+
+| 字段 | 类型 | 约束 | 说明 |
+|------|------|------|------|
+| id | INT | PK, AUTO_INCREMENT | 主键 |
+| activity_id | INT | FK → activities.id, NOT NULL, INDEX | 活动 ID |
+| user_id | INT | FK → users.id, NOT NULL | 操作人 ID |
+| action_type | VARCHAR(30) | NOT NULL | 操作类型（create/edit/join/leave/kick/group/ungroup） |
+| content | TEXT | NOT NULL | 操作内容描述 |
+| detail | JSON | NULLABLE | 结构化详情数据（分组操作时记录快照） |
+| created_at | DATETIME | DEFAULT NOW() | 操作时间 |
+
+### 2.10 constraints 字段结构
 
 activities 表的 `constraints` 字段为 JSON 数组，每项为一条多样性限定规则：
 
@@ -174,6 +186,7 @@ activities 表的 `constraints` 字段为 JSON 数组，每项为一条多样性
 | DELETE | `/api/activities/{slug}/members/{user_id}` | Session | 踢出成员（仅创建者） |
 | POST | `/api/activities/{slug}/groups` | Session | 执行分组（仅创建者） |
 | DELETE | `/api/activities/{slug}/groups` | Session | 解除分组（仅创建者） |
+| GET | `/api/activities/{slug}/logs` | Session | 查看操作日志（仅创建者） |
 
 `POST /api/activities` 创建活动
 - 请求体：`{title: str, description?: str, group_strategy?: str, group_param?: int, constraints?: list[ConstraintRule]}`
@@ -245,6 +258,19 @@ activities 表的 `constraints` 字段为 JSON 数组，每项为一条多样性
 - 删除该活动下所有分组及成员关系，活动恢复未分组状态
 - 响应：`{message: "已解除分组"}`
 
+`GET /api/activities/{slug}/logs`
+- 无请求体
+- 仅活动创建者可查看，非创建者返回 403
+- 响应：`list[ActivityLogResponse]`，按时间倒序
+- `ActivityLogResponse` 字段：`{id, user_nickname, action_type, content, detail, created_at}`
+- `detail` 为 JSON 对象（可为 null），仅在 `action_type` 为 `group` 时包含结构化分组快照：
+  - `activity_snapshot`：{group_strategy, group_param, constraints}
+  - `members`：[{user_id, nickname, attributes: Record<string, string>}] 分组时所有成员及其属性
+  - `seed`：随机种子（用于复现分组结果）
+  - `shuffle_order`：[user_id] 打乱前的成员顺序
+  - `groups`：[{group_number, members: [{user_id, nickname}]}] 分组结果
+  - `ungrouped`：[{user_id, nickname}] 尚未分组成员
+
 > 活动列表项响应格式：`{id, slug, title, description, group_strategy, group_param, constraints, creator_nickname, created_at}`
 
 ## 4. 安全策略
@@ -290,7 +316,8 @@ activities 表的 `constraints` 字段为 JSON 数组，每项为一条多样性
 | `/reset-password` | 重置密码页 | 公开 | ?token=xxx，设置新密码 |
 | `/` | 首页 | 需登录 | 「我创建的活动」列表（含「创建活动」按钮）+「我加入的活动」列表 |
 | `/activities/create` | 创建活动页 | 需登录 | 活动标题、描述、「我作为创建者也要参加」复选框（默认勾选）、「分组规则」区域（含分组方式配置、组内多样性限定规则） |
-| `/activities/:slug` | 活动详情页 | 需登录 | 主行：加入活动（未加入用户）/ 开始分组（创建者，未分组时）+ 分享链接 + 更多 ▼；更多菜单：退出活动（已加入成员）+ 重新分组（创建者，已分组时）+ 解除分组（创建者，已分组时）+ 编辑活动（创建者）+ 删除活动（创建者）；「分组规则」标题下展示分组方式与逐条多样性限定；成员列表（未分组时平铺，已分组后按组展示，标题显示总人数与组数） |
+| `/activities/:slug` | 活动详情页 | 需登录 | 主行：加入活动（未加入用户）/ 开始分组（创建者，未分组时）+ 分享链接 + 更多 ▼；更多菜单：退出活动（已加入成员）+ 重新分组（创建者，已分组时）+ 解除分组（创建者，已分组时）+ 编辑活动（创建者）+ 查看日志（创建者）+ 删除活动（创建者）；「分组规则」标题下展示分组方式与逐条多样性限定；成员列表（未分组时平铺，已分组后按组展示，标题显示总人数与组数） |
+| `/activities/:slug/logs` | 操作日志页 | 需登录 | 展示该活动所有操作日志，按时间倒序；分组日志可展开查看快照详情；仅创建者可访问，非创建者重定向到活动详情页 |
 | `/activities/:slug/edit` | 编辑活动页 | 需登录 | 编辑活动标题、描述、「分组规则」区域（含分组方式配置、组内多样性限定规则），仅创建者可操作，非创建者重定向回详情页 |
 | `/settings` | 设置页 | 需登录 | 头像上传、修改昵称、注销账号入口 |
 | `/settings/change-password` | 修改密码页 | 需登录 | 旧密码 + 新密码 + 确认新密码表单 |
@@ -332,3 +359,9 @@ activities 表的 `constraints` 字段为 JSON 数组，每项为一条多样性
 - 所有属性均为必填，提交前校验
 - 提交时以 `Record<string, string>` 格式向 join 接口传递
 - 供活动详情页和创建活动后的加入流程复用
+
+### 6.8 操作日志页
+- 新建 `ActivityLogsView.vue`，按时间倒序展示日志列表
+- 每条日志显示：操作人昵称、操作内容描述、操作时间
+- 分组类型日志额外显示「展开详情」按钮，点击展开结构化快照（分组规则快照、成员列表、分组结果、尚未分组列表）
+- 日志页面仅活动创建者可访问，非创建者重定向回详情页

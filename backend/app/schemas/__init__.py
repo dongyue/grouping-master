@@ -10,10 +10,12 @@ from app.schemas.auth import (
     ConstraintRule,
     ActivityCreateRequest,
     ActivityUpdateRequest,
+    JoinActivityRequest,
     ActivityResponse,
     ActivityDetailResponse,
     MemberItem,
     GroupResponse,
+    ActivityLogResponse,
 )
 
 __all__ = [
@@ -28,8 +30,10 @@ __all__ = [
     "ConstraintRule",
     "ActivityCreateRequest",
     "ActivityUpdateRequest",
+    "JoinActivityRequest",
     "ActivityResponse",
     "ActivityDetailResponse",
     "MemberItem",
     "GroupResponse",
+    "ActivityLogResponse",
 ]

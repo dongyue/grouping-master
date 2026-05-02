@@ -290,3 +290,14 @@ class GroupResponse(BaseModel):
     members: list[MemberItem]
 
     model_config = {"from_attributes": True}
+
+
+class ActivityLogResponse(BaseModel):
+    id: int
+    user_nickname: str
+    action_type: str
+    content: str
+    detail: dict | None = None
+    created_at: str
+
+    model_config = {"from_attributes": True}

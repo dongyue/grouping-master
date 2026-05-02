@@ -47,6 +47,12 @@ const routes = [
     meta: { requiresAuth: true },
   },
   {
+    path: '/activities/:slug/logs',
+    name: 'activity-logs',
+    component: () => import('../views/ActivityLogsView.vue'),
+    meta: { requiresAuth: true },
+  },
+  {
     path: '/activities/:slug',
     name: 'activity-detail',
     component: () => import('../views/ActivityDetailView.vue'),

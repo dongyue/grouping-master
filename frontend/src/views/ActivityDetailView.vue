@@ -382,6 +382,13 @@ async function handleUngroup() {
             </button>
             <button
               v-if="activity.is_creator"
+              class="btn btn-secondary"
+              @click="router.push({ name: 'activity-logs', params: { slug: route.params.slug } }); showMore = false"
+            >
+              查看日志
+            </button>
+            <button
+              v-if="activity.is_creator"
               class="btn btn-danger"
               :disabled="deleting"
               @click="handleDelete(); showMore = false"

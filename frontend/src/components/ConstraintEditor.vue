@@ -45,8 +45,10 @@ watch(constraints, () => {
     if (n === 0) return
     if (c.constraint_type === 'min_diversity') {
       if (c.constraint_value > n) c.constraint_value = n
+      if (c.constraint_value < 2) c.constraint_value = 2
     } else {
       if (c.constraint_value > n - 1) c.constraint_value = Math.max(n - 1, 1)
+      if (c.constraint_value < 1) c.constraint_value = 1
     }
   })
 }, { deep: true })
