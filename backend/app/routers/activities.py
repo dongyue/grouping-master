@@ -12,48 +12,25 @@ from app.models.activity_log import ActivityLog
 from app.models.user_attribute import UserAttribute
 from app.schemas.auth import ActivityCreateRequest, ActivityUpdateRequest, JoinActivityRequest, ActivityResponse, ActivityDetailResponse, MemberItem, GroupResponse, ActivityLogResponse
 from app.middleware.auth import get_current_user
+from app.services.member import get_attribute_warnings
+from app.services.log import add_activity_log
+from app.services.user_attribute import sync_user_attributes
 import random
 import json
 
 router = APIRouter(prefix="/api/activities", tags=["活动"])
 
 
-def _get_warnings(constraints: list | None, attrs: dict[str, str]) -> list[str]:
-    warnings = []
-    if not constraints:
-        return warnings
-    for c in constraints:
-        name = c["attribute_name"]
-        allowed = c["allowed_values"]
-        value = attrs.get(name)
-        if value is None:
-            warnings.append(f"缺少属性「{name}」")
-        elif value not in allowed:
-            warnings.append(f"「{name}」=「{value}」不在允许范围")
-    return warnings
+def _get_warnings(constraints, attrs):
+    return get_attribute_warnings(constraints, attrs)
 
 
-def _add_log(db: Session, activity_id: int, user_id: int, action_type: str, content: str, detail: dict | None = None):
-    log = ActivityLog(
-        activity_id=activity_id,
-        user_id=user_id,
-        action_type=action_type,
-        content=content,
-        detail=json.dumps(detail, ensure_ascii=False) if detail else None,
-    )
-    db.add(log)
+def _add_log(db, activity_id, user_id, action_type, content, detail=None):
+    add_activity_log(db, activity_id, user_id, action_type, content, detail)
 
 
-def _sync_user_attributes(db: Session, user_id: int, attribute_values: dict[str, str]):
-    for name, value in attribute_values.items():
-        existing = db.query(UserAttribute).filter(
-            UserAttribute.user_id == user_id,
-            UserAttribute.attribute_name == name,
-        ).first()
-        if existing:
-            existing.attribute_value = value
-        else:
-            db.add(UserAttribute(user_id=user_id, attribute_name=name, attribute_value=value))
+def _sync_user_attributes(db, user_id, attribute_values):
+    sync_user_attributes(db, user_id, attribute_values)
 
 
 @router.post("", response_model=ActivityResponse, status_code=status.HTTP_201_CREATED)

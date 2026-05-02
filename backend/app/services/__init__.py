@@ -15,6 +15,9 @@ from app.services.auth import (
 )
 from app.services.mail import send_reset_email, generate_token
 from app.services.upload import validate_magic_bytes
+from app.services.member import get_attribute_warnings
+from app.services.log import add_activity_log
+from app.services.user_attribute import sync_user_attributes
 
 __all__ = [
     "hash_password",
@@ -33,4 +36,7 @@ __all__ = [
     "send_reset_email",
     "generate_token",
     "validate_magic_bytes",
+    "get_attribute_warnings",
+    "add_activity_log",
+    "sync_user_attributes",
 ]
