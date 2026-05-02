@@ -14,20 +14,9 @@ function addConstraint() {
   })
 }
 
-function clampValue(c) {
-  const n = getValuesCount(c)
-  if (c.constraint_type === 'min_diversity') {
-    if (c.constraint_value < 2) c.constraint_value = 2
-    if (c.constraint_value > n) c.constraint_value = n
-  } else {
-    if (c.constraint_value < 1) c.constraint_value = 1
-    if (c.constraint_value >= n) c.constraint_value = Math.max(n - 1, 1)
-  }
+function onTypeChange(c) {
+  c.constraint_value = c.constraint_type === 'min_diversity' ? 2 : 1
 }
-
-watch(constraints, () => {
-  constraints.value.forEach(c => clampValue(c))
-}, { deep: true })
 
 function onAttrSelect(idx, val) {
   if (val === '__custom__') {
@@ -49,6 +38,17 @@ function removeConstraint(index) {
 function getValuesCount(c) {
   return c.allowed_values_raw.split(/[,，]/).map(s => s.trim()).filter(s => s).length
 }
+
+watch(constraints, () => {
+  constraints.value.forEach(c => {
+    const n = getValuesCount(c)
+    if (c.constraint_type === 'min_diversity') {
+      if (c.constraint_value > n) c.constraint_value = n
+    } else {
+      if (c.constraint_value > n - 1) c.constraint_value = Math.max(n - 1, 1)
+    }
+  })
+}, { deep: true })
 </script>
 
 <template>
@@ -70,7 +70,7 @@ function getValuesCount(c) {
       </div>
       <div class="constraint-row constraint-detail">
         <span class="constraint-label">每组中该属性</span>
-        <select v-model="c.constraint_type" class="constraint-type">
+        <select v-model="c.constraint_type" class="constraint-type" @change="onTypeChange(c)">
           <option value="min_diversity">至少</option>
           <option value="max_diversity">最多</option>
         </select>
