@@ -24,6 +24,7 @@
 | `activity_member.py` | `ActivityMember` 表：活动成员关系（id, activity_id FK, user_id FK, 时间戳），联合唯一约束 |
 | `group.py` | `Group` 表：分组（id, activity_id FK, group_number, 时间戳），关联 GroupMember |
 | `group_member.py` | `GroupMember` 表：分组成员关系（id, group_id FK, user_id FK），联合唯一约束 |
+| `member_attribute.py` | `MemberAttribute` 表：成员属性值（id, member_id FK, attribute_name, attribute_value），联合唯一约束，ON DELETE CASCADE |
 
 ### Pydantic Schema（app/schemas/）
 
@@ -70,6 +71,7 @@
 | `versions/6b2c3d4e5f6a_add_group_strategy_to_activities.py` | activities 表新增 group_strategy、group_param、remainder_handling 字段 |
 | `versions/7c3d4e5f6a7b_remove_remainder_handling.py` | activities 表删除 remainder_handling 字段 |
 | `versions/8d4e5f6a7b8c_add_constraints_to_activities.py` | activities 表新增 constraints JSON 字段 |
+| `versions/9e5f6a7b8c9d_add_member_attributes_table.py` | 新增 member_attributes 表 |
 
 ---
 
@@ -106,6 +108,7 @@
 | `groupRule.js` | 分组策略选项列表与标签映射，供表单和详情页共用 |
 | `constraintPresets.js` | 组内多样性限定预设属性名列表，供 ConstraintEditor 和编辑页回显共用 |
 | `ConstraintEditor.vue` | 组内多样性限定规则编辑器：下拉选择/自定义属性名、动态增删规则、自动填入枚举值、校验限定值范围，供创建/编辑活动页复用 |
+| `AttributeSelector.vue` | 属性选择弹框：成员加入活动时选择各属性的值，以弹框形式展示，全部必填，供详情页加入流程复用 |
 | `CreateActivityView.vue` | 创建活动页：活动标题、描述、「分组规则」区域（分组方式配置 + 组内多样性限定）、创建者参加复选框 |
 | `ActivityDetailView.vue` | 活动详情页：主行 + 更多下拉菜单 + 「分组规则」标题下分组方式与多样性限定展示 + 成员列表 + 分组展示 + 尚未分组展示 + 管理成员开关 + 确认对话框 |
 | `ActivityEditView.vue` | 编辑活动页：修改标题、描述、「分组规则」区域（分组方式配置 + 组内多样性限定），仅创建者可访问，取消回到详情页 |
