@@ -41,8 +41,12 @@ const editAttrValues = ref({})
 const editAttrLabel = ref('确认')
 const userAttributes = ref({})
 
-const hasMoreItems = computed(() => {
-  return activity.value?.is_member || activity.value?.is_creator
+const hasMemberItems = computed(() => {
+  return activity.value?.is_member
+})
+
+const hasCreatorItems = computed(() => {
+  return activity.value?.is_creator
 })
 
 onMounted(async () => {
@@ -381,25 +385,18 @@ async function handleUngroup() {
         <button class="btn btn-secondary" @click="handleCopyLink" style="white-space: nowrap;">
           {{ copied ? '已复制！' : '分享链接' }}
         </button>
-        <div v-if="hasMoreItems" class="more-wrapper">
+        <div v-if="hasMemberItems || hasCreatorItems" class="more-wrapper">
           <button class="btn btn-secondary" @click="showMore = !showMore">
             更多 ▾
           </button>
           <div v-if="showMore" class="more-menu">
             <button
-              v-if="activity.is_member"
-              class="btn btn-secondary btn-warning"
-              :disabled="leaving"
-              @click="handleLeave(); showMore = false"
-            >
-              {{ leaving ? '退出中...' : '退出活动' }}
-            </button>
-            <button
-              v-if="activity.is_member && activity.constraints?.length"
+              v-if="activity.is_creator && activity.has_groups"
               class="btn btn-secondary"
-              @click="openAttrEditor(); showMore = false"
+              :disabled="grouping"
+              @click="handleGroup(); showMore = false"
             >
-              编辑我的信息
+              {{ grouping ? '分组中...' : '重新分组' }}
             </button>
             <button
               v-if="activity.is_creator && activity.has_groups"
@@ -408,14 +405,6 @@ async function handleUngroup() {
               @click="handleUngroup(); showMore = false"
             >
               {{ grouping ? '解除中...' : '解除分组' }}
-            </button>
-            <button
-              v-if="activity.is_creator && activity.has_groups"
-              class="btn btn-secondary"
-              :disabled="grouping"
-              @click="handleGroup(); showMore = false"
-            >
-              {{ grouping ? '分组中...' : '重新分组' }}
             </button>
             <button
               v-if="activity.is_creator"
@@ -438,6 +427,22 @@ async function handleUngroup() {
               @click="handleDelete(); showMore = false"
             >
               {{ deleting ? '删除中...' : '删除活动' }}
+            </button>
+            <div v-if="hasCreatorItems && hasMemberItems" class="more-divider"></div>
+            <button
+              v-if="activity.is_member && activity.constraints?.length"
+              class="btn btn-secondary"
+              @click="openAttrEditor(); showMore = false"
+            >
+              编辑我的信息
+            </button>
+            <button
+              v-if="activity.is_member"
+              class="btn btn-secondary btn-warning"
+              :disabled="leaving"
+              @click="handleLeave(); showMore = false"
+            >
+              {{ leaving ? '退出中...' : '退出活动' }}
             </button>
           </div>
         </div>
@@ -649,8 +654,9 @@ async function handleUngroup() {
   color: #e6a23c;
 }
 
-.warning-msg {
-  color: #e6a23c;
-  font-size: 13px;
+.more-divider {
+  height: 1px;
+  background: #e5e7eb;
+  margin: 4px 0;
 }
 </style>
