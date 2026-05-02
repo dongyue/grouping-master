@@ -173,11 +173,13 @@ async function saveAttrs() {
     <form @submit.prevent="handleUpdateProfile" style="margin-top: 24px;">
       <div class="form-group">
         <label>昵称 *</label>
-        <input v-model="nickname" type="text" required placeholder="你的昵称" />
+        <div class="nickname-row">
+          <input v-model="nickname" type="text" required placeholder="你的昵称" />
+          <button type="submit" class="btn-save" :disabled="saving">
+            {{ saving ? '保存中...' : '保存' }}
+          </button>
+        </div>
       </div>
-      <button type="submit" class="btn btn-primary" :disabled="saving" style="margin-bottom: 20px;">
-        {{ saving ? '保存中...' : '保存' }}
-      </button>
     </form>
 
     <div class="form-group">
@@ -226,6 +228,31 @@ async function saveAttrs() {
 
 .upload-btn:hover {
   background: #eef2ff;
+}
+
+.nickname-row {
+  display: flex;
+  gap: 8px;
+}
+
+.nickname-row input {
+  flex: 1;
+}
+
+.btn-save {
+  height: 36px;
+  padding: 0 14px;
+  border: none;
+  border-radius: 6px;
+  background: #4f46e5;
+  color: #fff;
+  font-size: 13px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.btn-save:hover {
+  background: #3730a3;
 }
 
 .info-row {
