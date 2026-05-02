@@ -44,3 +44,7 @@ export function getActivityLogs(slug) {
   return api.get(`/activities/${slug}/logs`)
 }
 
+export function updateAttributes(slug, attributeValues) {
+  return api.put(`/activities/${slug}/attributes`, { attribute_values: attributeValues })
+}
+

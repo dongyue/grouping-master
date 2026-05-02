@@ -187,6 +187,7 @@ activities 表的 `constraints` 字段为 JSON 数组，每项为一条多样性
 | POST | `/api/activities/{slug}/groups` | Session | 执行分组（仅创建者） |
 | DELETE | `/api/activities/{slug}/groups` | Session | 解除分组（仅创建者） |
 | GET | `/api/activities/{slug}/logs` | Session | 查看操作日志（仅创建者） |
+| PUT | `/api/activities/{slug}/attributes` | Session | 更新已加入成员的属性值（仅已加入成员） |
 
 `POST /api/activities` 创建活动
 - 请求体：`{title: str, description?: str, group_strategy?: str, group_param?: int, constraints?: list[ConstraintRule]}`
@@ -273,6 +274,14 @@ activities 表的 `constraints` 字段为 JSON 数组，每项为一条多样性
 
 > 活动列表项响应格式：`{id, slug, title, description, group_strategy, group_param, constraints, creator_nickname, created_at}`
 
+`PUT /api/activities/{slug}/attributes`
+- 请求体：`{attribute_values: Record<string, string>}`
+- 仅已加入成员可操作，未加入返回 403，活动不存在返回 404
+- 校验规则与加入时一致：须包含全部约束属性名，每个值须在允许值列表内
+- 更新该成员在当前活动中的属性值记录（先删后插）
+- 活动无约束规则时返回 400
+- 响应：`{message: "属性已更新"}`
+
 ## 4. 安全策略
 
 - 密码使用 bcrypt 哈希存储，不存明文
@@ -353,12 +362,13 @@ activities 表的 `constraints` 字段为 JSON 数组，每项为一条多样性
 - 供创建活动页和编辑活动页复用
 
 ### 6.7 属性选择弹框
-- 新建 `AttributeSelector.vue`，以弹框形式展示，供成员加入活动时选择各属性值
+- 新建 `AttributeSelector.vue`，以弹框形式展示，供成员加入活动或编辑属性时选择各属性值
 - 接收活动的 `constraints` 数组，为每条规则渲染控件：
   - 属性名作为标签，属性值通过下拉选择（选项为对应的 `allowed_values`）
+- 接收 `initialValues` prop（`Record<string, string>`，可选），预填已有属性值；已有值不在当前枚举值中时视为未填写
 - 所有属性均为必填，提交前校验
-- 提交时以 `Record<string, string>` 格式向 join 接口传递
-- 供活动详情页和创建活动后的加入流程复用
+- 提交时以 `Record<string, string>` 格式向接口传递
+- 供活动详情页加入流程和编辑属性两个场景复用
 
 ### 6.8 操作日志页
 - 新建 `ActivityLogsView.vue`，按时间倒序展示日志列表

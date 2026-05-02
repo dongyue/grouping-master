@@ -2,7 +2,7 @@
 import { ref, onMounted, onBeforeUnmount, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
-import { getActivity, joinActivity, leaveActivity, deleteActivity, kickMember, createGroups, deleteGroups } from '../api/activities'
+import { getActivity, joinActivity, leaveActivity, deleteActivity, kickMember, createGroups, deleteGroups, updateAttributes } from '../api/activities'
 import ConfirmModal from '../components/ConfirmModal.vue'
 import AttributeSelector from '../components/AttributeSelector.vue'
 import { formatDate } from '../utils/date'
@@ -35,6 +35,8 @@ const showKick = ref(false)
 const confirmModal = ref({ show: false, title: '', message: '', onConfirm: null })
 const showAttributeSelector = ref(false)
 const attributeSubmitting = ref(false)
+const editAttrValues = ref({})
+const editAttrLabel = ref('确认')
 
 const hasMoreItems = computed(() => {
   return activity.value?.is_member || activity.value?.is_creator
@@ -137,6 +139,36 @@ async function handleAttributeConfirm(attributeValues) {
   } finally {
     attributeSubmitting.value = false
   }
+}
+
+function openAttrEditor() {
+  const me = activity.value.members?.find(m => m.user_id === auth.user.id)
+  editAttrValues.value = me?.attributes || {}
+  editAttrLabel.value = '保存'
+  showAttributeSelector.value = true
+}
+
+async function handleAttrEditConfirm(attributeValues) {
+  showAttributeSelector.value = false
+  attributeSubmitting.value = true
+  joinError.value = ''
+  joinSuccess.value = ''
+  try {
+    await updateAttributes(route.params.slug, attributeValues)
+    await refetchActivity()
+    joinSuccess.value = '属性已更新'
+    setTimeout(() => (joinSuccess.value = ''), 2000)
+  } catch (err) {
+    joinError.value = err.response?.data?.detail || '更新失败'
+  } finally {
+    attributeSubmitting.value = false
+  }
+}
+
+function handleAttrCancel() {
+  showAttributeSelector.value = false
+  editAttrValues.value = {}
+  editAttrLabel.value = '确认'
 }
 
 async function handleLeave() {
@@ -249,8 +281,10 @@ async function handleUngroup() {
           v-if="showAttributeSelector"
           :constraints="activity.constraints"
           :submitting="attributeSubmitting"
-          @confirm="handleAttributeConfirm"
-          @cancel="showAttributeSelector = false"
+          :initial-values="editAttrValues"
+          :confirm-label="editAttrLabel"
+          @confirm="Object.keys(editAttrValues).length ? handleAttrEditConfirm($event) : handleAttributeConfirm($event)"
+          @cancel="handleAttrCancel"
         />
       </div>
       <div class="members-section">
@@ -278,6 +312,7 @@ async function handleUngroup() {
                 <span v-if="member.attributes && Object.keys(member.attributes).length" class="member-attrs">
                   <span v-for="(val, key) in member.attributes" :key="key" class="attr-tag">{{ val }}</span>
                 </span>
+                <span v-if="member.user_id === auth.user.id && activity.constraints?.length" class="edit-icon" @click="openAttrEditor()" title="编辑我的信息">&#x270E;</span>
                 <span v-if="member.attribute_warnings?.length" class="warn-icon" :title="member.attribute_warnings.join('\n')">&#9888;</span>
                 <button
                   v-if="activity.is_creator && member.user_id !== auth.user.id && showKick"
@@ -302,6 +337,7 @@ async function handleUngroup() {
                 <span v-if="member.attributes && Object.keys(member.attributes).length" class="member-attrs">
                   <span v-for="(val, key) in member.attributes" :key="key" class="attr-tag">{{ val }}</span>
                 </span>
+                <span v-if="member.user_id === auth.user.id && activity.constraints?.length" class="edit-icon" @click="openAttrEditor()" title="编辑我的信息">&#x270E;</span>
                 <span v-if="member.attribute_warnings?.length" class="warn-icon" :title="member.attribute_warnings.join('\n')">&#9888;</span>
                 <button
                   v-if="activity.is_creator && member.user_id !== auth.user.id && showKick"
@@ -325,6 +361,7 @@ async function handleUngroup() {
             <span v-if="member.attributes && Object.keys(member.attributes).length" class="member-attrs">
               <span v-for="(val, key) in member.attributes" :key="key" class="attr-tag">{{ val }}</span>
             </span>
+            <span v-if="member.user_id === auth.user.id && activity.constraints?.length" class="edit-icon" @click="openAttrEditor()" title="编辑我的信息">&#x270E;</span>
             <span v-if="member.attribute_warnings?.length" class="warn-icon" :title="member.attribute_warnings.join('\n')">&#9888;</span>
             <button
               v-if="activity.is_creator && member.user_id !== auth.user.id && showKick"
@@ -368,6 +405,13 @@ async function handleUngroup() {
               @click="handleLeave(); showMore = false"
             >
               {{ leaving ? '退出中...' : '退出活动' }}
+            </button>
+            <button
+              v-if="activity.is_member && activity.constraints?.length"
+              class="btn btn-secondary"
+              @click="openAttrEditor(); showMore = false"
+            >
+              编辑我的信息
             </button>
             <button
               v-if="activity.is_creator && activity.has_groups"
@@ -594,6 +638,17 @@ async function handleUngroup() {
   color: #e63946;
   cursor: help;
   flex-shrink: 0;
+}
+
+.edit-icon {
+  font-size: 14px;
+  color: #4f46e5;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.edit-icon:hover {
+  color: #3730a3;
 }
 
 .members-empty {

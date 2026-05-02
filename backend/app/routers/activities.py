@@ -254,6 +254,56 @@ def join_activity(
     return {"message": "加入成功"}
 
 
+@router.put("/{slug}/attributes")
+def update_member_attributes(
+    slug: str,
+    body: JoinActivityRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    activity = db.query(Activity).filter(Activity.slug == slug).first()
+    if not activity:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="活动不存在")
+
+    membership = db.query(ActivityMember).filter(
+        ActivityMember.activity_id == activity.id,
+        ActivityMember.user_id == current_user.id,
+    ).first()
+    if not membership:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="您尚未加入该活动")
+
+    constraints = activity.constraints or []
+    if not constraints:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="该活动未设置约束规则")
+
+    if not body.attribute_values:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="请提供属性值")
+
+    attr_map = {c["attribute_name"]: c["allowed_values"] for c in constraints}
+    provided = set(body.attribute_values.keys())
+    required = set(attr_map.keys())
+
+    if provided != required:
+        missing = required - provided
+        extra = provided - required
+        if missing:
+            raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=f"缺少属性值：{', '.join(sorted(missing))}")
+        if extra:
+            raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=f"未知属性：{', '.join(sorted(extra))}")
+
+    for attr_name, attr_value in body.attribute_values.items():
+        if attr_value not in attr_map[attr_name]:
+            raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=f"属性「{attr_name}」的值「{attr_value}」不在允许范围")
+
+    db.query(MemberAttribute).filter(MemberAttribute.member_id == membership.id).delete()
+    for attr_name, attr_value in body.attribute_values.items():
+        db.add(MemberAttribute(member_id=membership.id, attribute_name=attr_name, attribute_value=attr_value))
+
+    _add_log(db, activity.id, current_user.id, "edit", f"{current_user.nickname} 更新了自己在活动中的属性值")
+    db.commit()
+    return {"message": "属性已更新"}
+
+
 @router.post("/{slug}/leave")
 def leave_activity(
     slug: str,

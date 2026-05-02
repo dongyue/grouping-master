@@ -4,11 +4,20 @@ import { ref, computed } from 'vue'
 const props = defineProps({
   constraints: { type: Array, required: true },
   submitting: { type: Boolean, default: false },
+  initialValues: { type: Object, default: () => ({}) },
+  confirmLabel: { type: String, default: '确认加入' },
 })
 
 const emit = defineEmits(['confirm', 'cancel'])
 
-const values = ref({})
+const initValues = {}
+for (const c of props.constraints) {
+  const val = props.initialValues[c.attribute_name]
+  if (val && c.allowed_values.includes(val)) {
+    initValues[c.attribute_name] = val
+  }
+}
+const values = ref(initValues)
 const error = ref('')
 
 const attributes = computed(() => {
@@ -49,7 +58,7 @@ function handleSubmit() {
       <div v-if="error" class="error-msg">{{ error }}</div>
       <div class="actions">
         <button class="btn btn-primary" :disabled="submitting" @click="handleSubmit">
-          {{ submitting ? '提交中...' : '确认加入' }}
+          {{ submitting ? '提交中...' : confirmLabel }}
         </button>
         <button class="btn btn-secondary" :disabled="submitting" @click="emit('cancel')">
           取消
