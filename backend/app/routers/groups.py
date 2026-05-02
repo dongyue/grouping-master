@@ -1,5 +1,6 @@
 import random
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -11,6 +12,7 @@ from app.models.group_member import GroupMember
 from app.schemas.activity import MemberItem, GroupResponse
 from app.middleware.auth import get_current_user
 from app.services.log import add_activity_log
+from app.services.member import get_attribute_warnings
 
 router = APIRouter(tags=["活动分组"])
 
@@ -31,6 +33,36 @@ def create_groups(
 
     if activity.user_id != current_user.id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="只有活动创建者才能执行分组")
+
+    constraints = activity.constraints
+    if constraints:
+        members = (
+            db.query(ActivityMember)
+            .filter(ActivityMember.activity_id == activity.id)
+            .all()
+        )
+        issue_list = []
+        for m in members:
+            attrs = {a.attribute_name: a.attribute_value for a in m.attributes}
+            warnings = get_attribute_warnings(constraints, attrs)
+            if warnings:
+                issue_list.append({
+                    "user_id": m.user_id,
+                    "nickname": m.user.nickname,
+                    "issues": warnings,
+                })
+        if issue_list:
+            summary = "、".join(
+                f"{i['nickname']}（{'；'.join(i['issues'])}）"
+                for i in issue_list
+            )
+            return JSONResponse(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                content={
+                    "detail": f"部分成员的属性值不完整——{summary}",
+                    "issues": issue_list,
+                },
+            )
 
     was_regroup = _activity_has_groups(db, activity.id)
     if was_regroup:

@@ -317,6 +317,7 @@ activities 表的 `constraints` 字段为 JSON 数组，每项为一条多样性
 `POST /api/activities/{slug}/groups`
 - 无请求体
 - 仅活动创建者可执行，非创建者返回 403
+- **前置校验**：若活动定义了约束规则，检查所有成员的属性值是否完整且合法。任一个成员存在属性缺失或值不在允许范围内，返回 422，`detail` 字段为文字摘要，额外返回 `issues` 数组列出每个不合格成员的 `user_id`、`nickname` 和 `issues` 列表
 - 若已分组，先清除已有分组及组成员数据，再重新分组
 - 读取活动的 `group_strategy`、`group_param` 配置执行分组
 - `group_strategy = "fixed_group_size"`：成员随机打乱，按 `group_param` 人一组分配。若不能整除，最后不足一组的人数归入「落单」不分配
