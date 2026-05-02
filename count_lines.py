@@ -3,6 +3,7 @@
 import subprocess
 import sys
 from collections import defaultdict
+from datetime import datetime
 
 try:
     result = subprocess.run(
@@ -39,6 +40,7 @@ for f in files:
 
 print(f"文件数：{len(files)}")
 print(f"总行数：{total}")
+print(f"统计时间：{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
 print()
 print(f"{'类型':<12} {'行数':>8} {'占比':>8}")
 print("-" * 30)
