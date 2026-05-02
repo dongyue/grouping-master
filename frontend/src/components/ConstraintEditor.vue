@@ -42,6 +42,7 @@ function getValuesCount(c) {
 watch(constraints, () => {
   constraints.value.forEach(c => {
     const n = getValuesCount(c)
+    if (n === 0) return
     if (c.constraint_type === 'min_diversity') {
       if (c.constraint_value > n) c.constraint_value = n
     } else {
