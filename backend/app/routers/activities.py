@@ -10,7 +10,7 @@ from app.models.group import Group
 from app.models.group_member import GroupMember
 from app.models.activity_log import ActivityLog
 from app.models.user_attribute import UserAttribute
-from app.schemas.auth import ActivityCreateRequest, ActivityUpdateRequest, JoinActivityRequest, ActivityResponse, ActivityDetailResponse, MemberItem, GroupResponse, ActivityLogResponse
+from app.schemas.activity import ActivityCreateRequest, ActivityUpdateRequest, JoinActivityRequest, ActivityResponse, ActivityDetailResponse, MemberItem, GroupResponse, ActivityLogResponse
 from app.middleware.auth import get_current_user
 from app.services.member import get_attribute_warnings
 from app.services.log import add_activity_log

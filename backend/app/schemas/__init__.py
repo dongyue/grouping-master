@@ -7,6 +7,10 @@ from app.schemas.auth import (
     UpdateProfileRequest,
     UserResponse,
     MessageResponse,
+    UserAttributesResponse,
+    UpdateUserAttributesRequest,
+)
+from app.schemas.activity import (
     ConstraintRule,
     ActivityCreateRequest,
     ActivityUpdateRequest,
@@ -16,8 +20,6 @@ from app.schemas.auth import (
     MemberItem,
     GroupResponse,
     ActivityLogResponse,
-    UserAttributesResponse,
-    UpdateUserAttributesRequest,
 )
 
 __all__ = [
