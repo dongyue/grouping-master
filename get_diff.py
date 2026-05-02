@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""输出当前工作区相对 master 的全部差异，格式对 LLM 友好"""
+"""输出当前工作区相对本地 master 分支末端的全部差异，格式对 LLM 友好"""
 
 import subprocess
 
@@ -16,7 +16,7 @@ commits = run("git log --oneline master..HEAD")
 dirty = bool(run("git status --porcelain"))
 
 lines = []
-lines.append("# 相对 master 的变更\n")
+lines.append("# 相对本地 master 分支末端的变更\n")
 lines.append(f"**分支**: `{branch}`")
 
 if commits:
