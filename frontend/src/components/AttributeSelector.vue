@@ -36,7 +36,7 @@ function handleSubmit() {
 <template>
   <div class="overlay" @click.self="emit('cancel')">
     <div class="modal">
-      <h3 class="modal-title">选择属性值</h3>
+      <h3 class="modal-title">我的信息</h3>
       <div class="fields">
         <div v-for="attr in attributes" :key="attr.name" class="field">
           <label>{{ attr.name }}</label>
