@@ -266,10 +266,10 @@ async function handleUngroup() {
           </button>
         </h3>
         <div v-if="activity.has_groups && activity.groups?.length">
-          <div v-for="group in activity.groups" :key="group.group_number" class="group-card">
+          <div v-for="group in activity.groups" :key="group.group_number" class="group-card" :class="{ 'my-group': group.members.some(m => m.user_id === auth.user.id) }">
             <h4 class="group-title">第 {{ group.group_number }} 组 {{ group.members.length }} 人</h4>
             <div class="members-list">
-              <div v-for="member in group.members" :key="member.user_id" class="member-item">
+              <div v-for="member in group.members" :key="member.user_id" class="member-item" :class="{ me: member.user_id === auth.user.id }">
                 <div class="member-avatar">
                   <img v-if="member.avatar_path" :src="`${uploadsUrl}/${member.avatar_path}`" />
                   <span v-else class="avatar-placeholder">{{ member.nickname[0] }}</span>
@@ -286,10 +286,10 @@ async function handleUngroup() {
               </div>
             </div>
           </div>
-          <div v-if="activity.ungrouped_members?.length" class="group-card ungrouped-card">
+          <div v-if="activity.ungrouped_members?.length" class="group-card ungrouped-card" :class="{ 'my-group': activity.ungrouped_members.some(m => m.user_id === auth.user.id) }">
             <h4 class="group-title">尚未分组 {{ activity.ungrouped_members.length }} 人</h4>
             <div class="members-list">
-              <div v-for="member in activity.ungrouped_members" :key="member.user_id" class="member-item">
+              <div v-for="member in activity.ungrouped_members" :key="member.user_id" class="member-item" :class="{ me: member.user_id === auth.user.id }">
                 <div class="member-avatar">
                   <img v-if="member.avatar_path" :src="`${uploadsUrl}/${member.avatar_path}`" />
                   <span v-else class="avatar-placeholder">{{ member.nickname[0] }}</span>
@@ -308,7 +308,7 @@ async function handleUngroup() {
           </div>
         </div>
         <div v-else-if="activity.members?.length" class="members-list">
-          <div v-for="member in activity.members" :key="member.user_id" class="member-item">
+          <div v-for="member in activity.members" :key="member.user_id" class="member-item" :class="{ me: member.user_id === auth.user.id }">
             <div class="member-avatar">
               <img v-if="member.avatar_path" :src="`${uploadsUrl}/${member.avatar_path}`" />
               <span v-else class="avatar-placeholder">{{ member.nickname[0] }}</span>
@@ -525,6 +525,11 @@ async function handleUngroup() {
   border-radius: 8px;
 }
 
+.member-item.me {
+  background: #ede9fe;
+  outline: 2px solid #a78bfa;
+}
+
 .member-avatar {
   width: 28px;
   height: 28px;
@@ -589,6 +594,11 @@ async function handleUngroup() {
   border-radius: 8px;
   padding: 12px 16px;
   margin-bottom: 12px;
+}
+
+.group-card.my-group {
+  background: #f5f3ff;
+  border: 2px solid #a78bfa;
 }
 
 .group-title {
