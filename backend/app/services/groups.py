@@ -147,7 +147,7 @@ def constrained_grouping(
             g_attrs = [all_attrs[i] for i in group]
             for u_idx in ungrouped_indices:
                 u_attrs = all_attrs[u_idx]
-                if _can_accept(g_attrs, u_attrs, constraints, is_last=False):
+                if _can_accept(g_attrs, u_attrs, constraints, False):
                     fillable = True
                     break
             if not fillable:
