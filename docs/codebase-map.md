@@ -165,3 +165,11 @@ routers → schemas → models → database.py
 | `SettingsView.vue` | 个人设置页 |
 | `NotFoundView.vue` | 404 页面 |
 | `ActivityLogsView.vue` | 操作日志页 |
+
+---
+
+## 测试（backend/tests/）
+
+| 文件 | 职责 |
+|------|------|
+| `test_groups.py` | 分组算法单元测试：`_distinct_count`、`_can_accept`、`_rarity_sort_key`、`_compute_groups` 覆盖 22 个场景 |
