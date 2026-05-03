@@ -72,6 +72,7 @@
 | id | INT | PK, AUTO_INCREMENT | 主键 |
 | activity_id | INT | FK → activities.id, NOT NULL | 活动 ID |
 | user_id | INT | FK → users.id, NOT NULL | 成员 ID |
+| nickname | VARCHAR(50) | NULLABLE | 该成员在此活动中的显示昵称，空时回退到 users.nickname |
 | created_at | DATETIME | DEFAULT NOW() | 加入时间 |
 
 > 联合唯一约束：(activity_id, user_id)，防止重复加入
@@ -277,13 +278,14 @@ activities 表的 `constraints` 字段为 JSON 数组，每项为一条多样性
 - 响应字段：`{id, slug, title, description, group_strategy, group_param, constraints, creator_nickname, created_at, is_member, is_creator, has_groups, groups, members, ungrouped_members}`
 - `constraints`：`[ConstraintRule]` 多样性限定规则列表，空数组表示无限定
 - `groups`：`[GroupResponse]` 分组列表，未分组时为空数组。每项 `{group_number, members: [MemberItem]}`，组内成员同样包含 `attributes` 字段
-- `members`：`[MemberItem]` 成员列表，每项 `{user_id, nickname, avatar_path, joined_at, attributes, attribute_warnings}`，其中 `attributes` 为 `Record<string, string>`，`attribute_warnings` 为 `list[str]`（不合规警告信息，合规时为空数组），按加入时间升序
+- `members`：`[MemberItem]` 成员列表，每项 `{user_id, nickname, avatar_path, joined_at, attributes, attribute_warnings}`。`nickname` 取自 `activity_members.nickname`，为空时回退到 `users.nickname`。`attributes` 为 `Record<string, string>`，`attribute_warnings` 为 `list[str]`（不合规警告信息，合规时为空数组），按加入时间升序
 - `ungrouped_members`：`[MemberItem]` 落单的成员列表。未分组时为空数组，分组后包含未分配到任何组的成员
 
 `POST /api/activities/{slug}/join`
-- 请求体：`JoinActivityRequest {attribute_values?: Record<string, string>}`
-- 活动有约束规则时，`attribute_values` 必填，须包含全部属性名，每个值须在对应属性的允许值列表内
-- 活动无约束规则时，`attribute_values` 可省略或为 `null`，直接加入
+- 请求体：`{nickname: str, attribute_values?: Record<string, string>}`
+- 始终弹出个人信息表单，因此必含 `nickname`（前端预设当前用户昵称，用户可修改）
+- `attribute_values` 可选；若活动有约束规则，每个值须在对应属性的允许值列表内，全部属性均须提供
+- 加入成功后，`nickname` 写入 `activity_members.nickname`，同时更新 `users.nickname`（反写）
 - 用户已加入时返回 409
 - 响应：`{message: "加入成功"}`
 
@@ -354,12 +356,12 @@ activities 表的 `constraints` 字段为 JSON 数组，每项为一条多样性
 > 活动列表项响应格式：`{id, slug, title, description, group_strategy, group_param, constraints, creator_nickname, created_at}`
 
 `PUT /api/activities/{slug}/attributes`
-- 请求体：`{attribute_values: Record<string, string>}`
+- 请求体：`{nickname: str, attribute_values?: Record<string, string>}`
 - 仅已加入成员可操作，未加入返回 403，活动不存在返回 404
-- 校验规则与加入时一致：须包含全部约束属性名，每个值须在允许值列表内
-- 更新该成员在当前活动中的属性值记录（先删后插）
-- 活动无约束规则时返回 400
-- 响应：`{message: "属性已更新"}`
+- 始终可调用（修改昵称、修改属性值，或两者都改）
+- 若提供 `attribute_values`，校验规则与加入时一致；若不提供，仅更新昵称
+- `nickname` 写入 `activity_members.nickname`，同时更新 `users.nickname`（反写）
+- 响应：`{message: "个人信息已更新"}`
 
 ## 4. 安全策略
 
@@ -440,15 +442,15 @@ activities 表的 `constraints` 字段为 JSON 数组，每项为一条多样性
 - 限定值输入框根据 constrained_type 动态限制 min/max
 - 供创建活动页和编辑活动页复用
 
-### 6.7 属性选择弹框
-- 新建 `AttributeSelector.vue`，以弹框形式展示，供成员加入活动或编辑属性时选择各属性值
-- 接收活动的 `constraints` 数组，为每条规则渲染控件：
-  - 属性名作为标签，属性值通过下拉选择（选项为对应的 `allowed_values`）
-- 接收 `initialValues` prop（`Record<string, string>`，可选），预填已有属性值；已有值不在当前枚举值中时视为未填写
+### 6.7 个人信息弹框
+- `AttributeSelector.vue`，以弹框形式展示，供成员加入活动或编辑个人信息时使用
+- 始终包含昵称输入框（预设当前用户昵称，可修改）
+- 若活动有约束规则，额外为每条规则渲染属性下拉选择
+- 接收 `initialValues` prop（`Record<string, string>`，可选），预填已有属性值
 - 接收 `userAttributes` prop（`Record<string, string>`，可选），当某属性无预填值时从中查找匹配值作为补充预填
 - 所有属性均为必填，提交前校验
-- 提交时以 `Record<string, string>` 格式向接口传递
-- 供活动详情页加入流程和编辑属性两个场景复用
+- 提交时以 `{nickname: string, attributeValues: Record<string, string>}` 格式向外 emit
+- 加入和编辑两个场景复用
 
 ### 6.8 操作日志页
 - 新建 `ActivityLogsView.vue`，按时间倒序展示日志列表
