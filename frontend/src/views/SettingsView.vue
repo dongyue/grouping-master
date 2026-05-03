@@ -170,7 +170,10 @@ async function saveAttrs() {
     <!-- 修改昵称 -->
     <form @submit.prevent="handleUpdateProfile" style="margin-top: 24px;">
       <div class="form-group">
-        <label>昵称 *</label>
+        <label>昵称 * <a href="#" @click.prevent="showHelp = !showHelp" class="help-link">&#x24D8;</a></label>
+        <div v-if="showHelp" class="help-box">
+          你在活动中的显示名。参加活动时可修改，修改后会反写回这里，下次加入新活动时自动预填。
+        </div>
         <div class="nickname-row">
           <input v-model="nickname" type="text" required placeholder="你的昵称" />
           <button type="submit" class="btn-save" :disabled="saving">
@@ -179,13 +182,6 @@ async function saveAttrs() {
         </div>
       </div>
     </form>
-
-    <div class="form-group">
-      <label>昵称 <a href="#" @click.prevent="showHelp = !showHelp" class="help-link">&#x24D8;</a></label>
-    </div>
-    <div v-if="showHelp" class="help-box">
-      你在活动中的显示名。参加活动时可修改，修改后会反写回这里，下次加入新活动时自动预填。
-    </div>
 
     <div class="form-group">
       <label>属性值 <a href="#" @click.prevent="showHelp = !showHelp" class="help-link">&#x24D8;</a></label>
