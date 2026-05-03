@@ -90,8 +90,12 @@ def constrained_grouping(
         ]
         return [], ungrouped_members
 
+    indices = list(range(len(members)))
+    seed = random.randint(0, 2**31 - 1)
+    rng = random.Random(seed)
+    rng.shuffle(indices)
     sorted_indices = sorted(
-        range(len(members)),
+        indices,
         key=lambda i: _rarity_sort_key(i, all_attrs, {}, constraints),
     )
 
@@ -155,7 +159,7 @@ def constrained_grouping(
         for i in ungrouped_indices
     ]
 
-    return groups_result, ungrouped_members
+    return groups_result, ungrouped_members, seed
 
 
 def simple_grouping(

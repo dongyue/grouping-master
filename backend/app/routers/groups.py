@@ -91,10 +91,9 @@ def create_groups(
 
     constraints = activity.constraints
     if constraints:
-        groups_result, ungrouped_users = constrained_grouping(
+        groups_result, ungrouped_users, seed = constrained_grouping(
             db, activity.id, activity.group_strategy, activity.group_param, constraints
         )
-        seed = None
         shuffle_order = None
     else:
         groups_result, ungrouped_users, seed, shuffle_order = simple_grouping(
