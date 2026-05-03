@@ -2,14 +2,17 @@
 import { ref, computed } from 'vue'
 
 const props = defineProps({
-  constraints: { type: Array, required: true },
+  constraints: { type: Array, default: () => [] },
   submitting: { type: Boolean, default: false },
+  initialNickname: { type: String, default: '' },
   initialValues: { type: Object, default: () => ({}) },
   userAttributes: { type: Object, default: () => ({}) },
   confirmLabel: { type: String, default: '确认加入' },
 })
 
 const emit = defineEmits(['confirm', 'cancel'])
+
+const nickname = ref(props.initialNickname)
 
 const initValues = {}
 for (const c of props.constraints) {
@@ -33,6 +36,10 @@ const attributes = computed(() => {
 
 function handleSubmit() {
   error.value = ''
+  if (!nickname.value.trim()) {
+    error.value = '请输入昵称'
+    return
+  }
   const result = {}
   for (const attr of attributes.value) {
     const v = values.value[attr.name]
@@ -42,15 +49,19 @@ function handleSubmit() {
     }
     result[attr.name] = v
   }
-  emit('confirm', result)
+  emit('confirm', { nickname: nickname.value.trim(), attributeValues: result })
 }
 </script>
 
 <template>
   <div class="overlay" @click.self="emit('cancel')">
     <div class="modal">
-      <h3 class="modal-title">我的信息</h3>
+      <h3 class="modal-title">个人信息</h3>
       <div class="fields">
+        <div class="field">
+          <label>昵称</label>
+          <input v-model="nickname" type="text" placeholder="你的显示昵称" />
+        </div>
         <div v-for="attr in attributes" :key="attr.name" class="field">
           <label>{{ attr.name }}</label>
           <select v-model="values[attr.name]">
@@ -113,8 +124,8 @@ function handleSubmit() {
   color: #666;
   font-weight: 500;
 }
+.field input,
 .field select {
-  width: 100%;
   padding: 8px 12px;
   border: 1px solid #ddd;
   border-radius: 6px;
@@ -123,6 +134,7 @@ function handleSubmit() {
   background: #fff;
   transition: border-color 0.2s;
 }
+.field input:focus,
 .field select:focus {
   border-color: #4f46e5;
 }

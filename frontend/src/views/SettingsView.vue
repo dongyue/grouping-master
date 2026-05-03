@@ -181,9 +181,16 @@ async function saveAttrs() {
     </form>
 
     <div class="form-group">
-      <label>我的信息 <a href="#" @click.prevent="showHelp = !showHelp" class="help-link">&#x24D8;</a></label>
+      <label>昵称 <a href="#" @click.prevent="showHelp = !showHelp" class="help-link">&#x24D8;</a></label>
+    </div>
+    <div v-if="showHelp" class="help-box">
+      你在活动中的显示名。参加活动时可修改，修改后会反写回这里，下次加入新活动时自动预填。
+    </div>
+
+    <div class="form-group">
+      <label>属性值 <a href="#" @click.prevent="showHelp = !showHelp" class="help-link">&#x24D8;</a></label>
       <div v-if="showHelp" class="help-box">
-        这里存储你的个人默认值。参加活动时，如果某个属性还没填且这里已有值、又在该活动的选项中，就会自动预填。在活动中提交的属性值也会自动回存到这里，省得下次再输入。
+        这里是各约束属性的个人默认值。参加活动时如有同名属性且值在活动选项中，自动预填。在活动中填写的属性值也会反写回这里。
       </div>
       <div class="attr-list">
         <div v-for="(val, name) in userAttrs" :key="name" class="attr-row">

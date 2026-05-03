@@ -12,8 +12,8 @@ export function getActivity(slug) {
   return api.get(`/activities/${slug}`)
 }
 
-export function joinActivity(slug, attributeValues = null) {
-  return api.post(`/activities/${slug}/join`, { attribute_values: attributeValues })
+export function joinActivity(slug, data) {
+  return api.post(`/activities/${slug}/join`, data)
 }
 
 export function leaveActivity(slug) {
@@ -44,7 +44,7 @@ export function getActivityLogs(slug) {
   return api.get(`/activities/${slug}/logs`)
 }
 
-export function updateAttributes(slug, attributeValues) {
-  return api.put(`/activities/${slug}/attributes`, { attribute_values: attributeValues })
+export function updateAttributes(slug, data) {
+  return api.put(`/activities/${slug}/attributes`, data)
 }
 

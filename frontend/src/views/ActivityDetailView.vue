@@ -78,11 +78,7 @@ onMounted(async () => {
 
   if (route.query.autojoin === '1') {
     router.replace({ query: {} })
-    if (activity.value.constraints?.length) {
-      showAttributeSelector.value = true
-    } else {
-      handleJoin()
-    }
+    handleJoin()
   }
 
   document.addEventListener('click', handleClickOutside)
@@ -118,33 +114,20 @@ async function refetchActivity() {
 }
 
 async function handleJoin() {
-  if (activity.value.constraints?.length) {
-    isEditingAttrs.value = false
-    showAttributeSelector.value = true
-    return
-  }
-  joining.value = true
-  joinError.value = ''
-  joinSuccess.value = ''
-  try {
-    await joinActivity(route.params.slug)
-    await refetchActivity()
-    joinSuccess.value = '加入成功'
-    setTimeout(() => (joinSuccess.value = ''), 2000)
-  } catch (err) {
-    joinError.value = err.response?.data?.detail || '加入失败'
-  } finally {
-    joining.value = false
-  }
+  isEditingAttrs.value = false
+  showAttributeSelector.value = true
 }
 
-async function handleAttributeConfirm(attributeValues) {
+async function handleAttributeConfirm({ nickname, attributeValues }) {
   showAttributeSelector.value = false
   attributeSubmitting.value = true
   joinError.value = ''
   joinSuccess.value = ''
   try {
-    await joinActivity(route.params.slug, attributeValues)
+    await joinActivity(route.params.slug, {
+      nickname,
+      attribute_values: Object.keys(attributeValues).length ? attributeValues : null,
+    })
     await refetchActivity()
     joinSuccess.value = '加入成功'
     setTimeout(() => (joinSuccess.value = ''), 2000)
@@ -163,15 +146,18 @@ function openAttrEditor() {
   showAttributeSelector.value = true
 }
 
-async function handleAttrEditConfirm(attributeValues) {
+async function handleAttrEditConfirm({ nickname, attributeValues }) {
   showAttributeSelector.value = false
   attributeSubmitting.value = true
   joinError.value = ''
   joinSuccess.value = ''
   try {
-    await updateAttributes(route.params.slug, attributeValues)
+    await updateAttributes(route.params.slug, {
+      nickname,
+      attribute_values: Object.keys(attributeValues).length ? attributeValues : null,
+    })
     await refetchActivity()
-    joinSuccess.value = '属性已更新'
+    joinSuccess.value = '个人信息已更新'
     setTimeout(() => (joinSuccess.value = ''), 2000)
   } catch (err) {
     joinError.value = err.response?.data?.detail || '更新失败'
@@ -295,8 +281,9 @@ async function handleUngroup() {
         </template>
         <AttributeSelector
           v-if="showAttributeSelector"
-          :constraints="activity.constraints"
+          :constraints="activity.constraints || []"
           :submitting="attributeSubmitting"
+          :initial-nickname="auth.user?.nickname || ''"
           :initial-values="editAttrValues"
           :user-attributes="userAttributes"
           :confirm-label="editAttrLabel"
@@ -328,7 +315,7 @@ async function handleUngroup() {
                 :is-creator="activity.is_creator"
                 :show-kick="showKick"
                 :kicking-user-id="kickingUserId"
-                :has-constraints="!!activity.constraints?.length"
+                :has-constraints
                 :uploads-url="uploadsUrl"
                 @edit="openAttrEditor()"
                 @kick="handleKick"
@@ -346,7 +333,7 @@ async function handleUngroup() {
                 :is-creator="activity.is_creator"
                 :show-kick="showKick"
                 :kicking-user-id="kickingUserId"
-                :has-constraints="!!activity.constraints?.length"
+                :has-constraints
                 :uploads-url="uploadsUrl"
                 @edit="openAttrEditor()"
                 @kick="handleKick"
@@ -363,7 +350,7 @@ async function handleUngroup() {
             :is-creator="activity.is_creator"
             :show-kick="showKick"
             :kicking-user-id="kickingUserId"
-            :has-constraints="!!activity.constraints?.length"
+            :has-constraints
             :uploads-url="uploadsUrl"
             @edit="openAttrEditor()"
             @kick="handleKick"
@@ -434,7 +421,7 @@ async function handleUngroup() {
             </button>
             <div v-if="hasCreatorItems && hasMemberItems" class="more-divider"></div>
             <button
-              v-if="activity.is_member && activity.constraints?.length"
+              v-if="activity.is_member"
               class="btn btn-secondary"
               @click="openAttrEditor(); showMore = false"
             >

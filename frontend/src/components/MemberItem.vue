@@ -5,7 +5,6 @@ const props = defineProps({
   isCreator: { type: Boolean, default: false },
   showKick: { type: Boolean, default: false },
   kickingUserId: { type: Number, default: null },
-  hasConstraints: { type: Boolean, default: false },
   uploadsUrl: { type: String, required: true },
 })
 
@@ -23,7 +22,7 @@ const emit = defineEmits(['edit', 'kick'])
       <span v-for="(val, key) in member.attributes" :key="key" class="attr-tag">{{ val }}</span>
     </span>
     <span v-if="member.attribute_warnings?.length" class="warn-icon" :title="member.attribute_warnings.join('\n')">&#9888;</span>
-    <span v-if="member.user_id === currentUserId && hasConstraints" class="edit-icon" @click="$emit('edit')" title="编辑我的信息">&#x270E;</span>
+    <span v-if="member.user_id === currentUserId" class="edit-icon" @click="$emit('edit')" title="编辑个人信息">&#x270E;</span>
     <button
       v-if="isCreator && member.user_id !== currentUserId && showKick"
       class="btn-kick"
