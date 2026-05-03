@@ -263,14 +263,14 @@ main {
 }
 
 .rule-input {
-  width: 80px !important;
+  width: 56px !important;
   text-align: center;
   padding: 0 8px !important;
 }
 
 .rule-select {
-  min-width: 120px;
-  max-width: 200px;
+  width: auto !important;
+  min-width: 0;
 }
 
 .rule-extra {
@@ -290,6 +290,6 @@ main {
 
 .actions .btn {
   width: auto;
-  flex: 1;
+  padding: 0 24px;
 }
 </style>
