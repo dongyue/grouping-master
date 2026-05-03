@@ -262,17 +262,6 @@ main {
   white-space: nowrap;
 }
 
-.rule-input {
-  width: 56px !important;
-  text-align: center;
-  padding: 0 8px !important;
-}
-
-.rule-select {
-  width: auto !important;
-  min-width: 0;
-}
-
 .rule-extra {
   margin-top: 8px;
 }

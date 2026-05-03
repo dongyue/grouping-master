@@ -100,23 +100,23 @@ function handleSubmit() {
             <label class="checkbox-label">
               <input v-model="allowWantPreferences" type="checkbox" />
               <span>允许成员设置「想和谁同组」</span>
+              <template v-if="allowWantPreferences">
+                <span>，最多</span>
+                <input v-model.number="maxWantCount" type="number" min="1" max="10" class="pref-count-input" />
+                <span>人</span>
+              </template>
             </label>
-            <div v-if="allowWantPreferences" class="pref-count-row">
-              <span>最多</span>
-              <input v-model.number="maxWantCount" type="number" min="1" max="10" class="pref-count-input" />
-              <span>人</span>
-            </div>
           </div>
           <div class="pref-row">
             <label class="checkbox-label">
               <input v-model="allowAvoidPreferences" type="checkbox" />
               <span>允许成员设置「不想和谁同组」</span>
+              <template v-if="allowAvoidPreferences">
+                <span>，最多</span>
+                <input v-model.number="maxAvoidCount" type="number" min="1" max="10" class="pref-count-input" />
+                <span>人</span>
+              </template>
             </label>
-            <div v-if="allowAvoidPreferences" class="pref-count-row">
-              <span>最多</span>
-              <input v-model.number="maxAvoidCount" type="number" min="1" max="10" class="pref-count-input" />
-              <span>人</span>
-            </div>
           </div>
         </div>
         <slot name="extra-actions" />
@@ -151,21 +151,26 @@ function handleSubmit() {
   flex-shrink: 0;
 }
 
-.pref-count-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-top: 8px;
-  font-size: 14px;
-  color: #555;
-}
-
 .pref-count-input {
-  width: 60px;
-  padding: 4px 8px;
+  width: 52px;
+  height: 32px;
+  padding: 0 6px;
   border: 1px solid #ccc;
   border-radius: 4px;
   text-align: center;
   font-size: 14px;
+}
+
+.rule-input {
+  width: 52px;
+  height: 32px;
+  text-align: center;
+  padding: 0 8px;
+}
+
+.rule-select {
+  width: auto;
+  height: 32px;
+  min-width: 0;
 }
 </style>
