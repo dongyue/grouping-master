@@ -109,7 +109,7 @@ def get_activity(
     members_data = [
         MemberItem(
             user_id=m.user_id,
-            nickname=m.user.nickname,
+            nickname=m.nickname or m.user.nickname,
             avatar_path=m.user.avatar_path,
             joined_at=m.created_at.isoformat(),
             attributes={attr.attribute_name: attr.attribute_value for attr in m.attributes},
@@ -132,6 +132,7 @@ def get_activity(
     )
 
     member_attrs_map = {m.user_id: m.attributes for m in members}
+    member_nickname_map = {m.user_id: m.nickname or m.user.nickname for m in members}
 
     groups_data = [
         GroupResponse(
@@ -139,7 +140,7 @@ def get_activity(
             members=[
                 MemberItem(
                     user_id=gm.user_id,
-                    nickname=gm.user.nickname,
+                    nickname=member_nickname_map.get(gm.user_id, gm.user.nickname),
                     avatar_path=gm.user.avatar_path,
                     joined_at="",
                     attributes={attr.attribute_name: attr.attribute_value for attr in member_attrs_map.get(gm.user_id, [])},

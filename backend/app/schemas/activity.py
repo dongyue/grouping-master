@@ -76,6 +76,7 @@ class ActivityUpdateRequest(ActivityBaseRequest):
 
 
 class JoinActivityRequest(BaseModel):
+    nickname: str
     attribute_values: dict[str, str] | None = None
 
 
