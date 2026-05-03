@@ -43,6 +43,39 @@ const isEditingAttrs = ref(false)
 const userAttributes = ref({})
 const sortKey = ref('joined')
 
+const groupMap = computed(() => {
+  const map = {}
+  if (!activity.value) return map
+  if (activity.value.has_groups) {
+    if (activity.value.groups) {
+      for (const g of activity.value.groups) {
+        for (const m of g.members) {
+          map[m.user_id] = `第${g.group_number}组`
+        }
+      }
+    }
+    if (activity.value.ungrouped_members) {
+      for (const m of activity.value.ungrouped_members) {
+        map[m.user_id] = '落单'
+      }
+    }
+  }
+  return map
+})
+
+const memberTitle = computed(() => {
+  const count = activity.value?.members?.length || 0
+  if (!activity.value?.has_groups || !activity.value?.groups?.length) {
+    return `成员 ${count} 人`
+  }
+  const groupCount = activity.value.groups.length
+  const ungroupedCount = activity.value.ungrouped_members?.length || 0
+  if (ungroupedCount === 0) {
+    return `成员 ${count} 人，分为 ${groupCount} 组。`
+  }
+  return `成员 ${count} 人，分为 ${groupCount} 组，另有 ${ungroupedCount} 人落单。`
+})
+
 const sortOptions = computed(() => {
   const options = [
     { value: 'joined', label: '按加入时间' },
@@ -52,6 +85,9 @@ const sortOptions = computed(() => {
     for (const c of activity.value.constraints) {
       options.push({ value: 'attr:' + c.attribute_name, label: '按' + c.attribute_name })
     }
+  }
+  if (activity.value?.has_groups) {
+    options.push({ value: 'group', label: '按分组' })
   }
   return options
 })
@@ -91,6 +127,7 @@ onMounted(async () => {
   try {
     const res = await getActivity(route.params.slug)
     activity.value = res.data
+    if (res.data.has_groups) sortKey.value = 'group'
   } catch (err) {
     console.error('加载活动详情错误:', err)
     if (err.response?.status === 404) {
@@ -125,6 +162,11 @@ onBeforeUnmount(() => {
   document.removeEventListener('click', handleClickOutside)
 })
 
+function getGroupLabel(userId) {
+  if (!activity.value?.has_groups || sortKey.value === 'group') return ''
+  return groupMap.value[userId] || ''
+}
+
 function handleClickOutside(event) {
   if (showMore.value && !event.target.closest('.more-wrapper')) {
     showMore.value = false
@@ -147,6 +189,7 @@ async function refetchActivity() {
   try {
     const res = await getActivity(route.params.slug)
     activity.value = res.data
+    sortKey.value = res.data.has_groups ? 'group' : 'joined'
   } catch {} // silently ignore refetch failures
 }
 
@@ -330,9 +373,9 @@ async function handleUngroup() {
       </div>
       <div class="members-section">
         <h3 class="members-title">
-          已加入的成员 {{ activity.members?.length || 0 }} 人<template v-if="activity.has_groups && activity.groups?.length">，共 {{ activity.groups.length }} 组</template>
+          {{ memberTitle }}
           <select
-            v-if="!activity.has_groups && activity.members?.length && sortOptions.length > 2"
+            v-if="activity.members?.length && sortOptions.length > 2"
             v-model="sortKey"
             class="sort-select"
           >
@@ -347,7 +390,7 @@ async function handleUngroup() {
             {{ showKick ? '完成管理' : '管理成员' }}
           </button>
         </h3>
-        <div v-if="activity.has_groups && activity.groups?.length">
+        <div v-if="activity.has_groups && sortKey === 'group' && activity.groups?.length">
           <div v-for="group in activity.groups" :key="group.group_number" class="group-card" :class="{ 'my-group': group.members.some(m => m.user_id === auth.user.id) }">
             <h4 class="group-title">第 {{ group.group_number }} 组 {{ group.members.length }} 人</h4>
             <div class="members-list">
@@ -359,7 +402,6 @@ async function handleUngroup() {
                 :is-creator="activity.is_creator"
                 :show-kick="showKick"
                 :kicking-user-id="kickingUserId"
-                :has-constraints
                 :uploads-url="uploadsUrl"
                 @edit="openAttrEditor()"
                 @kick="handleKick"
@@ -377,7 +419,6 @@ async function handleUngroup() {
                 :is-creator="activity.is_creator"
                 :show-kick="showKick"
                 :kicking-user-id="kickingUserId"
-                :has-constraints
                 :uploads-url="uploadsUrl"
                 @edit="openAttrEditor()"
                 @kick="handleKick"
@@ -394,7 +435,7 @@ async function handleUngroup() {
             :is-creator="activity.is_creator"
             :show-kick="showKick"
             :kicking-user-id="kickingUserId"
-            :has-constraints
+            :group-label="getGroupLabel(member.user_id)"
             :uploads-url="uploadsUrl"
             @edit="openAttrEditor()"
             @kick="handleKick"
@@ -412,7 +453,7 @@ async function handleUngroup() {
                 :is-creator="activity.is_creator"
                 :show-kick="showKick"
                 :kicking-user-id="kickingUserId"
-                :has-constraints
+                :group-label="getGroupLabel(member.user_id)"
                 :uploads-url="uploadsUrl"
                 @edit="openAttrEditor()"
                 @kick="handleKick"
@@ -602,17 +643,8 @@ async function handleUngroup() {
   color: #666;
   cursor: pointer;
   transition: all 0.2s;
-}
-
-.sort-select {
-  font-size: 11px;
-  padding: 2px 6px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  background: #fff;
-  color: #666;
-  cursor: pointer;
-  margin-left: 8px;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .btn-toggle-kick:hover {

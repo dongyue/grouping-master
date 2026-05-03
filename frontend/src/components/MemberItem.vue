@@ -6,6 +6,7 @@ const props = defineProps({
   showKick: { type: Boolean, default: false },
   kickingUserId: { type: Number, default: null },
   uploadsUrl: { type: String, required: true },
+  groupLabel: { type: String, default: '' },
 })
 
 const emit = defineEmits(['edit', 'kick'])
@@ -17,6 +18,7 @@ const emit = defineEmits(['edit', 'kick'])
       <img v-if="member.avatar_path" :src="`${uploadsUrl}/${member.avatar_path}`" />
       <span v-else class="avatar-placeholder">{{ member.nickname[0] }}</span>
     </div>
+    <span v-if="groupLabel" class="group-label" :class="{ 'ungrouped-label': groupLabel === '落单' }">{{ groupLabel }}</span>
     <span class="member-nickname">{{ member.nickname }}</span>
     <span v-if="member.attributes && Object.keys(member.attributes).length" class="member-attrs">
       <span v-for="(val, key) in member.attributes" :key="key" class="attr-tag">{{ val }}</span>
@@ -94,6 +96,21 @@ const emit = defineEmits(['edit', 'kick'])
   background: #f0f0f0;
   color: #888;
   border-radius: 3px;
+}
+
+.group-label {
+  font-size: 11px;
+  padding: 1px 6px;
+  background: #ede9fe;
+  color: #6d28d9;
+  border-radius: 3px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.group-label.ungrouped-label {
+  background: #fef3c7;
+  color: #b45309;
 }
 
 .warn-icon {

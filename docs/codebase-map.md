@@ -148,7 +148,7 @@ routers → schemas → models → database.py
 | `ConstraintEditor.vue` | 组内多样性限定规则编辑器 |
 | `AttributeSelector.vue` | 属性选择弹框：加入/编辑属性值 |
 | `ConfirmModal.vue` | 确认对话框组件 |
-| `MemberItem.vue` | 成员条目组件：头像、昵称、属性标签、高亮、警告、编辑入口、踢出按钮 |
+| `MemberItem.vue` | 成员条目组件：头像、组号标签、昵称、属性标签、高亮、警告、编辑入口、踢出按钮 |
 
 ### 页面组件（views/）
 
