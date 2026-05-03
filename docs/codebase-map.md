@@ -156,7 +156,7 @@ routers → schemas → models → database.py
 |------|------|
 | `HomeView.vue` | 首页：我创建的活动列表 + 我加入的活动列表 |
 | `CreateActivityView.vue` | 创建活动页 |
-| `ActivityDetailView.vue` | 活动详情页：操作按钮栏、分组规则展示、成员列表（含分组/落单视图）、属性选择、确认对话框 |
+| `ActivityDetailView.vue` | 活动详情页：操作按钮栏、分组规则展示、成员列表（含排序切换/属性分类/分组/落单视图）、属性选择、确认对话框 |
 | `ActivityEditView.vue` | 编辑活动页 |
 | `LoginView.vue` | 登录页 |
 | `RegisterView.vue` | 注册页 |

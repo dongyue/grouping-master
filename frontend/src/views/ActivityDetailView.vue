@@ -41,6 +41,43 @@ const editAttrValues = ref({})
 const editAttrLabel = ref('确认')
 const isEditingAttrs = ref(false)
 const userAttributes = ref({})
+const sortKey = ref('joined')
+
+const sortOptions = computed(() => {
+  const options = [
+    { value: 'joined', label: '按加入时间' },
+    { value: 'nickname', label: '按昵称' },
+  ]
+  if (activity.value?.constraints) {
+    for (const c of activity.value.constraints) {
+      options.push({ value: 'attr:' + c.attribute_name, label: '按' + c.attribute_name })
+    }
+  }
+  return options
+})
+
+const sortedMembers = computed(() => {
+  const members = activity.value?.members || []
+  if (!members.length || !sortKey.value) return { flat: members }
+
+  if (sortKey.value === 'joined') return { flat: [...members] }
+  if (sortKey.value === 'nickname') {
+    return { flat: [...members].sort((a, b) => a.nickname.localeCompare(b.nickname, 'zh-CN')) }
+  }
+
+  if (sortKey.value.startsWith('attr:')) {
+    const attrName = sortKey.value.slice(5)
+    const groups = {}
+    for (const m of members) {
+      const v = m.attributes?.[attrName] || '未填写'
+      if (!groups[v]) groups[v] = []
+      groups[v].push(m)
+    }
+    return { grouped: groups }
+  }
+
+  return { flat: members }
+})
 
 const hasMemberItems = computed(() => {
   return activity.value?.is_member
@@ -294,6 +331,13 @@ async function handleUngroup() {
       <div class="members-section">
         <h3 class="members-title">
           已加入的成员 {{ activity.members?.length || 0 }} 人<template v-if="activity.has_groups && activity.groups?.length">，共 {{ activity.groups.length }} 组</template>
+          <select
+            v-if="!activity.has_groups && activity.members?.length && sortOptions.length > 2"
+            v-model="sortKey"
+            class="sort-select"
+          >
+            <option v-for="opt in sortOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
+          </select>
           <button
             v-if="activity.is_creator"
             class="btn-toggle-kick"
@@ -341,9 +385,9 @@ async function handleUngroup() {
             </div>
           </div>
         </div>
-        <div v-else-if="activity.members?.length" class="members-list">
+        <div v-else-if="sortedMembers.flat?.length" class="members-list">
           <MemberItem
-            v-for="member in activity.members"
+            v-for="member in sortedMembers.flat"
             :key="member.user_id"
             :member="member"
             :current-user-id="auth.user.id"
@@ -355,6 +399,26 @@ async function handleUngroup() {
             @edit="openAttrEditor()"
             @kick="handleKick"
           />
+        </div>
+        <div v-else-if="sortedMembers.grouped">
+          <div v-for="(members, groupLabel) in sortedMembers.grouped" :key="groupLabel" class="group-card" :class="{ 'my-group': members.some(m => m.user_id === auth.user.id) }">
+            <h4 class="group-title">{{ groupLabel }} {{ members.length }} 人</h4>
+            <div class="members-list">
+              <MemberItem
+                v-for="member in members"
+                :key="member.user_id"
+                :member="member"
+                :current-user-id="auth.user.id"
+                :is-creator="activity.is_creator"
+                :show-kick="showKick"
+                :kicking-user-id="kickingUserId"
+                :has-constraints
+                :uploads-url="uploadsUrl"
+                @edit="openAttrEditor()"
+                @kick="handleKick"
+              />
+            </div>
+          </div>
         </div>
         <p v-else class="members-empty">暂无成员</p>
       </div>
@@ -538,6 +602,17 @@ async function handleUngroup() {
   color: #666;
   cursor: pointer;
   transition: all 0.2s;
+}
+
+.sort-select {
+  font-size: 11px;
+  padding: 2px 6px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background: #fff;
+  color: #666;
+  cursor: pointer;
+  margin-left: 8px;
 }
 
 .btn-toggle-kick:hover {

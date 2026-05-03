@@ -42,3 +42,6 @@ backend/alembic/README
 
 # diff 工具输出
 diff.md
+
+# 合并前检查清单（过程工具，不跟踪）
+.checklist.md
