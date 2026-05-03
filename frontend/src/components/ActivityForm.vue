@@ -54,12 +54,12 @@ function handleSubmit() {
     title: title.value,
     description: description.value || null,
     group_strategy: groupStrategy.value,
-    group_param: groupParam.value,
+    group_param: Number(groupParam.value) || 2,
     constraints: buildConstraints(),
     allow_want_preferences: allowWantPreferences.value,
-    max_want_count: maxWantCount.value,
+    max_want_count: Number(maxWantCount.value) || 1,
     allow_avoid_preferences: allowAvoidPreferences.value,
-    max_avoid_count: maxAvoidCount.value,
+    max_avoid_count: Number(maxAvoidCount.value) || 1,
   })
 }
 </script>
