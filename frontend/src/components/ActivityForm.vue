@@ -154,7 +154,7 @@ function handleSubmit() {
   height: 32px;
   padding: 0 6px;
   border: 1px solid #ccc;
-  border-radius: 4px;
+  border-radius: 8px;
   text-align: center;
   font-size: 14px;
 }
