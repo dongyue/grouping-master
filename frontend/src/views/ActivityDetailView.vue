@@ -363,6 +363,12 @@ async function handleUngroup() {
             组内限定：每组{{ c.constraint_type === 'min_diversity' ? '至少' : '最多' }}{{ c.constraint_value }}种{{ c.attribute_name }}
           </span>
         </template>
+        <span v-if="activity.allow_want_preferences" class="rule-badge">
+          成员偏好：允许设置「想和谁同组」，最多 {{ activity.max_want_count }} 人
+        </span>
+        <span v-if="activity.allow_avoid_preferences" class="rule-badge">
+          成员偏好：允许设置「不想和谁同组」，最多 {{ activity.max_avoid_count }} 人
+        </span>
         <AttributeSelector
           v-if="showAttributeSelector"
           :constraints="activity.constraints || []"
