@@ -319,9 +319,15 @@ activities 表的 `constraints` 字段为 JSON 数组，每项为一条多样性
 - 仅活动创建者可执行，非创建者返回 403
 - **前置校验**：若活动定义了约束规则，检查所有成员的属性值是否完整且合法。任一个成员存在属性缺失或值不在允许范围内，返回 422，`detail` 字段为文字摘要，额外返回 `issues` 数组列出每个不合格成员的 `user_id`、`nickname` 和 `issues` 列表
 - 若已分组，先清除已有分组及组成员数据，再重新分组
-- 读取活动的 `group_strategy`、`group_param` 配置执行分组
-- `group_strategy = "fixed_group_size"`：成员随机打乱，按 `group_param` 人一组分配。若不能整除，最后不足一组的人数归入「落单」不分配
-- `group_strategy = "fixed_group_count"`：成员随机打乱，尽可能平均分配到 `group_param` 组（每组 `floor(总人数/组数)` 人）。余数归入「落单」
+- 读取活动的 `group_strategy`、`group_param`、`constraints` 配置执行分组：
+  - 若活动未定义约束规则，使用随机分组（成员打乱后顺序填组）
+  - 若活动定义了约束规则，使用约束感知分组算法：
+    - 按属性值稀有度排序（稀有属性值的成员优先分配）
+    - 贪心放置：每个成员尝试落入已有未满组，检查组内多样性是否合规
+    - `min_diversity` 仅在该组满员时校验（未满组总可期待后续成员补足多样性）
+    - `max_diversity` 在每次加入时校验（新人推高多样性可能超标）
+    - 落单回填：贪心轮结束后遍历落单列表，尝试填入尚未满员的组
+  - `group_strategy = "fixed_group_count"` 时，若约束过紧导致无法建满目标组数，宁可少建组，每个已建组必须合规
 - 响应：`{groups: [GroupResponse], ungrouped_members: [MemberItem]}`
 
 `DELETE /api/activities/{slug}/groups`

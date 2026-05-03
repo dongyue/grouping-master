@@ -18,6 +18,7 @@ from app.services.upload import validate_magic_bytes
 from app.services.member import get_attribute_warnings
 from app.services.log import add_activity_log
 from app.services.user_attribute import sync_user_attributes
+from app.services.groups import constrained_grouping, simple_grouping
 
 __all__ = [
     "hash_password",
@@ -39,4 +40,6 @@ __all__ = [
     "get_attribute_warnings",
     "add_activity_log",
     "sync_user_attributes",
+    "constrained_grouping",
+    "simple_grouping",
 ]
