@@ -9,7 +9,7 @@ main.py
   ├── routers/auth.py       → services/auth.py, services/mail.py, services/upload.py
   ├── routers/activities.py → services/member.py, services/log.py
   ├── routers/members.py    → services/log.py, services/user_attribute.py
-  ├── routers/groups.py     → services/log.py
+  ├── routers/groups.py     → services/log.py, services/groups.py, services/member.py
   ├── routers/logs.py
   └── middleware/auth.py    → services/auth.py
 
@@ -72,6 +72,7 @@ routers → schemas → models → database.py
 | `member.py` | `get_attribute_warnings` — 检查成员属性值合规性 |
 | `log.py` | `add_activity_log` — 写入活动操作日志 |
 | `user_attribute.py` | `sync_user_attributes` — 同步用户个人属性值 |
+| `groups.py` | `constrained_grouping`（约束感知贪心分组）、`simple_grouping`（无约束随机分组） |
 
 ### 中间件（app/middleware/）
 
