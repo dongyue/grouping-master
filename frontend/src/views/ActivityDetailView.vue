@@ -71,9 +71,13 @@ const memberTitle = computed(() => {
   const groupCount = activity.value.groups.length
   const ungroupedCount = activity.value.ungrouped_members?.length || 0
   if (ungroupedCount === 0) {
-    return `成员 ${count} 人，分为 ${groupCount} 组。`
+    return `成员 ${count} 人，分为 ${groupCount} 组`
   }
-  return `成员 ${count} 人，分为 ${groupCount} 组，另有 ${ungroupedCount} 人落单。`
+  return `成员 ${count} 人，分为 ${groupCount} 组，另有 ${ungroupedCount} 人落单`
+})
+
+const sectionTitle = computed(() => {
+  return activity.value?.has_groups ? '成员与分组情况' : '成员情况'
 })
 
 const sortOptions = computed(() => {
@@ -371,25 +375,28 @@ async function handleUngroup() {
           @cancel="handleAttrCancel"
         />
       </div>
+      <h3 class="rule-heading section-heading">
+        <span class="section-heading-text">{{ sectionTitle }}</span>
+        <select
+          v-if="activity.members?.length && sortOptions.length > 2"
+          v-model="sortKey"
+          class="sort-select"
+        >
+          <option v-for="opt in sortOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
+        </select>
+        <button
+          v-if="activity.is_creator"
+          class="btn-toggle-kick"
+          :class="{ active: showKick }"
+          @click="showKick = !showKick"
+        >
+          {{ showKick ? '完成管理' : '管理成员' }}
+        </button>
+      </h3>
       <div class="members-section">
-        <h3 class="members-title">
-          {{ memberTitle }}
-          <select
-            v-if="activity.members?.length && sortOptions.length > 2"
-            v-model="sortKey"
-            class="sort-select"
-          >
-            <option v-for="opt in sortOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
-          </select>
-          <button
-            v-if="activity.is_creator"
-            class="btn-toggle-kick"
-            :class="{ active: showKick }"
-            @click="showKick = !showKick"
-          >
-            {{ showKick ? '完成管理' : '管理成员' }}
-          </button>
-        </h3>
+        <div class="members-toolbar">
+          <span class="members-summary">{{ memberTitle }}</span>
+        </div>
         <div v-if="activity.has_groups && sortKey === 'group' && activity.groups?.length">
           <div v-for="group in activity.groups" :key="group.group_number" class="group-card" :class="{ 'my-group': group.members.some(m => m.user_id === auth.user.id) }">
             <h4 class="group-title">第 {{ group.group_number }} 组 {{ group.members.length }} 人</h4>
@@ -624,14 +631,34 @@ async function handleUngroup() {
   margin-bottom: 24px;
 }
 
-.members-title {
-  font-size: 14px;
-  color: #666;
-  margin-bottom: 12px;
-  font-weight: 600;
+.section-heading {
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+.section-heading-text {
+  flex: 1;
+}
+
+.members-toolbar {
+  margin-bottom: 12px;
+}
+
+.members-summary {
+  font-size: 13px;
+  color: #666;
+}
+
+.sort-select {
+  font-size: 11px;
+  padding: 2px 6px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background: #fff;
+  color: #666;
+  cursor: pointer;
+  flex-shrink: 0;
 }
 
 .btn-toggle-kick {
