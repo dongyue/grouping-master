@@ -105,7 +105,7 @@ const actionLabels = {
                 </span>
               </div>
             </div>
-            <div class="detail-section">
+            <div v-if="log.detail.shuffle_order" class="detail-section">
               <h5>打乱前顺序</h5>
               <div class="detail-line">
                 {{ log.detail.shuffle_order.map(uid => log.detail.members.find(m => m.user_id === uid)?.nickname || uid).join(' → ') }}
