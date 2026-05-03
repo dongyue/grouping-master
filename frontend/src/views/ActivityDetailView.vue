@@ -364,10 +364,10 @@ async function handleUngroup() {
           </span>
         </template>
         <span v-if="activity.allow_want_preferences" class="rule-badge">
-          成员偏好：允许设置「想和谁同组」，最多 {{ activity.max_want_count }} 人
+          成员偏好：允许成员设置「想和谁同组」，最多 {{ activity.max_want_count }} 人
         </span>
         <span v-if="activity.allow_avoid_preferences" class="rule-badge">
-          成员偏好：允许设置「不想和谁同组」，最多 {{ activity.max_avoid_count }} 人
+          成员偏好：允许成员设置「不想和谁同组」，最多 {{ activity.max_avoid_count }} 人
         </span>
         <AttributeSelector
           v-if="showAttributeSelector"
