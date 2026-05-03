@@ -12,9 +12,10 @@
 2. 编写/更新 `docs/requirements.md`，给用户确认
 3. 用户确认后 → 编写/更新 `docs/design.md`，给用户确认
 4. 用户确认后 → 编写代码
-5. 用户人工测试验收
-6. 验收通过后 → 检查并更新 `docs/requirements.md`、`docs/design.md`、`docs/codebase-map.md`，确保三者反映当前源代码功能，给用户确认
-7. 用户确认后 → commit 所有改动 → 合入 master
+5. 若改动涉及算法逻辑 → 更新/编写单测脚本，跑全部后端单测通过（`cd backend && source venv/bin/activate && python3 -m pytest tests/ -v`）
+6. 用户人工测试验收
+7. 验收通过后 → 检查并更新 `docs/requirements.md`、`docs/design.md`、`docs/codebase-map.md`，确保三者反映当前源代码功能，给用户确认
+8. 用户确认后 → commit 所有改动 → 合入 master
 
 ### 文档定位
 
