@@ -15,6 +15,10 @@ class ActivityBaseRequest(BaseModel):
     group_strategy: str = "fixed_group_size"
     group_param: int = 2
     constraints: list[ConstraintRule] | None = None
+    allow_want_preferences: bool = False
+    max_want_count: int = 1
+    allow_avoid_preferences: bool = False
+    max_avoid_count: int = 1
 
     @field_validator("title")
     @classmethod
@@ -66,6 +70,20 @@ class ActivityBaseRequest(BaseModel):
                     raise ValueError(f"属性「{attr_name}」的『最多』限定值({rule.constraint_value})不能达到枚举值数量({n})")
         return v
 
+    @field_validator("max_want_count")
+    @classmethod
+    def validate_max_want_count(cls, v: int) -> int:
+        if v < 1 or v > 10:
+            raise ValueError("「希望在一起」上限需在 1-10 之间")
+        return v
+
+    @field_validator("max_avoid_count")
+    @classmethod
+    def validate_max_avoid_count(cls, v: int) -> int:
+        if v < 1 or v > 10:
+            raise ValueError("「不希望在一起」上限需在 1-10 之间")
+        return v
+
 
 class ActivityCreateRequest(ActivityBaseRequest):
     pass
@@ -88,6 +106,10 @@ class ActivityResponse(BaseModel):
     group_strategy: str
     group_param: int
     constraints: list | None = None
+    allow_want_preferences: bool
+    max_want_count: int
+    allow_avoid_preferences: bool
+    max_avoid_count: int
     creator_nickname: str
     created_at: str
 

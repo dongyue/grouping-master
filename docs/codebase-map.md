@@ -34,7 +34,7 @@ routers → schemas → models → database.py
 | `user.py` | `User` 表 |
 | `session.py` | `Session` 表：服务端 session 持久化 |
 | `password_reset.py` | `PasswordReset` 表：密码重置令牌 |
-| `activity.py` | `Activity` 表：活动（id, slug, user_id FK, title, description, group_strategy, group_param, constraints JSON） |
+| `activity.py` | `Activity` 表：活动（id, slug, user_id FK, title, description, group_strategy, group_param, constraints JSON, allow_want_preferences, max_want_count, allow_avoid_preferences, max_avoid_count） |
 | `activity_member.py` | `ActivityMember` 表：活动成员关系（含 nickname），联合唯一约束 |
 | `group.py` | `Group` 表：分组，关联 GroupMember |
 | `group_member.py` | `GroupMember` 表：分组成员关系，联合唯一约束 |
@@ -98,7 +98,8 @@ routers → schemas → models → database.py
 | `versions/9e5f6a7b8c9d_add_member_attributes_table.py` | 新增 member_attributes 表 |
 | `versions/a0f5b6c7d8e9_add_activity_logs_table.py` | 新增 activity_logs 表 |
 | `versions/b1c6d7e8f9a0_add_user_attributes_table.py` | 新增 user_attributes 表 |
-| `versions/a42da61cb8a7_add_nickname_to_activity_members.py` | activity_members 表新增 nickname 列（⬅ 当前 HEAD） |
+| `versions/a42da61cb8a7_add_nickname_to_activity_members.py` | activity_members 表新增 nickname 列 |
+| `versions/d7b34759a402_add_member_preferences_to_activities.py` | activities 表新增 allow_want_preferences、max_want_count、allow_avoid_preferences、max_avoid_count 列（⬅ 当前 HEAD） |
 
 ---
 
@@ -146,6 +147,7 @@ routers → schemas → models → database.py
 | 文件 | 职责 |
 |------|------|
 | `ConstraintEditor.vue` | 组内多样性限定规则编辑器 |
+| `ActivityForm.vue` | 活动表单共享组件：标题/描述/分组规则/成员偏好设置的统一表单，含表单状态管理和构建逻辑 |
 | `AttributeSelector.vue` | 属性选择弹框：加入/编辑属性值 |
 | `ConfirmModal.vue` | 确认对话框组件 |
 | `MemberItem.vue` | 成员条目组件：头像、组号标签、昵称、属性标签、高亮、警告、编辑入口、踢出按钮 |
@@ -155,9 +157,9 @@ routers → schemas → models → database.py
 | 文件 | 职责 |
 |------|------|
 | `HomeView.vue` | 首页：我创建的活动列表 + 我加入的活动列表 |
-| `CreateActivityView.vue` | 创建活动页 |
+| `CreateActivityView.vue` | 创建活动页：管理 joinActivity 复选框，通过 ActivityForm 渲染表单 |
 | `ActivityDetailView.vue` | 活动详情页：操作按钮栏、分组规则展示、成员列表（含排序切换/属性分类/分组/落单视图）、属性选择、确认对话框 |
-| `ActivityEditView.vue` | 编辑活动页 |
+| `ActivityEditView.vue` | 编辑活动页：加载活动数据并转换 constraints 格式，通过 ActivityForm 渲染预填表单 |
 | `LoginView.vue` | 登录页 |
 | `RegisterView.vue` | 注册页 |
 | `ForgotPasswordView.vue` | 忘记密码页 |

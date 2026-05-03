@@ -28,6 +28,10 @@ def create_activity(
         group_strategy=body.group_strategy,
         group_param=body.group_param,
         constraints=[c.model_dump() for c in body.constraints] if body.constraints else None,
+        allow_want_preferences=body.allow_want_preferences,
+        max_want_count=body.max_want_count,
+        allow_avoid_preferences=body.allow_avoid_preferences,
+        max_avoid_count=body.max_avoid_count,
     )
     db.add(activity)
     db.flush()
@@ -41,6 +45,10 @@ def create_activity(
         group_strategy=activity.group_strategy,
         group_param=activity.group_param,
         constraints=activity.constraints,
+        allow_want_preferences=activity.allow_want_preferences,
+        max_want_count=activity.max_want_count,
+        allow_avoid_preferences=activity.allow_avoid_preferences,
+        max_avoid_count=activity.max_avoid_count,
         creator_nickname=current_user.nickname,
         created_at=activity.created_at.isoformat(),
     )
@@ -77,6 +85,10 @@ def list_activities(
             group_strategy=a.group_strategy,
             group_param=a.group_param,
             constraints=a.constraints,
+            allow_want_preferences=a.allow_want_preferences,
+            max_want_count=a.max_want_count,
+            allow_avoid_preferences=a.allow_avoid_preferences,
+            max_avoid_count=a.max_avoid_count,
             creator_nickname=a.user.nickname,
             created_at=a.created_at.isoformat(),
         )
@@ -163,6 +175,10 @@ def get_activity(
         group_strategy=activity.group_strategy,
         group_param=activity.group_param,
         constraints=activity.constraints,
+        allow_want_preferences=activity.allow_want_preferences,
+        max_want_count=activity.max_want_count,
+        allow_avoid_preferences=activity.allow_avoid_preferences,
+        max_avoid_count=activity.max_avoid_count,
         creator_nickname=activity.user.nickname,
         created_at=activity.created_at.isoformat(),
         is_member=is_member,
@@ -199,6 +215,10 @@ def update_activity(
     activity.group_strategy = body.group_strategy
     activity.group_param = body.group_param
     activity.constraints = [c.model_dump() for c in body.constraints] if body.constraints else None
+    activity.allow_want_preferences = body.allow_want_preferences
+    activity.max_want_count = body.max_want_count
+    activity.allow_avoid_preferences = body.allow_avoid_preferences
+    activity.max_avoid_count = body.max_avoid_count
 
     content = f"{current_user.nickname} 编辑了活动"
     if changes:
@@ -214,6 +234,10 @@ def update_activity(
         group_strategy=activity.group_strategy,
         group_param=activity.group_param,
         constraints=activity.constraints,
+        allow_want_preferences=activity.allow_want_preferences,
+        max_want_count=activity.max_want_count,
+        allow_avoid_preferences=activity.allow_avoid_preferences,
+        max_avoid_count=activity.max_avoid_count,
         creator_nickname=activity.user.nickname,
         created_at=activity.created_at.isoformat(),
     )
