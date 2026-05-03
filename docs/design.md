@@ -444,7 +444,7 @@ activities 表的 `constraints` 字段为 JSON 数组，每项为一条多样性
 
 ### 6.7 个人信息弹框
 - `AttributeSelector.vue`，以弹框形式展示，供成员加入活动或编辑个人信息时使用
-- 始终包含昵称输入框（预设当前用户昵称，可修改）
+- 始终包含昵称输入框（预设当前用户昵称，可修改，旁注提示此处有时宜填写真实姓名）
 - 若活动有约束规则，额外为每条规则渲染属性下拉选择
 - 接收 `initialValues` prop（`Record<string, string>`，可选），预填已有属性值
 - 接收 `userAttributes` prop（`Record<string, string>`，可选），当某属性无预填值时从中查找匹配值作为补充预填

@@ -61,6 +61,7 @@ function handleSubmit() {
         <div class="field">
           <label>昵称</label>
           <input v-model="nickname" type="text" placeholder="你的显示昵称" />
+          <span class="field-hint">此处有时宜填写真实姓名</span>
         </div>
         <div v-for="attr in attributes" :key="attr.name" class="field">
           <label>{{ attr.name }}</label>
@@ -123,6 +124,11 @@ function handleSubmit() {
   font-size: 13px;
   color: #666;
   font-weight: 500;
+}
+.field-hint {
+  font-size: 11px;
+  color: #aaa;
+  margin-top: 2px;
 }
 .field input,
 .field select {
