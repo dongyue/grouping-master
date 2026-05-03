@@ -39,6 +39,7 @@ const showAttributeSelector = ref(false)
 const attributeSubmitting = ref(false)
 const editAttrValues = ref({})
 const editAttrLabel = ref('确认')
+const isEditingAttrs = ref(false)
 const userAttributes = ref({})
 
 const hasMemberItems = computed(() => {
@@ -118,6 +119,7 @@ async function refetchActivity() {
 
 async function handleJoin() {
   if (activity.value.constraints?.length) {
+    isEditingAttrs.value = false
     showAttributeSelector.value = true
     return
   }
@@ -157,6 +159,7 @@ function openAttrEditor() {
   const me = activity.value.members?.find(m => m.user_id === auth.user.id)
   editAttrValues.value = me?.attributes || {}
   editAttrLabel.value = '保存'
+  isEditingAttrs.value = true
   showAttributeSelector.value = true
 }
 
@@ -181,6 +184,7 @@ function handleAttrCancel() {
   showAttributeSelector.value = false
   editAttrValues.value = {}
   editAttrLabel.value = '确认'
+  isEditingAttrs.value = false
 }
 
 async function handleLeave() {
@@ -296,7 +300,7 @@ async function handleUngroup() {
           :initial-values="editAttrValues"
           :user-attributes="userAttributes"
           :confirm-label="editAttrLabel"
-          @confirm="Object.keys(editAttrValues).length ? handleAttrEditConfirm($event) : handleAttributeConfirm($event)"
+          @confirm="isEditingAttrs ? handleAttrEditConfirm($event) : handleAttributeConfirm($event)"
           @cancel="handleAttrCancel"
         />
       </div>
