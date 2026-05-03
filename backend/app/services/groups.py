@@ -133,6 +133,61 @@ def constrained_grouping(
                 ungrouped_indices.remove(u_idx)
                 break
 
+    # Cleanup doomed groups: if a non-full group can never be filled,
+    # disband it and return its members to ungrouped, then retry backfill.
+    changed = True
+    while changed:
+        changed = False
+        doomed = []
+        for g_idx, group in enumerate(groups):
+            if len(group) >= target_size:
+                continue
+            # check if any ungrouped member can join this group
+            fillable = False
+            g_attrs = [all_attrs[i] for i in group]
+            for u_idx in ungrouped_indices:
+                u_attrs = all_attrs[u_idx]
+                if _can_accept(g_attrs, u_attrs, constraints, is_last=False):
+                    fillable = True
+                    break
+            if not fillable:
+                doomed.append(g_idx)
+        # Disband from high to low index
+        for g_idx in reversed(doomed):
+            for i in groups[g_idx]:
+                ungrouped_indices.append(i)
+            groups.pop(g_idx)
+            changed = True
+        # Retry backfill after disbanding
+        for u_idx in list(ungrouped_indices):
+            u_attrs = all_attrs[u_idx]
+            for group in groups:
+                if len(group) >= target_size:
+                    continue
+                is_last = len(group) + 1 == target_size
+                g_attrs = [all_attrs[i] for i in group]
+                if _can_accept(g_attrs, u_attrs, constraints, is_last):
+                    group.append(u_idx)
+                    ungrouped_indices.remove(u_idx)
+                    break
+
+        # Rebuild: try to form new groups from remaining ungrouped
+        while len(groups) < num_groups:
+            candidate = []
+            for u_idx in list(ungrouped_indices):
+                u_attrs = all_attrs[u_idx]
+                c_attrs = [all_attrs[i] for i in candidate]
+                is_last = len(candidate) + 1 == target_size
+                if _can_accept(c_attrs, u_attrs, constraints, is_last):
+                    candidate.append(u_idx)
+                    ungrouped_indices.remove(u_idx)
+                    if len(candidate) == target_size:
+                        groups.append(candidate)
+                        changed = True
+                        break
+            else:
+                break  # can't form a full group from remaining members
+
     groups_result = []
     for g_num, group in enumerate(groups):
         group_members = [
