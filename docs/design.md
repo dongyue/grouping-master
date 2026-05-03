@@ -72,7 +72,7 @@
 | id | INT | PK, AUTO_INCREMENT | 主键 |
 | activity_id | INT | FK → activities.id, NOT NULL | 活动 ID |
 | user_id | INT | FK → users.id, NOT NULL | 成员 ID |
-| nickname | VARCHAR(50) | NULLABLE | 该成员在此活动中的显示昵称，空时回退到 users.nickname |
+| nickname | VARCHAR(50) | NOT NULL | 该成员在此活动中的显示昵称，加入时默认取当前用户昵称 |
 | created_at | DATETIME | DEFAULT NOW() | 加入时间 |
 
 > 联合唯一约束：(activity_id, user_id)，防止重复加入
