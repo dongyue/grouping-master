@@ -99,9 +99,8 @@ function handleSubmit() {
           <div class="pref-row">
             <label class="checkbox-label">
               <input v-model="allowWantPreferences" type="checkbox" />
-              <span>允许成员设置「想和谁同组」</span>
+              <span>允许成员设置「想和谁同组」<template v-if="allowWantPreferences">，最多</template></span>
               <template v-if="allowWantPreferences">
-                <span>，最多</span>
                 <input v-model.number="maxWantCount" type="number" min="1" max="10" class="pref-count-input" />
                 <span>人</span>
               </template>
@@ -110,9 +109,8 @@ function handleSubmit() {
           <div class="pref-row">
             <label class="checkbox-label">
               <input v-model="allowAvoidPreferences" type="checkbox" />
-              <span>允许成员设置「不想和谁同组」</span>
+              <span>允许成员设置「不想和谁同组」<template v-if="allowAvoidPreferences">，最多</template></span>
               <template v-if="allowAvoidPreferences">
-                <span>，最多</span>
                 <input v-model.number="maxAvoidCount" type="number" min="1" max="10" class="pref-count-input" />
                 <span>人</span>
               </template>
