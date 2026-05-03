@@ -35,7 +35,7 @@ routers → schemas → models → database.py
 | `session.py` | `Session` 表：服务端 session 持久化 |
 | `password_reset.py` | `PasswordReset` 表：密码重置令牌 |
 | `activity.py` | `Activity` 表：活动（id, slug, user_id FK, title, description, group_strategy, group_param, constraints JSON） |
-| `activity_member.py` | `ActivityMember` 表：活动成员关系，联合唯一约束 |
+| `activity_member.py` | `ActivityMember` 表：活动成员关系（含 nickname），联合唯一约束 |
 | `group.py` | `Group` 表：分组，关联 GroupMember |
 | `group_member.py` | `GroupMember` 表：分组成员关系，联合唯一约束 |
 | `member_attribute.py` | `MemberAttribute` 表：成员属性值，联合唯一约束，ON DELETE CASCADE |
@@ -97,7 +97,8 @@ routers → schemas → models → database.py
 | `versions/8d4e5f6a7b8c_add_constraints_to_activities.py` | activities 表新增 constraints JSON 字段 |
 | `versions/9e5f6a7b8c9d_add_member_attributes_table.py` | 新增 member_attributes 表 |
 | `versions/a0f5b6c7d8e9_add_activity_logs_table.py` | 新增 activity_logs 表 |
-| `versions/b1c6d7e8f9a0_add_user_attributes_table.py` | 新增 user_attributes 表（⬅ 当前 HEAD） |
+| `versions/b1c6d7e8f9a0_add_user_attributes_table.py` | 新增 user_attributes 表 |
+| `versions/a42da61cb8a7_add_nickname_to_activity_members.py` | activity_members 表新增 nickname 列（⬅ 当前 HEAD） |
 
 ---
 
