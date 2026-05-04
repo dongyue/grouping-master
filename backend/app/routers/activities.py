@@ -5,9 +5,9 @@ from app.database import get_db
 from app.models.user import User
 from app.models.activity import Activity
 from app.models.activity_member import ActivityMember
+from app.models.member_preference import MemberPreference
 from app.models.group import Group
-from app.models.group_member import GroupMember
-from app.schemas.activity import ActivityCreateRequest, ActivityUpdateRequest, ActivityResponse, ActivityDetailResponse, MemberItem, GroupResponse
+from app.schemas.activity import ActivityCreateRequest, ActivityUpdateRequest, ActivityResponse, ActivityDetailResponse, MemberItem, GroupResponse, MemberPreferencesResponse
 from app.middleware.auth import get_current_user
 from app.services.member import get_attribute_warnings
 from app.services.log import add_activity_log
@@ -167,6 +167,19 @@ def get_activity(
     grouped_user_ids = {gm.user_id for g in groups for gm in g.members}
     ungrouped_members = [m for m in members_data if m.user_id not in grouped_user_ids]
 
+    my_preferences = None
+    if is_member:
+        membership = next((m for m in members if m.user_id == current_user.id), None)
+        if membership:
+            member_user_ids = {m.user_id for m in members if m.user_id != current_user.id}
+            want = [p.target_user_id for p in membership.preferences if p.preference_type == "want" and p.target_user_id in member_user_ids]
+            avoid = [p.target_user_id for p in membership.preferences if p.preference_type == "avoid" and p.target_user_id in member_user_ids]
+            if activity.max_want_count:
+                want = want[:activity.max_want_count]
+            if activity.max_avoid_count:
+                avoid = avoid[:activity.max_avoid_count]
+            my_preferences = MemberPreferencesResponse(want=want, avoid=avoid)
+
     return ActivityDetailResponse(
         id=activity.id,
         slug=activity.slug,
@@ -187,6 +200,7 @@ def get_activity(
         members=members_data,
         groups=groups_data,
         ungrouped_members=ungrouped_members,
+        my_preferences=my_preferences,
     )
 
 

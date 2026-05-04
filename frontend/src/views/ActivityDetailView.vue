@@ -2,7 +2,7 @@
 import { ref, onMounted, onBeforeUnmount, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
-import { getActivity, joinActivity, leaveActivity, deleteActivity, kickMember, createGroups, deleteGroups, updateAttributes } from '../api/activities'
+import { getActivity, joinActivity, leaveActivity, deleteActivity, kickMember, createGroups, deleteGroups, updateMemberInfo } from '../api/activities'
 import { getUserAttributes } from '../api/auth'
 import ConfirmModal from '../components/ConfirmModal.vue'
 import AttributeSelector from '../components/AttributeSelector.vue'
@@ -202,7 +202,7 @@ async function handleJoin() {
   showAttributeSelector.value = true
 }
 
-async function handleAttributeConfirm({ nickname, attributeValues }) {
+async function handleAttributeConfirm({ nickname, attributeValues, preferences }) {
   showAttributeSelector.value = false
   attributeSubmitting.value = true
   joinError.value = ''
@@ -211,6 +211,7 @@ async function handleAttributeConfirm({ nickname, attributeValues }) {
     await joinActivity(route.params.slug, {
       nickname,
       attribute_values: Object.keys(attributeValues).length ? attributeValues : null,
+      preferences: preferences || null,
     })
     await refetchActivity()
     joinSuccess.value = '加入成功'
@@ -229,16 +230,16 @@ function openAttrEditor() {
   isEditingAttrs.value = true
   showAttributeSelector.value = true
 }
-
-async function handleAttrEditConfirm({ nickname, attributeValues }) {
+async function handleAttrEditConfirm({ nickname, attributeValues, preferences }) {
   showAttributeSelector.value = false
   attributeSubmitting.value = true
   joinError.value = ''
   joinSuccess.value = ''
   try {
-    await updateAttributes(route.params.slug, {
+    await updateMemberInfo(route.params.slug, {
       nickname,
       attribute_values: Object.keys(attributeValues).length ? attributeValues : null,
+      preferences: preferences || null,
     })
     await refetchActivity()
     joinSuccess.value = '个人信息已更新'
@@ -377,6 +378,14 @@ async function handleUngroup() {
           :initial-values="editAttrValues"
           :user-attributes="userAttributes"
           :confirm-label="editAttrLabel"
+          :activity-members="activity.members || []"
+          :allow-want-preferences="activity.allow_want_preferences"
+          :max-want-count="activity.max_want_count"
+          :allow-avoid-preferences="activity.allow_avoid_preferences"
+          :max-avoid-count="activity.max_avoid_count"
+          :initial-preferences="activity.my_preferences || { want: [], avoid: [] }"
+          :current-user-id="auth.user.id"
+          :uploads-url="uploadsUrl"
           @confirm="isEditingAttrs ? handleAttrEditConfirm($event) : handleAttributeConfirm($event)"
           @cancel="handleAttrCancel"
         />

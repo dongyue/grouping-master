@@ -96,6 +96,12 @@ class ActivityUpdateRequest(ActivityBaseRequest):
 class JoinActivityRequest(BaseModel):
     nickname: str
     attribute_values: dict[str, str] | None = None
+    preferences: dict[str, list[int]] | None = None
+
+
+class MemberPreferencesResponse(BaseModel):
+    want: list[int] = []
+    avoid: list[int] = []
 
 
 class ActivityResponse(BaseModel):
@@ -141,6 +147,7 @@ class ActivityDetailResponse(ActivityResponse):
     members: list[MemberItem]
     groups: list[GroupResponse] = []
     ungrouped_members: list[MemberItem] = []
+    my_preferences: MemberPreferencesResponse | None = None
 
 
 class ActivityLogResponse(BaseModel):

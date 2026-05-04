@@ -10,6 +10,7 @@ const props = defineProps({
   loading: { type: Boolean, default: false },
   error: { type: String, default: '' },
   pageTitle: { type: String, default: '' },
+  hintText: { type: String, default: '' },
 })
 
 const emit = defineEmits(['submit'])
@@ -72,6 +73,7 @@ function handleSubmit() {
       <h1 class="page-title">{{ pageTitle }}</h1>
       <div v-if="submitError" class="error-msg">{{ submitError }}</div>
       <form @submit.prevent="handleSubmit">
+        <p v-if="hintText" class="rule-hint">{{ hintText }}</p>
         <div class="form-group">
           <label>活动标题 *</label>
           <input v-model="title" type="text" required placeholder="输入活动标题" />
@@ -117,7 +119,6 @@ function handleSubmit() {
             </label>
           </div>
         </div>
-        <slot name="extra-actions" />
         <div class="actions">
           <slot name="actions" :submitting="submitting" />
         </div>

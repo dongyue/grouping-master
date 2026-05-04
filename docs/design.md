@@ -135,7 +135,19 @@
 | detail | TEXT | NULLABLE | 结构化详情数据（JSON 字符串），分组操作时记录快照 |
 | created_at | DATETIME | DEFAULT NOW() | 操作时间 |
 
-### 2.11 constraints 字段结构
+### 2.11 member_preferences 表
+
+| 字段 | 类型 | 约束 | 说明 |
+|------|------|------|------|
+| id | INT | PK, AUTO_INCREMENT | 主键 |
+| member_id | INT | FK → activity_members.id, NOT NULL, ON DELETE CASCADE | 成员记录 ID |
+| target_user_id | INT | FK → users.id, NOT NULL | 目标成员用户 ID |
+| preference_type | VARCHAR(10) | NOT NULL | 偏好类型：`"want"`（想同组）或 `"avoid"`（不想同组） |
+
+> 联合唯一约束：(member_id, target_user_id, preference_type)，每个成员对同一目标同一类型只能有一条记录
+> member_id 设置 ON DELETE CASCADE：成员退出/被踢出时偏好记录同步删除
+
+### 2.12 constraints 字段结构
 
 activities 表的 `constraints` 字段为 JSON 数组，每项为一条多样性限定规则：
 
@@ -157,7 +169,7 @@ activities 表的 `constraints` 字段为 JSON 数组，每项为一条多样性
 | `constraint_type` | str | `"min_diversity"`（限定最小多样性）或 `"max_diversity"`（限定最大多样性） |
 | `constraint_value` | int | 限定值。限定最小值时满足 2 ≤ value ≤ len(allowed_values)；限定最大值时满足 1 ≤ value ≤ len(allowed_values)-1 |
 
-### 2.12 索引策略
+### 2.13 索引策略
 
 | 表 | 索引字段 | 用途 |
 |------|------|------|
@@ -173,8 +185,9 @@ activities 表的 `constraints` 字段为 JSON 数组，每项为一条多样性
 | member_attributes | (member_id, attribute_name) (UNIQUE) | 每个属性唯一值 |
 | user_attributes | (user_id, attribute_name) (UNIQUE) | 每个属性唯一值 |
 | activity_logs | activity_id | 按活动查询日志 |
+| member_preferences | (member_id, target_user_id, preference_type) (UNIQUE) | 防止重复偏好记录 |
 
-### 2.13 级联删除关系
+### 2.14 级联删除关系
 
 | 主表 | 关联表 | 删除行为 |
 |------|------|------|
@@ -189,6 +202,7 @@ activities 表的 `constraints` 字段为 JSON 数组，每项为一条多样性
 | activities | activity_logs (activity_id FK) | ON DELETE CASCADE — 删活动时清日志 |
 | groups | group_members (group_id FK) | ON DELETE CASCADE — 删分组时清组成员 |
 | activity_members | member_attributes (member_id FK) | ON DELETE CASCADE — 删成员关系时清其属性值 |
+| activity_members | member_preferences (member_id FK) | ON DELETE CASCADE — 删成员关系时清其偏好 |
 
 ## 3. API 设计
 
@@ -282,17 +296,19 @@ activities 表的 `constraints` 字段为 JSON 数组，每项为一条多样性
 - 均按创建时间倒序
 
 `GET /api/activities/{slug}`
-- 响应字段：`{id, slug, title, description, group_strategy, group_param, constraints, allow_want_preferences, max_want_count, allow_avoid_preferences, max_avoid_count, creator_nickname, created_at, is_member, is_creator, has_groups, groups, members, ungrouped_members}`
+- 响应字段：`{id, slug, title, description, group_strategy, group_param, constraints, allow_want_preferences, max_want_count, allow_avoid_preferences, max_avoid_count, creator_nickname, created_at, is_member, is_creator, has_groups, groups, members, ungrouped_members, my_preferences}`
+- `my_preferences`：`{want: [user_id], avoid: [user_id]}` 或 `null`（非成员时），当前用户已设置的偏好；自动过滤已退出的目标成员，超上限时截断
 - `constraints`：`[ConstraintRule]` 多样性限定规则列表，空数组表示无限定
 - `groups`：`[GroupResponse]` 分组列表，未分组时为空数组。每项 `{group_number, members: [MemberItem]}`，组内成员同样包含 `attributes` 字段
 - `members`：`[MemberItem]` 成员列表，每项 `{user_id, nickname, avatar_path, joined_at, attributes, attribute_warnings}`。`nickname` 取自 `activity_members.nickname`，为空时回退到 `users.nickname`。`attributes` 为 `Record<string, string>`，`attribute_warnings` 为 `list[str]`（不合规警告信息，合规时为空数组），按加入时间升序
 - `ungrouped_members`：`[MemberItem]` 落单的成员列表。未分组时为空数组，分组后包含未分配到任何组的成员
 
 `POST /api/activities/{slug}/join`
-- 请求体：`{nickname: str, attribute_values?: Record<string, string>}`
+- 请求体：`{nickname: str, attribute_values?: Record<string, string>, preferences?: {want: [int], avoid: [int]}}`
 - 始终弹出个人信息表单，因此必含 `nickname`（前端预设当前用户昵称，用户可修改）
 - `attribute_values` 可选；若活动有约束规则，每个值须在对应属性的允许值列表内，全部属性均须提供
-- 加入成功后，`nickname` 写入 `activity_members.nickname`，同时更新 `users.nickname`（反写）
+- `preferences` 可选，其 `want`/`avoid` 数组中的每个值须为活动其他成员的用户 ID；人数不超过活动的 `max_want_count` 和 `max_avoid_count`
+- 加入成功后，`nickname` 写入 `activity_members.nickname`，同时更新 `users.nickname`（反写）；属性值和偏好分别写入 `member_attributes` 和 `member_preferences` 表
 - 用户已加入时返回 409
 - 响应：`{message: "加入成功"}`
 
@@ -362,11 +378,12 @@ activities 表的 `constraints` 字段为 JSON 数组，每项为一条多样性
 
 > 活动列表项响应格式：`{id, slug, title, description, group_strategy, group_param, constraints, allow_want_preferences, max_want_count, allow_avoid_preferences, max_avoid_count, creator_nickname, created_at}`
 
-`PUT /api/activities/{slug}/attributes`
-- 请求体：`{nickname: str, attribute_values?: Record<string, string>}`
+`PUT /api/activities/{slug}/member-info`
+- 请求体：`{nickname: str, attribute_values?: Record<string, string>, preferences?: {want: [int], avoid: [int]}}`
 - 仅已加入成员可操作，未加入返回 403，活动不存在返回 404
-- 始终可调用（修改昵称、修改属性值，或两者都改）
-- 若提供 `attribute_values`，校验规则与加入时一致；若不提供，仅更新昵称
+- 始终可调用（修改昵称、修改属性值、修改偏好，或三者任意组合）
+- 若提供 `attribute_values`，校验规则与加入时一致
+- 若提供 `preferences`，校验规则与加入时一致；全量覆盖已有偏好（提交空数组即视为清空该类偏好）
 - `nickname` 写入 `activity_members.nickname`，同时更新 `users.nickname`（反写）
 - 响应：`{message: "个人信息已更新"}`
 
@@ -463,4 +480,10 @@ activities 表的 `constraints` 字段为 JSON 数组，每项为一条多样性
 - 新建 `ActivityLogsView.vue`，按时间倒序展示日志列表
 - 每条日志显示：操作人昵称、操作内容描述、操作时间
 - 分组类型日志额外显示「展开详情」按钮，点击展开结构化快照（分组规则快照、成员列表、分组结果、落单列表）
+
+### 6.9 成员多选组件
+- 新建 `MemberSelector.vue`，在 `AttributeSelector.vue` 内供偏好设置使用
+- 接收 `members`（可选成员列表）、`modelValue`（已选 user_id 数组）、`max`（上限人数）、`actionLabel`（标题前缀，如"尽量安排与"或"尽量不与"）
+- 标题格式如「尽量安排与他/她们同组」（上限为 1 时显示「他/她」），下方标注隐私声明和调整提示
+- 以 checkbox 列表展示，每项显示头像和昵称；已选满上限时未选项置灰
 - 日志页面仅活动创建者可访问，非创建者重定向回详情页

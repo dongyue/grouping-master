@@ -8,5 +8,6 @@ from app.models.group import Group
 from app.models.group_member import GroupMember
 from app.models.activity_log import ActivityLog
 from app.models.user_attribute import UserAttribute
+from app.models.member_preference import MemberPreference
 
-__all__ = ["User", "Session", "PasswordReset", "Activity", "ActivityMember", "MemberAttribute", "Group", "GroupMember", "ActivityLog", "UserAttribute"]
+__all__ = ["User", "Session", "PasswordReset", "Activity", "ActivityMember", "MemberAttribute", "Group", "GroupMember", "ActivityLog", "UserAttribute", "MemberPreference"]

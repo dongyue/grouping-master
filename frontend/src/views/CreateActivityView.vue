@@ -33,6 +33,7 @@ function handleCancel() {
 <template>
   <ActivityForm
     page-title="创建活动"
+    hint-text="以下内容在创建活动后可在编辑页中继续修改完善"
     :submitting="creating"
     :submit-error="error"
     @submit="handleCreate"
@@ -44,9 +45,6 @@ function handleCancel() {
           <span>我作为创建者也要参加</span>
         </label>
       </div>
-    </template>
-    <template #extra-actions>
-      <p class="rule-hint">创建后可在编辑页中修改上述设置</p>
     </template>
     <template #actions="{ submitting }">
       <button type="submit" class="btn btn-primary" :disabled="submitting">

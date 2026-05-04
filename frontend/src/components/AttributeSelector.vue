@@ -1,5 +1,6 @@
 <script setup>
 import { ref, computed } from 'vue'
+import MemberSelector from './MemberSelector.vue'
 
 const props = defineProps({
   constraints: { type: Array, default: () => [] },
@@ -8,6 +9,14 @@ const props = defineProps({
   initialValues: { type: Object, default: () => ({}) },
   userAttributes: { type: Object, default: () => ({}) },
   confirmLabel: { type: String, default: '确认加入' },
+  activityMembers: { type: Array, default: () => [] },
+  allowWantPreferences: { type: Boolean, default: false },
+  maxWantCount: { type: Number, default: 1 },
+  allowAvoidPreferences: { type: Boolean, default: false },
+  maxAvoidCount: { type: Number, default: 1 },
+  initialPreferences: { type: Object, default: () => ({ want: [], avoid: [] }) },
+  currentUserId: { type: Number, default: null },
+  uploadsUrl: { type: String, default: '' },
 })
 
 const emit = defineEmits(['confirm', 'cancel'])
@@ -26,6 +35,13 @@ for (const c of props.constraints) {
 }
 const values = ref(initValues)
 const error = ref('')
+
+const wantSelected = ref([...props.initialPreferences.want])
+const avoidSelected = ref([...props.initialPreferences.avoid])
+
+const otherMembers = computed(() => {
+  return props.activityMembers.filter(m => m.user_id !== props.currentUserId)
+})
 
 const attributes = computed(() => {
   return props.constraints.map(c => ({
@@ -49,7 +65,16 @@ function handleSubmit() {
     }
     result[attr.name] = v
   }
-  emit('confirm', { nickname: nickname.value.trim(), attributeValues: result })
+  const preferences = {}
+  if (props.allowWantPreferences || props.allowAvoidPreferences) {
+    if (props.allowWantPreferences) preferences.want = wantSelected.value
+    if (props.allowAvoidPreferences) preferences.avoid = avoidSelected.value
+  }
+  emit('confirm', {
+    nickname: nickname.value.trim(),
+    attributeValues: result,
+    preferences: Object.keys(preferences).length ? preferences : null,
+  })
 }
 </script>
 
@@ -57,6 +82,7 @@ function handleSubmit() {
   <div class="overlay" @click.self="emit('cancel')">
     <div class="modal">
       <h3 class="modal-title">个人信息</h3>
+      <p class="pref-footer">请在本页填写您在本次活动中的个人信息，加入活动后可在编辑页中继续修改完善</p>
       <div class="fields">
         <div class="field">
           <label>昵称</label>
@@ -69,6 +95,26 @@ function handleSubmit() {
             <option value="" disabled>请选择</option>
             <option v-for="v in attr.allowed" :key="v" :value="v">{{ v }}</option>
           </select>
+        </div>
+        <div v-if="allowWantPreferences" class="field">
+          <MemberSelector
+            v-model="wantSelected"
+            :members="otherMembers"
+            :max="maxWantCount"
+            action-label="尽量安排与"
+            :privacy-note="allowAvoidPreferences ? '此名单系统不会透露给任何人（下同）' : '此名单系统不会透露给任何人'"
+            :uploads-url="uploadsUrl"
+          />
+        </div>
+        <div v-if="allowAvoidPreferences" class="field">
+          <MemberSelector
+            v-model="avoidSelected"
+            :members="otherMembers"
+            :max="maxAvoidCount"
+            action-label="尽量避免与"
+            :show-privacy="!allowWantPreferences"
+            :uploads-url="uploadsUrl"
+          />
         </div>
       </div>
       <div v-if="error" class="error-msg">{{ error }}</div>
@@ -98,8 +144,10 @@ function handleSubmit() {
   background: #fff;
   border-radius: 12px;
   padding: 28px 32px;
-  width: 400px;
+  width: 440px;
   max-width: 90vw;
+  max-height: 85vh;
+  overflow-y: auto;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
 }
 .modal-title {
@@ -155,5 +203,10 @@ function handleSubmit() {
 }
 .actions .btn {
   flex: 1;
+}
+.pref-footer {
+  font-size: 12px;
+  color: #aaa;
+  margin: 0 0 8px 0;
 }
 </style>

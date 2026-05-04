@@ -4,6 +4,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.database import Base
 
 
+
 class ActivityMember(Base):
     __tablename__ = "activity_members"
 
@@ -15,6 +16,7 @@ class ActivityMember(Base):
 
     activity = relationship("Activity", lazy="joined")
     user = relationship("User", lazy="joined")
+    preferences = relationship("MemberPreference", lazy="joined", back_populates="member")
 
     __table_args__ = (
         UniqueConstraint("activity_id", "user_id", name="uq_activity_user"),

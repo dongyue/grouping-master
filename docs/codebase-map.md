@@ -41,6 +41,7 @@ routers → schemas → models → database.py
 | `member_attribute.py` | `MemberAttribute` 表：成员属性值，联合唯一约束，ON DELETE CASCADE |
 | `activity_log.py` | `ActivityLog` 表：活动操作日志（detail 为 TEXT 存储 JSON 字符串） |
 | `user_attribute.py` | `UserAttribute` 表：用户个人属性值，联合唯一约束 |
+| `member_preference.py` | `MemberPreference` 表：成员偏好（想/不想同组），关联 activity_members + users |
 
 ### Pydantic Schema（app/schemas/）
 
@@ -99,7 +100,8 @@ routers → schemas → models → database.py
 | `versions/a0f5b6c7d8e9_add_activity_logs_table.py` | 新增 activity_logs 表 |
 | `versions/b1c6d7e8f9a0_add_user_attributes_table.py` | 新增 user_attributes 表 |
 | `versions/a42da61cb8a7_add_nickname_to_activity_members.py` | activity_members 表新增 nickname 列 |
-| `versions/d7b34759a402_add_member_preferences_to_activities.py` | activities 表新增 allow_want_preferences、max_want_count、allow_avoid_preferences、max_avoid_count 列（⬅ 当前 HEAD） |
+| `versions/d7b34759a402_add_member_preferences_to_activities.py` | activities 表新增 allow_want_preferences、max_want_count、allow_avoid_preferences、max_avoid_count 列 |
+| `versions/593ec8df1bab_add_member_preferences_table.py` | 新增 member_preferences 表（⬅ 当前 HEAD） |
 
 ---
 
@@ -151,6 +153,7 @@ routers → schemas → models → database.py
 | `AttributeSelector.vue` | 属性选择弹框：加入/编辑属性值 |
 | `ConfirmModal.vue` | 确认对话框组件 |
 | `MemberItem.vue` | 成员条目组件：头像、组号标签、昵称、属性标签、高亮、警告、编辑入口、踢出按钮 |
+| `MemberSelector.vue` | 成员多选组件：昵称排序、属性内联显示、已选总结、隐私声明 |
 
 ### 页面组件（views/）
 

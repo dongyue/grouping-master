@@ -20,6 +20,7 @@ from app.schemas.activity import (
     MemberItem,
     GroupResponse,
     ActivityLogResponse,
+    MemberPreferencesResponse,
 )
 
 __all__ = [
@@ -40,6 +41,7 @@ __all__ = [
     "MemberItem",
     "GroupResponse",
     "ActivityLogResponse",
+    "MemberPreferencesResponse",
     "UserAttributesResponse",
     "UpdateUserAttributesRequest",
 ]
