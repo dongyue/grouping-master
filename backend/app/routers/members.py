@@ -170,7 +170,7 @@ def update_member_info(
     if body.nickname.strip() != current_user.nickname:
         current_user.nickname = body.nickname.strip()
 
-    add_activity_log(db, activity.id, current_user.id, "edit", f"{current_user.nickname} 更新了自己在活动中的个人信息")
+    add_activity_log(db, activity.id, current_user.id, "member_edit", f"{current_user.nickname} 更新了自己在活动中的个人信息")
     db.commit()
     return {"message": "个人信息已更新"}
 

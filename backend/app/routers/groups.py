@@ -6,6 +6,7 @@ from app.database import get_db
 from app.models.user import User
 from app.models.activity import Activity
 from app.models.activity_member import ActivityMember
+from app.models.member_preference import MemberPreference
 from app.models.group import Group
 from app.models.group_member import GroupMember
 from app.schemas.activity import MemberItem, GroupResponse
@@ -130,6 +131,12 @@ def create_groups(
     if seed is not None:
         detail["seed"] = seed
         detail["shuffle_order"] = shuffle_order
+
+    pref_count = db.query(MemberPreference.member_id).filter(
+        MemberPreference.member_id.in_([m.id for m in members])
+    ).distinct().count()
+    if pref_count > 0:
+        detail["preference_summary"] = f"其中 {pref_count} 名成员设置了成员偏好"
 
     action_label = "重新分组" if was_regroup else "执行分组"
     add_activity_log(db, activity.id, current_user.id, "group", f"{current_user.nickname} {action_label}", detail)

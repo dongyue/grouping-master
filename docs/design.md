@@ -130,7 +130,7 @@
 | id | INT | PK, AUTO_INCREMENT | 主键 |
 | activity_id | INT | FK → activities.id, NOT NULL, INDEX | 活动 ID |
 | user_id | INT | FK → users.id, NOT NULL | 操作人 ID |
-| action_type | VARCHAR(30) | NOT NULL | 操作类型（create/edit/join/leave/kick/group/ungroup） |
+| action_type | VARCHAR(30) | NOT NULL | 操作类型（create/edit/join/leave/kick/group/ungroup/member_edit） |
 | content | TEXT | NOT NULL | 操作内容描述 |
 | detail | TEXT | NULLABLE | 结构化详情数据（JSON 字符串），分组操作时记录快照 |
 | created_at | DATETIME | DEFAULT NOW() | 操作时间 |
@@ -375,6 +375,7 @@ activities 表的 `constraints` 字段为 JSON 数组，每项为一条多样性
   - `shuffle_order`：[user_id] 打乱前的成员顺序
   - `groups`：[{group_number, members: [{user_id, nickname}]}] 分组结果
   - `ungrouped`：[{user_id, nickname}] 落单成员
+  - `preference_summary`：字符串，若有人设置了成员偏好则记录统计信息
 
 > 活动列表项响应格式：`{id, slug, title, description, group_strategy, group_param, constraints, allow_want_preferences, max_want_count, allow_avoid_preferences, max_avoid_count, creator_nickname, created_at}`
 

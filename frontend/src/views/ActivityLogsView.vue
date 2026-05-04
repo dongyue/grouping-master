@@ -51,6 +51,7 @@ const actionLabels = {
   kick: '踢出成员',
   group: '执行分组',
   ungroup: '解除分组',
+  member_edit: '编辑个人信息',
 }
 </script>
 
@@ -98,12 +99,13 @@ const actionLabels = {
               <div class="detail-line">随机种子：{{ log.detail.seed }}</div>
             </div>
             <div class="detail-section">
-              <h5>分组时成员及属性 ({{ log.detail.members.length }} 人)</h5>
+              <h5>分组时成员情况 ({{ log.detail.members.length }} 人)</h5>
               <div v-for="m in log.detail.members" :key="m.user_id" class="detail-line">
                 {{ m.nickname }}<span v-if="m.attributes && Object.keys(m.attributes).length">
                   ：{{ Object.entries(m.attributes).map(([k, v]) => k + '=' + v).join('，') }}
                 </span>
               </div>
+              <div v-if="log.detail.preference_summary" class="detail-line">{{ log.detail.preference_summary }}</div>
             </div>
             <div v-if="log.detail.shuffle_order" class="detail-section">
               <h5>打乱前顺序</h5>
@@ -201,6 +203,7 @@ const actionLabels = {
 .log-type.type-kick { background: #fff1f0; color: #cf1322; }
 .log-type.type-group { background: #f9f0ff; color: #722ed1; }
 .log-type.type-ungroup { background: #fff7e6; color: #d48806; }
+.log-type.type-member_edit { background: #f0f5ff; color: #1d39c4; }
 
 .log-time {
   font-size: 12px;
