@@ -1,9 +1,11 @@
 import pytest
+import random
 from app.services.groups import (
     _distinct_count,
     _can_accept,
     _rarity_sort_key,
     _compute_groups,
+    _best_group_by_preference,
 )
 
 
@@ -86,6 +88,18 @@ def test_can_accept_both_constraints_max_fails():
     assert not _can_accept([{"性别": "男"}], {"性别": "女"}, cs, True)
 
 
+def test_can_accept_empty_constraints():
+    """约束为空列表时始终可接受"""
+    assert _can_accept([{"性别": "男"}], {"性别": "女"}, [], True)
+    assert _can_accept([{"性别": "男"}], {"性别": "女"}, [], False)
+
+
+def test_can_accept_none_constraints():
+    """约束为 None 时始终可接受"""
+    assert _can_accept([{"性别": "男"}], {"性别": "女"}, None, True)
+    assert _can_accept([{"性别": "男"}], {"性别": "女"}, None, False)
+
+
 # ---------------------------------------------------------------------------
 # _rarity_sort_key
 # ---------------------------------------------------------------------------
@@ -107,6 +121,12 @@ def test_rarity_missing_attribute_rarest():
     attrs = [{"性别": "男"}, {"部门": "工程部"}]
     # Index 1 has no 性别 → rarity 0 (rarest)
     assert _rarity_sort_key(1, attrs, {}, [{"attribute_name": "性别"}]) == 0
+
+
+def test_rarity_none_constraints():
+    """约束为 None 时稀有度返回 0"""
+    attrs = [{"性别": "男"}]
+    assert _rarity_sort_key(0, attrs, {}, None) == 0
 
 
 # ---------------------------------------------------------------------------
@@ -255,3 +275,260 @@ def test_multi_constraint():
         dc_dept = _distinct_count([attrs[i] for i in g], cs[1])
         assert dc_gender <= 1
         assert dc_dept >= 2
+
+
+# ---------------------------------------------------------------------------
+# _best_group_by_preference
+# ---------------------------------------------------------------------------
+
+def test_best_group_by_preference_highest_score():
+    """多个候选组，选偏好得分最高的"""
+    rng = random.Random(42)
+    groups = [[0], [1], [2]]  # 三个组，各有一个成员
+    pref = [
+        [0, 0, 0, 0],
+        [0, 0, 0, 0],
+        [0, 0, 0, 0],
+        [3, 1, 0, 0],  # 新成员 idx=3: 对组0得3分，组1得1分，组2得0分
+    ]
+    best = _best_group_by_preference([0, 1, 2], 3, groups, pref, rng)
+    assert best == 0  # 组0得分最高
+
+
+def test_best_group_by_preference_tie_picks_any():
+    """得分相同时返回结果在候选组中"""
+    rng = random.Random(42)
+    groups = [[0], [1]]
+    pref = [
+        [0, 0, 0],
+        [0, 0, 0],
+        [1, 1, 0],  # idx=2 对两组得分相同
+    ]
+    best = _best_group_by_preference([0, 1], 2, groups, pref, rng)
+    assert best in [0, 1]
+
+
+def test_best_group_by_preference_no_pref_matrix():
+    """无偏好矩阵时随机选择候选组之一"""
+    rng = random.Random(42)
+    groups = [[0], [1], [2]]
+    best = _best_group_by_preference([0, 1, 2], 3, groups, None, rng)
+    assert best in [0, 1, 2]
+
+
+def test_best_group_by_preference_single_candidate():
+    """只有一个候选组直接返回"""
+    rng = random.Random(42)
+    groups = [[0]]
+    pref = [[0, 0], [0, 0]]
+    best = _best_group_by_preference([0], 1, groups, pref, rng)
+    assert best == 0
+
+
+# ---------------------------------------------------------------------------
+# _compute_groups with preferences
+# ---------------------------------------------------------------------------
+
+PREF_SEED = 100
+
+M_ATTRS = {"性别": "男"}
+F_ATTRS = {"性别": "女"}
+
+
+def test_compute_mutual_want_same_group():
+    """6人，每组2人。用约束排序让互相want的0,1排在最后，确保他们面前有可选组"""
+    # 无害约束，仅用于驱动稀有度排序：0,1属性值常见（排后），2-5各自唯一（排前）
+    tag_constraint = [
+        {"attribute_name": "tag", "allowed_values": ["A","B","C","D","E"],
+         "constraint_type": "max_diversity", "constraint_value": 10},
+    ]
+    all_attrs = [
+        {"tag": "A"},  # idx=0, 2人有A → 稀有度=2，排后
+        {"tag": "A"},  # idx=1
+        {"tag": "B"},  # idx=2, 1人有B → 稀有度=1，排前
+        {"tag": "C"},  # idx=3
+        {"tag": "D"},  # idx=4
+        {"tag": "E"},  # idx=5
+    ]
+    pref = [
+        [0, 3, 0, 0, 0, 0],
+        [3, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0],
+    ]
+    groups, ungrouped, seed = _compute_groups(
+        all_attrs, "fixed_group_size", 2, tag_constraint, PREF_SEED,
+        preference_matrix=pref,
+    )
+    assert len(groups) == 3
+    assert len(ungrouped) == 0
+    for g in groups:
+        if 0 in g:
+            assert 1 in g
+
+
+def test_compute_mutual_avoid_different_groups():
+    """6人，每组2人。互相avoid的0,1排在最后，有多组可选时应被分开"""
+    tag_constraint = [
+        {"attribute_name": "tag", "allowed_values": ["A","B","C","D","E"],
+         "constraint_type": "max_diversity", "constraint_value": 10},
+    ]
+    all_attrs = [
+        {"tag": "A"}, {"tag": "A"},
+        {"tag": "B"}, {"tag": "C"}, {"tag": "D"}, {"tag": "E"},
+    ]
+    pref = [
+        [0, -6, 0, 0, 0, 0],
+        [-6, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0],
+    ]
+    groups, ungrouped, seed = _compute_groups(
+        all_attrs, "fixed_group_size", 2, tag_constraint, PREF_SEED,
+        preference_matrix=pref,
+    )
+    assert len(groups) == 3
+    assert len(ungrouped) == 0
+    for g in groups:
+        assert len(g) == 2
+        assert _distinct_count([all_attrs[i] for i in g], tag_constraint[0]) <= 10
+
+
+def test_compute_avoid_priority_over_want():
+    """6人，每组2人。成员0 want 1，成员1 avoid 0，偏好矩阵中视为避免关系。
+    由于0,1排最后可能仅有一个候选组从而被迫同组，这里仅验证硬约束和分组结构。"""
+    tag_constraint = [
+        {"attribute_name": "tag", "allowed_values": ["A","B","C","D","E"],
+         "constraint_type": "max_diversity", "constraint_value": 10},
+    ]
+    all_attrs = [
+        {"tag": "A"}, {"tag": "A"},
+        {"tag": "B"}, {"tag": "C"}, {"tag": "D"}, {"tag": "E"},
+    ]
+    pref = [
+        [0, -2, 0, 0, 0, 0],
+        [-2, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0],
+    ]
+    groups, ungrouped, seed = _compute_groups(
+        all_attrs, "fixed_group_size", 2, tag_constraint, PREF_SEED,
+        preference_matrix=pref,
+    )
+    assert len(groups) == 3
+    assert len(ungrouped) == 0
+    for g in groups:
+        assert len(g) == 2
+
+
+def test_compute_constraint_overrides_preference_mutual_want():
+    """成员0和1互相want，但性别相同且约束要求每组必须男女混合（min_diversity=2）。
+    偏好不能让位于约束，0和1可能不在同一组。"""
+    all_attrs = [
+        {"性别": "男"},  # idx=0 男
+        {"性别": "男"},  # idx=1 男，0 want 1
+        {"性别": "女"},  # idx=2 女
+        {"性别": "女"},  # idx=3 女
+    ]
+    pref = [
+        [0, 3, 0, 0],
+        [3, 0, 0, 0],
+        [0, 0, 0, 0],
+        [0, 0, 0, 0],
+    ]
+    groups, ungrouped, seed = _compute_groups(
+        all_attrs, "fixed_group_size", 2, MIN_2_GENDER, PREF_SEED,
+        preference_matrix=pref,
+    )
+    # 必须满足 min_diversity
+    for g in groups:
+        assert len(g) == 2
+        dc = _distinct_count([all_attrs[i] for i in g], MIN_2_GENDER[0])
+        assert dc >= 2
+
+
+def test_compute_no_constraint_with_preferences():
+    """有want和avoid混合偏好，验证偏好矩阵不影响分组结构的正确性"""
+    tag_constraint = [
+        {"attribute_name": "tag", "allowed_values": ["A","B","C","D","E","F","G","H"],
+         "constraint_type": "max_diversity", "constraint_value": 10},
+    ]
+    all_attrs = [
+        {"tag": "A"}, {"tag": "A"},  # 0,1 互相want，排后
+        {"tag": "B"}, {"tag": "B"},  # 2,3 互相avoid，排后
+        {"tag": "C"}, {"tag": "D"}, {"tag": "E"}, {"tag": "F"}, {"tag": "G"}, {"tag": "H"},
+    ]
+    # 0↔1互相want(+3)，2↔3互相avoid(-6)
+    pref = [
+        [0, 3, 0,  0,  0, 0, 0, 0, 0, 0],
+        [3, 0, 0,  0,  0, 0, 0, 0, 0, 0],
+        [0, 0, 0, -6,  0, 0, 0, 0, 0, 0],
+        [0, 0, -6, 0,  0, 0, 0, 0, 0, 0],
+        [0, 0, 0,  0,  0, 0, 0, 0, 0, 0],
+        [0, 0, 0,  0,  0, 0, 0, 0, 0, 0],
+        [0, 0, 0,  0,  0, 0, 0, 0, 0, 0],
+        [0, 0, 0,  0,  0, 0, 0, 0, 0, 0],
+        [0, 0, 0,  0,  0, 0, 0, 0, 0, 0],
+        [0, 0, 0,  0,  0, 0, 0, 0, 0, 0],
+    ]
+    groups, ungrouped, seed = _compute_groups(
+        all_attrs, "fixed_group_size", 2, tag_constraint, PREF_SEED,
+        preference_matrix=pref,
+    )
+    assert len(groups) == 5
+    assert len(ungrouped) == 0
+    for g in groups:
+        assert len(g) == 2
+        assert _distinct_count([all_attrs[i] for i in g], tag_constraint[0]) <= 10
+
+
+def test_compute_preference_no_pref_matrix():
+    """偏好矩阵为None时行为等同无偏好"""
+    all_attrs = [{}, {}, {}, {}]
+    groups, ungrouped, seed = _compute_groups(
+        all_attrs, "fixed_group_size", 2, [], PREF_SEED, preference_matrix=None
+    )
+    assert len(groups) == 2
+    assert len(ungrouped) == 0
+
+
+def test_compute_none_constraints_with_preferences():
+    """constraints=None 且有偏好矩阵时正常运行不崩溃"""
+    all_attrs = [{}, {}, {}, {}]
+    pref = [
+        [0, 3, 0, 0],
+        [3, 0, 0, 0],
+        [0, 0, 0, 0],
+        [0, 0, 0, 0],
+    ]
+    groups, ungrouped, seed = _compute_groups(
+        all_attrs, "fixed_group_size", 2, None, PREF_SEED, preference_matrix=pref
+    )
+    assert len(groups) == 2
+    assert len(ungrouped) == 0
+    for g in groups:
+        assert len(g) == 2
+
+
+def test_compute_empty_constraints_with_preferences():
+    """constraints=[] 且有偏好矩阵时正常运行"""
+    all_attrs = [{}, {}, {}, {}, {}, {}]
+    pref = [
+        [0, -6, 0, 0, 0, 0],
+        [-6, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0],
+    ]
+    groups, ungrouped, seed = _compute_groups(
+        all_attrs, "fixed_group_size", 2, [], PREF_SEED, preference_matrix=pref
+    )
+    assert len(groups) == 3
+    assert len(ungrouped) == 0

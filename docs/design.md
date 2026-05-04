@@ -344,15 +344,7 @@ activities 表的 `constraints` 字段为 JSON 数组，每项为一条多样性
 - 仅活动创建者可执行，非创建者返回 403
 - **前置校验**：若活动定义了约束规则，检查所有成员的属性值是否完整且合法。任一个成员存在属性缺失或值不在允许范围内，返回 422，`detail` 字段为文字摘要，额外返回 `issues` 数组列出每个不合格成员的 `user_id`、`nickname` 和 `issues` 列表
 - 若已分组，先清除已有分组及组成员数据，再重新分组
-- 读取活动的 `group_strategy`、`group_param`、`constraints` 配置执行分组：
-  - 若活动未定义约束规则，使用随机分组（成员打乱后顺序填组）
-  - 若活动定义了约束规则，使用约束感知分组算法：
-    - 按属性值稀有度排序（稀有属性值的成员优先分配），同等稀有度随机排列
-    - 贪心放置：每个成员尝试落入已有未满组，检查组内多样性是否合规
-    - `min_diversity` 仅在该组满员时校验（未满组总可期待后续成员补足多样性）
-    - `max_diversity` 在每次加入时校验（新人推高多样性可能超标）
-    - 落单回填：贪心轮结束后遍历落单列表，尝试填入尚未满员的组
-  - `group_strategy = "fixed_group_count"` 时，若约束过紧导致无法建满目标组数，宁可少建组，每个已建组必须合规
+- 读取活动的 `group_strategy`、`group_param`、`constraints` 配置及成员的属性值和偏好数据，执行分组算法（详见第 7 章）
 - 响应：`{groups: [GroupResponse], ungrouped_members: [MemberItem]}`
 
 `DELETE /api/activities/{slug}/groups`
@@ -488,3 +480,62 @@ activities 表的 `constraints` 字段为 JSON 数组，每项为一条多样性
 - 标题格式如「尽量安排与他/她们同组」（上限为 1 时显示「他/她」），下方标注隐私声明和调整提示
 - 以 checkbox 列表展示，每项显示头像和昵称；已选满上限时未选项置灰
 - 日志页面仅活动创建者可访问，非创建者重定向回详情页
+
+## 7. 分组算法设计
+
+### 7.1 总体流程
+
+路由 `POST /{slug}/groups` 调用 `groups.py` 中的分组服务：
+
+1. 若无约束规则且所有成员均未设置偏好 → 调用 `simple_grouping`：成员打乱后按顺序填入各组，余下成员落单
+2. 否则 → 调用 `constrained_grouping`：
+   - 从 DB 读取成员列表、各成员属性值、成员偏好记录
+   - 构建偏好评分矩阵（7.3）
+   - 调用 `_compute_groups(all_attrs, strategy, param, constraints, seed, preference_matrix)`
+   - 将结果写回 DB
+
+### 7.2 `_compute_groups` 主循环
+
+1. 根据 `group_strategy` 和 `group_param` 计算组数和每组目标人数
+2. 初始随机打乱成员索引，再按属性值稀有度升序排列（稀有值成员优先分配），同等稀有度保持随机顺序
+3. **贪心放置**：按排序依次处理每个成员：
+   - 遍历已有未满组，用 `_can_accept` 筛选出所有满足硬约束的组
+   - 若无满足硬约束的组且还可建新组 → 新开一组放入
+   - 若无满足硬约束的组且已达组数上限 → 归入落单
+   - 若有一个或多个满足硬约束的组 → 调用偏好评分选择器（7.4）择最优组放入
+4. **落单回填**：遍历落单列表，对每个落单成员筛选所有满足硬约束的未满组，通过偏好评分选择器择最优组回填
+5. **清理 doomed 组**：解散无法由剩余落单成员填满的组，其成员退回后重复回填与重建
+6. 返回 `(groups, ungrouped_indices, seed)`
+
+#### `_can_accept` 规则
+
+- `constraints` 为空或 `None` 时始终返回 `True`（无硬约束限制）
+- `max_diversity`：每次加入时校验，加入后该属性不同值数量不得超过 `constraint_value`
+- `min_diversity`：仅在该组满员（新成员为最后一人）时校验，满员后不同值数量不得少于 `constraint_value`
+- 多个约束同时存在时，全部满足方视为可接受
+
+#### `fixed_group_count` 策略
+
+- 目标组数 = `min(group_param, 总人数)`，每组目标人数 = `总人数 // 目标组数`
+- 约束过紧时允许实际组数少于目标组数，每个已建组须合规
+
+### 7.3 偏好评分矩阵
+
+在 `constrained_grouping` 中，从 `member_preferences` 表读取当前活动所有成员的 want/avoid 记录。构建 `n × n` 矩阵 `pref[i][j]`，按以下规则逐对赋值：
+
+| 条件 | i 与 j 得分 |
+|------|------------|
+| i avoid j 且 j avoid i | -6 |
+| i avoid j 或 j avoid i（单向） | -2 |
+| 无 avoid，且 i want j 且 j want i | +3 |
+| 无 avoid，且 i want j 或 j want i（单向） | +1 |
+| 其他 | 0 |
+
+### 7.4 偏好评分选择器
+
+函数签名：`_best_group_by_preference(candidate_groups, new_member_index, group_attrs_list, all_attrs, pref_matrix, rng)`
+
+- `candidate_groups`：`_can_accept` 已筛选出的满足硬约束的组索引列表
+- 对每个候选组，计算该成员加入后与组内已有成员的两两偏好得分累加和
+- 返回得分最高的组索引；多个组得分相同时随机选择
+- 贪心放置（第 3 步）和落单回填（第 4 步）共调用此函数

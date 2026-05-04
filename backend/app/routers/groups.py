@@ -91,7 +91,11 @@ def create_groups(
         })
 
     constraints = activity.constraints
-    if constraints:
+    has_preferences = db.query(MemberPreference.member_id).filter(
+        MemberPreference.member_id.in_([m.id for m in members])
+    ).limit(1).first() is not None
+
+    if constraints or has_preferences:
         groups_result, ungrouped_users, seed = constrained_grouping(
             db, activity.id, activity.group_strategy, activity.group_param, constraints
         )

@@ -73,7 +73,7 @@ routers → schemas → models → database.py
 | `member.py` | `get_attribute_warnings` — 检查成员属性值合规性 |
 | `log.py` | `add_activity_log` — 写入活动操作日志 |
 | `user_attribute.py` | `sync_user_attributes` — 同步用户个人属性值 |
-| `groups.py` | `constrained_grouping`（约束感知贪心分组）、`simple_grouping`（无约束随机分组） |
+| `groups.py` | 自动分组算法 |
 
 ### 中间件（app/middleware/）
 
