@@ -9,7 +9,7 @@ from app.models.activity_member import ActivityMember
 from app.models.member_preference import MemberPreference
 from app.models.group import Group
 from app.models.group_member import GroupMember
-from app.schemas.activity import MemberItem, GroupResponse, MoveMemberRequest, CreateGroupRequest
+from app.schemas.activity import MemberItem, GroupResponse, MoveMemberRequest, CreateGroupRequest, DeleteGroupRequest
 from app.middleware.auth import get_current_user
 from app.services.log import add_activity_log
 from app.services.member import get_attribute_warnings
@@ -241,9 +241,6 @@ def create_group(
     if activity.user_id != current_user.id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="只有活动创建者才能调整分组")
 
-    if not _activity_has_groups(db, activity.id):
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="该活动尚未分组")
-
     existing = db.query(Group).filter(Group.activity_id == activity.id).all()
     max_num = max((g.group_number for g in existing), default=0)
     new_group = Group(activity_id=activity.id, group_number=max_num + 1)
@@ -272,3 +269,38 @@ def create_group(
 
     db.commit()
     return {"message": "已创建新组", "group_number": new_group.group_number}
+
+
+@router.post("/{slug}/groups/delete")
+def delete_group(
+    slug: str,
+    body: DeleteGroupRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    activity = db.query(Activity).filter(Activity.slug == slug).first()
+    if not activity:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="活动不存在")
+
+    if activity.user_id != current_user.id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="只有活动创建者才能调整分组")
+
+    group = db.query(Group).filter(
+        Group.activity_id == activity.id,
+        Group.group_number == body.group_number,
+    ).first()
+    if not group:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="该组不存在")
+
+    db.query(GroupMember).filter(GroupMember.group_id == group.id).delete()
+    db.delete(group)
+    db.flush()
+
+    remaining = db.query(Group).filter(Group.activity_id == activity.id).order_by(Group.group_number).all()
+    for i, g in enumerate(remaining):
+        g.group_number = i + 1
+
+    add_activity_log(db, activity.id, current_user.id, "group_delete",
+                     f"{current_user.nickname} 删除了第{body.group_number}组")
+    db.commit()
+    return {"message": "已删除"}

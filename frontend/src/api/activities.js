@@ -56,3 +56,7 @@ export function createGroup(slug, data) {
   return api.post(`/activities/${slug}/groups/create`, data)
 }
 
+export function deleteGroup(slug, data) {
+  return api.post(`/activities/${slug}/groups/delete`, data)
+}
+

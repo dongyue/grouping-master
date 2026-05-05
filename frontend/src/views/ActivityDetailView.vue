@@ -2,7 +2,7 @@
 import { ref, onMounted, onBeforeUnmount, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
-import { getActivity, joinActivity, leaveActivity, deleteActivity, kickMember, createGroups, deleteGroups, updateMemberInfo, moveMember, createGroup } from '../api/activities'
+import { getActivity, joinActivity, leaveActivity, deleteActivity, kickMember, createGroups, deleteGroups, updateMemberInfo, moveMember, createGroup, deleteGroup } from '../api/activities'
 import { getUserAttributes } from '../api/auth'
 import ConfirmModal from '../components/ConfirmModal.vue'
 import AttributeSelector from '../components/AttributeSelector.vue'
@@ -211,7 +211,7 @@ async function handleCreateGroup() {
     try {
       await createGroup(route.params.slug, { move_ungrouped: false })
       await refetchActivity()
-    } catch {}
+    } catch (e) { console.error(e) }
     return
   }
 
@@ -220,16 +220,23 @@ async function handleCreateGroup() {
       try {
         await createGroup(route.params.slug, { move_ungrouped: true })
         await refetchActivity()
-      } catch {}
+      } catch (e) { console.error(e) }
     },
     async () => {
       try {
         await createGroup(route.params.slug, { move_ungrouped: false })
         await refetchActivity()
-      } catch {}
+      } catch (e) { console.error(e) }
     },
     '是', '否'
   )
+}
+
+async function handleDeleteGroup(groupNumber) {
+  try {
+    await deleteGroup(route.params.slug, { group_number: groupNumber })
+    await refetchActivity()
+  } catch {}
 }
 
 async function refetchActivity() {
@@ -237,6 +244,7 @@ async function refetchActivity() {
     const res = await getActivity(route.params.slug)
     activity.value = res.data
     sortKey.value = res.data.has_groups ? 'group' : 'joined'
+    if (!res.data.has_groups) showManualAdjust.value = false
   } catch {} // silently ignore refetch failures
 }
 
@@ -461,12 +469,14 @@ async function handleUngroup() {
             :key="group.group_number"
             class="group-card"
             :class="{
-              'my-group': group.members.some(m => m.user_id === auth.user.id)
+              'my-group': group.members.some(m => m.user_id === auth.user.id),
+              'group-card-adjust': showManualAdjust
             }"
             @dragover.prevent
             @drop="showManualAdjust && handleDrop($event, group.group_number)"
           >
             <h4 class="group-title">第 {{ group.group_number }} 组 {{ group.members.length }} 人</h4>
+            <button v-if="showManualAdjust" class="group-remove" @click="handleDeleteGroup(group.group_number)" title="删除此组">&times;</button>
             <div class="members-list">
               <div
                 v-for="member in group.members"
@@ -579,7 +589,7 @@ async function handleUngroup() {
           {{ copied ? '已复制！' : '分享链接' }}
         </button>
         <button
-          v-if="activity.is_creator && activity.has_groups"
+          v-if="activity.is_creator && (activity.has_groups || showManualAdjust)"
           class="btn btn-secondary"
           @click="showManualAdjust = !showManualAdjust"
         >
@@ -801,6 +811,10 @@ async function handleUngroup() {
   margin-bottom: 12px;
 }
 
+.group-card-adjust {
+  position: relative;
+}
+
 .group-card.my-group {
   background: #f5f3ff;
   border: 2px solid #a78bfa;
@@ -845,6 +859,29 @@ async function handleUngroup() {
 .btn-add-group:hover {
   border-color: #666;
   color: #555;
+}
+
+.group-remove {
+  position: absolute;
+  top: -10px;
+  right: -10px;
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: #fff;
+  color: #999;
+  font-size: 18px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.group-remove:hover {
+  color: #dc2626;
+  background: #fef2f2;
 }
 
 .btn-disabled {

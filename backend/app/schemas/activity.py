@@ -108,6 +108,10 @@ class CreateGroupRequest(BaseModel):
     move_ungrouped: bool = False
 
 
+class DeleteGroupRequest(BaseModel):
+    group_number: int
+
+
 class MemberPreferencesResponse(BaseModel):
     want: list[int] = []
     avoid: list[int] = []

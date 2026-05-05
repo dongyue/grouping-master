@@ -367,10 +367,16 @@ activities 表的 `constraints` 字段为 JSON 数组，每项为一条多样性
 `POST /api/activities/{slug}/groups/create`
 - 请求体：`{move_ungrouped: bool}`
 - 仅活动创建者可执行，非创建者返回 403
-- 活动未分组时返回 400
-- 在已有组末尾追加新组（组号 = 当前最大组号 + 1）
-- `move_ungrouped` 为 `true` 时将全部落单成员移入新组
+- 在已有组末尾追加新组（组号 = 当前最大组号 + 1，尚无组时组号为 1）
+- `move_ungrouped` 为 `true` 时将全部未分组（落单）成员移入新组
 - 响应：`{message: "已创建新组", group_number: int}`
+
+`POST /api/activities/{slug}/groups/delete`
+- 请求体：`{group_number: int}`
+- 仅活动创建者可执行，非创建者返回 403
+- 活动未分组或组不存在时返回 404
+- 将组内全部成员移入落单区域后删除该组，剩余组按自然数重新编号
+- 响应：`{message: "已删除"}`
 
 `GET /api/activities/{slug}/logs`
 - 无请求体
@@ -505,6 +511,7 @@ activities 表的 `constraints` 字段为 JSON 数组，每项为一条多样性
 - 各组卡片和落单区域卡片设置 `@dragover.prevent` 和 `@drop` 事件，`drop` 时读取 `dataTransfer` 获取 `user_id`，调用 `POST /api/activities/{slug}/groups/move` 保存
 - API 返回后刷新活动数据以更新视图
 - 组列表末尾设有「新增组」按钮，调用 `POST /api/activities/{slug}/groups/create`；若有落单人员则先弹确认框选择是否一并移入新组
+- 每组右上角设有 ✕ 删除按钮，调用 `POST /api/activities/{slug}/groups/delete`，组内成员移入落单后删除组并重新编号
 
 ## 7. 分组算法设计
 
