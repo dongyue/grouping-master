@@ -400,7 +400,10 @@ async function handleUngroup() {
         <p v-if="activity.description" class="description">{{ activity.description }}</p>
         <p v-else class="description" style="color: #bbb;">暂无描述</p>
       </div>
-      <h3 class="rule-heading">分组规则</h3>
+      <h3 class="rule-heading">
+        分组规则
+        <span v-if="activity.is_creator" class="edit-icon" @click="router.push({ name: 'activity-edit', params: { slug: route.params.slug } })" title="编辑活动">&nbsp;&#x270E;</span>
+      </h3>
       <div class="rule-section">
         <span class="rule-badge" v-if="activity.group_strategy === 'fixed_group_count'">
           分组方式：共分 {{ activity.group_param }} 组
@@ -689,6 +692,18 @@ async function handleUngroup() {
 
 .desc-section {
   margin-bottom: 24px;
+}
+
+.edit-icon {
+  cursor: pointer;
+  color: #bbb;
+  font-size: 14px;
+  transition: color 0.15s;
+  flex-shrink: 0;
+}
+
+.edit-icon:hover {
+  color: #666;
 }
 
 .rule-heading {
