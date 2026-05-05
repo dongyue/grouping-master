@@ -34,6 +34,7 @@ const groupError = ref('')
 const groupSuccess = ref('')
 const showMore = ref(false)
 const showKick = ref(false)
+const showManualAdjust = ref(false)
 const confirmModal = ref({ show: false, title: '', message: '', onConfirm: null })
 const showAttributeSelector = ref(false)
 const attributeSubmitting = ref(false)
@@ -498,10 +499,17 @@ async function handleUngroup() {
           {{ joining ? '加入中...' : '加入活动' }}
         </button>
         <button v-if="activity.is_creator && !activity.has_groups" class="btn btn-primary" :disabled="grouping" @click="handleGroup">
-          {{ grouping ? '分组中...' : '开始分组' }}
+          {{ grouping ? '分组中...' : '自动分组' }}
         </button>
         <button class="btn btn-secondary" @click="handleCopyLink" style="white-space: nowrap;">
           {{ copied ? '已复制！' : '分享链接' }}
+        </button>
+        <button
+          v-if="activity.is_creator && activity.has_groups"
+          class="btn btn-secondary"
+          @click="showManualAdjust = !showManualAdjust"
+        >
+          {{ showManualAdjust ? '完成调整' : '手动调整' }}
         </button>
         <div v-if="hasMemberItems || hasCreatorItems" class="more-wrapper">
           <button class="btn btn-secondary" @click="showMore = !showMore">
