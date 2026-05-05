@@ -452,6 +452,14 @@ async function handleUngroup() {
           <option v-for="opt in sortOptions" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
         </select>
         <button
+          v-if="activity.is_creator && activity.has_groups"
+          class="btn-toggle-kick"
+          :class="{ active: showManualAdjust }"
+          @click="showManualAdjust = !showManualAdjust"
+        >
+          {{ showManualAdjust ? '完成调整' : '手动调整分组' }}
+        </button>
+        <button
           v-if="activity.is_creator"
           class="btn-toggle-kick"
           :class="{ active: showKick }"
@@ -588,13 +596,6 @@ async function handleUngroup() {
         </button>
         <button class="btn btn-secondary" @click="handleCopyLink" style="white-space: nowrap;">
           {{ copied ? '已复制！' : '分享链接' }}
-        </button>
-        <button
-          v-if="activity.is_creator && (activity.has_groups || showManualAdjust)"
-          class="btn btn-secondary"
-          @click="showManualAdjust = !showManualAdjust"
-        >
-          {{ showManualAdjust ? '完成调整' : '手动调整' }}
         </button>
         <div v-if="hasMemberItems || hasCreatorItems" class="more-wrapper">
           <button class="btn btn-secondary" @click="showMore = !showMore">
