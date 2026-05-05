@@ -118,7 +118,7 @@ def join_activity(
     if body.nickname.strip() != current_user.nickname:
         current_user.nickname = body.nickname.strip()
 
-    add_activity_log(db, activity.id, current_user.id, "join", f"{current_user.nickname} 加入了活动")
+    add_activity_log(db, activity.id, current_user.id, "join", f"{current_user.nickname}加入了活动")
     if body.attribute_values:
         sync_user_attributes(db, current_user.id, body.attribute_values)
     db.commit()
@@ -200,6 +200,12 @@ def leave_activity(
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="您尚未加入该活动")
 
     groups = db.query(Group).filter(Group.activity_id == activity.id).all()
+    gm = db.query(GroupMember).join(Group).filter(
+        Group.activity_id == activity.id,
+        GroupMember.user_id == current_user.id,
+    ).first()
+    group_info = f"第{gm.group.group_number}组" if gm else "落单"
+
     for g in groups:
         db.query(GroupMember).filter(
             GroupMember.group_id == g.id,
@@ -207,7 +213,7 @@ def leave_activity(
         ).delete()
 
     db.delete(membership)
-    add_activity_log(db, activity.id, current_user.id, "leave", f"{current_user.nickname} 退出了活动")
+    add_activity_log(db, activity.id, current_user.id, "leave", f"{current_user.nickname}从{group_info}退出了活动")
     db.commit()
     return {"message": "已退出活动"}
 
@@ -236,6 +242,12 @@ def kick_member(
     kicked_user = db.query(User).filter(User.id == user_id).first()
 
     groups = db.query(Group).filter(Group.activity_id == activity.id).all()
+    gm = db.query(GroupMember).join(Group).filter(
+        Group.activity_id == activity.id,
+        GroupMember.user_id == user_id,
+    ).first()
+    group_info = f"第{gm.group.group_number}组" if gm else "落单"
+
     for g in groups:
         db.query(GroupMember).filter(
             GroupMember.group_id == g.id,
@@ -243,6 +255,6 @@ def kick_member(
         ).delete()
 
     db.delete(membership)
-    add_activity_log(db, activity.id, current_user.id, "kick", f"{current_user.nickname} 将 {kicked_user.nickname} 踢出了活动")
+    add_activity_log(db, activity.id, current_user.id, "kick", f"{current_user.nickname}将{kicked_user.nickname}从{group_info}踢出了活动")
     db.commit()
     return {"message": "已将该成员移出活动"}

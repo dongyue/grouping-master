@@ -379,7 +379,7 @@ activities 表的 `constraints` 字段为 JSON 数组，每项为一条多样性
 - 响应：`{message: "已删除"}`
 
 `GET /api/activities/{slug}/logs`
-- 无请求体
+- Query 参数：`after_group`（可选，bool），为 `true` 时仅返回最近一次分组之后的 join/leave/kick 记录
 - 仅活动创建者可查看，非创建者返回 403
 - 响应：`list[ActivityLogResponse]`，按时间倒序
 - `ActivityLogResponse` 字段：`{id, user_nickname, action_type, content, detail, created_at}`
@@ -513,6 +513,12 @@ activities 表的 `constraints` 字段为 JSON 数组，每项为一条多样性
 - API 返回后刷新活动数据以更新视图
 - 组列表末尾设有「新增组」按钮，调用 `POST /api/activities/{slug}/groups/create`；若有落单人员则先弹确认框选择是否一并移入新组
 - 每组右上角设有 ✕ 删除按钮，调用 `POST /api/activities/{slug}/groups/delete`，组内成员移入落单后删除组并重新编号
+
+### 6.11 分组后变动日志
+
+- 活动详情页已分组时，调用 `GET /api/activities/{slug}/logs?after_group=true` 获取最近一次分组后的成员变动
+- 在成员列表下方以彩色标签展示：绿底标注新增落单，橙底标注退出/被踢出并显示原组号
+- 仅活动创建者可见
 
 ## 7. 分组算法设计
 

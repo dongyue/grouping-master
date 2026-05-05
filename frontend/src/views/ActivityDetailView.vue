@@ -2,7 +2,7 @@
 import { ref, onMounted, onBeforeUnmount, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
-import { getActivity, joinActivity, leaveActivity, deleteActivity, kickMember, createGroups, deleteGroups, updateMemberInfo, moveMember, createGroup, deleteGroup } from '../api/activities'
+import { getActivity, joinActivity, leaveActivity, deleteActivity, kickMember, createGroups, deleteGroups, updateMemberInfo, moveMember, createGroup, deleteGroup, getActivityLogs } from '../api/activities'
 import { getUserAttributes } from '../api/auth'
 import ConfirmModal from '../components/ConfirmModal.vue'
 import AttributeSelector from '../components/AttributeSelector.vue'
@@ -35,6 +35,9 @@ const groupSuccess = ref('')
 const showMore = ref(false)
 const showKick = ref(false)
 const showManualAdjust = ref(false)
+const changeLogs = ref([])
+
+const actionLabels = { join: '新加入', leave: '已退出', kick: '已被踢' }
 const confirmModal = ref({ show: false, title: '', message: '', onConfirm: null })
 const showAttributeSelector = ref(false)
 const attributeSubmitting = ref(false)
@@ -133,6 +136,7 @@ onMounted(async () => {
     const res = await getActivity(route.params.slug)
     activity.value = res.data
     if (res.data.has_groups) sortKey.value = 'group'
+    if (res.data.is_creator && res.data.has_groups) fetchChangeLogs()
   } catch (err) {
     console.error('加载活动详情错误:', err)
     if (err.response?.status === 404) {
@@ -245,7 +249,15 @@ async function refetchActivity() {
     activity.value = res.data
     sortKey.value = res.data.has_groups ? 'group' : 'joined'
     if (!res.data.has_groups) showManualAdjust.value = false
+    if (res.data.is_creator && res.data.has_groups) fetchChangeLogs()
   } catch {} // silently ignore refetch failures
+}
+
+async function fetchChangeLogs() {
+  try {
+    const res = await getActivityLogs(route.params.slug, { after_group: true })
+    changeLogs.value = res.data
+  } catch {}
 }
 
 async function handleJoin() {
@@ -578,6 +590,13 @@ async function handleUngroup() {
           </div>
         </div>
         <p v-else class="members-empty">暂无成员</p>
+        <div v-if="changeLogs.length" class="change-logs">
+          <h4 class="change-logs-title">自动分组后成员变动</h4>
+          <div v-for="log in changeLogs" :key="log.id" class="change-log-item" :class="'cl-' + log.action_type">
+            <span class="cl-tag">{{ actionLabels[log.action_type] || log.action_type }}</span>
+            {{ log.content }}
+          </div>
+        </div>
       </div>
       <div v-if="updated" class="success-msg" style="margin-bottom: 12px;">活动信息已更新</div>
       <div v-if="joinError" class="error-msg" style="margin-bottom: 12px;">{{ joinError }}</div>
@@ -706,6 +725,39 @@ async function handleUngroup() {
 .edit-icon:hover {
   color: #666;
 }
+
+.change-logs {
+  margin-top: 20px;
+  padding: 12px 16px;
+  background: #fafafa;
+  border-radius: 8px;
+}
+
+.change-logs-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #666;
+  margin-bottom: 8px;
+}
+
+.change-log-item {
+  font-size: 13px;
+  padding: 4px 0;
+  color: #555;
+}
+
+.cl-tag {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  margin-right: 6px;
+}
+
+.cl-join .cl-tag { background: #f6ffed; color: #52c41a; }
+.cl-leave .cl-tag { background: #fff7e6; color: #fa8c16; }
+.cl-kick .cl-tag { background: #fff1f0; color: #f5222d; }
 
 .rule-heading {
   font-size: 15px;
