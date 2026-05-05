@@ -310,6 +310,7 @@ activities 表的 `constraints` 字段为 JSON 数组，每项为一条多样性
 - `preferences` 可选，其 `want`/`avoid` 数组中的每个值须为活动其他成员的用户 ID；人数不超过活动的 `max_want_count` 和 `max_avoid_count`
 - 加入成功后，`nickname` 写入 `activity_members.nickname`，同时更新 `users.nickname`（反写）；属性值和偏好分别写入 `member_attributes` 和 `member_preferences` 表
 - 用户已加入时返回 409
+- 活动成员数达到 500 上限时返回 409
 - 响应：`{message: "加入成功"}`
 
 `DELETE /api/activities/{slug}`
@@ -479,6 +480,7 @@ activities 表的 `constraints` 字段为 JSON 数组，每项为一条多样性
 - 属性名支持下拉选择预设值（性别、团队、部门、单位、班级、年级、学校）+ 自定义输入
 - 选择「性别」时自动填入枚举值「男，女」
 - 限定值输入框根据 constrained_type 动态限制 min/max
+- 规则数量上限 10 条，达到上限后隐藏添加按钮
 - 供创建活动页和编辑活动页复用
 
 ### 6.7 个人信息弹框

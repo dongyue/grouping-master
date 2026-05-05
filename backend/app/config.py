@@ -13,6 +13,11 @@ DATABASE_URL = f"mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB
 
 SECRET_KEY = os.getenv("SECRET_KEY", "dev-secret-change-me")
 SESSION_EXPIRE_DAYS = 30
+# 以下上限前端也有对应常量，修改时需两端同步
+MAX_CONSTRAINTS = 10
+MAX_PREFERENCE_COUNT = 10
+# 仅后端校验，前端无需同步
+MAX_MEMBERS_PER_ACTIVITY = 500
 
 SMTP_HOST = os.getenv("SMTP_HOST", "").strip()
 SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))

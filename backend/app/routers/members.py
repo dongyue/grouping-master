@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.database import get_db
+from app.config import MAX_MEMBERS_PER_ACTIVITY
 from app.models.user import User
 from app.models.activity import Activity
 from app.models.activity_member import ActivityMember
@@ -60,6 +61,12 @@ def join_activity(
     activity = db.query(Activity).filter(Activity.slug == slug).first()
     if not activity:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="活动不存在")
+
+    member_count = db.query(ActivityMember).filter(
+        ActivityMember.activity_id == activity.id
+    ).count()
+    if member_count >= MAX_MEMBERS_PER_ACTIVITY:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=f"活动成员数已达上限（{MAX_MEMBERS_PER_ACTIVITY}人）")
 
     existing = db.query(ActivityMember).filter(
         ActivityMember.activity_id == activity.id,

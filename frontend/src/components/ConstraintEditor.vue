@@ -2,6 +2,7 @@
 import { watch } from 'vue'
 import { presetAttributes } from '../utils/constraintPresets'
 
+const MAX_CONSTRAINTS = 10  // 与后端 config.py 同步
 const constraints = defineModel({ type: Array, default: () => [] })
 
 function addConstraint() {
@@ -85,7 +86,7 @@ watch(constraints, () => {
         <span class="constraint-label">种不同值</span>
       </div>
     </div>
-    <button type="button" class="btn-add-constraint" @click="addConstraint">+ 添加限定规则</button>
+    <button type="button" class="btn-add-constraint" v-if="constraints.length < MAX_CONSTRAINTS" @click="addConstraint">+ 添加限定规则</button>
   </div>
 </template>
 

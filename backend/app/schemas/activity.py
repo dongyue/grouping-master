@@ -1,5 +1,6 @@
 from pydantic import BaseModel, field_validator, model_validator
 from typing import Literal
+from app.config import MAX_CONSTRAINTS, MAX_PREFERENCE_COUNT
 
 
 class ConstraintRule(BaseModel):
@@ -47,6 +48,8 @@ class ActivityBaseRequest(BaseModel):
     def validate_constraints(cls, v: list | None) -> list | None:
         if v is None:
             return v
+        if len(v) > MAX_CONSTRAINTS:
+            raise ValueError(f"约束规则不超过{MAX_CONSTRAINTS}条")
         seen_names = set()
         for rule in v:
             attr_name = rule.attribute_name.strip()
@@ -73,15 +76,15 @@ class ActivityBaseRequest(BaseModel):
     @field_validator("max_want_count")
     @classmethod
     def validate_max_want_count(cls, v: int) -> int:
-        if v < 1 or v > 10:
-            raise ValueError("「希望在一起」上限需在 1-10 之间")
+        if v < 1 or v > MAX_PREFERENCE_COUNT:
+            raise ValueError(f"「希望在一起」上限需在 1-{MAX_PREFERENCE_COUNT} 之间")
         return v
 
     @field_validator("max_avoid_count")
     @classmethod
     def validate_max_avoid_count(cls, v: int) -> int:
-        if v < 1 or v > 10:
-            raise ValueError("「不希望在一起」上限需在 1-10 之间")
+        if v < 1 or v > MAX_PREFERENCE_COUNT:
+            raise ValueError(f"「不希望在一起」上限需在 1-{MAX_PREFERENCE_COUNT} 之间")
         return v
 
 

@@ -3,6 +3,8 @@ import { ref, watch } from 'vue'
 import { groupStrategyOptions } from '../utils/groupRule'
 import ConstraintEditor from './ConstraintEditor.vue'
 
+const MAX_PREF_COUNT = 10  // 与后端 config.py MAX_PREFERENCE_COUNT 同步
+
 const props = defineProps({
   initialData: { type: Object, default: null },
   submitting: { type: Boolean, default: false },
@@ -103,7 +105,7 @@ function handleSubmit() {
               <input v-model="allowWantPreferences" type="checkbox" />
               <span>允许成员设置「想和谁同组」<template v-if="allowWantPreferences">，最多</template></span>
               <template v-if="allowWantPreferences">
-                <input v-model.number="maxWantCount" type="number" min="1" max="10" class="pref-count-input" />
+                <input v-model.number="maxWantCount" type="number" min="1" :max="MAX_PREF_COUNT" class="pref-count-input" />
                 <span>人</span>
               </template>
             </label>
@@ -113,7 +115,7 @@ function handleSubmit() {
               <input v-model="allowAvoidPreferences" type="checkbox" />
               <span>允许成员设置「不想和谁同组」<template v-if="allowAvoidPreferences">，最多</template></span>
               <template v-if="allowAvoidPreferences">
-                <input v-model.number="maxAvoidCount" type="number" min="1" max="10" class="pref-count-input" />
+                <input v-model.number="maxAvoidCount" type="number" :min="MIN_PREF_COUNT" :max="MAX_PREF_COUNT" class="pref-count-input" />
                 <span>人</span>
               </template>
             </label>
