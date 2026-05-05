@@ -2,7 +2,7 @@
 import { ref, onMounted, onBeforeUnmount, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
-import { getActivity, joinActivity, leaveActivity, deleteActivity, kickMember, createGroups, deleteGroups, updateMemberInfo } from '../api/activities'
+import { getActivity, joinActivity, leaveActivity, deleteActivity, kickMember, createGroups, deleteGroups, updateMemberInfo, moveMember } from '../api/activities'
 import { getUserAttributes } from '../api/auth'
 import ConfirmModal from '../components/ConfirmModal.vue'
 import AttributeSelector from '../components/AttributeSelector.vue'
@@ -188,6 +188,21 @@ function handleCopyLink() {
     copied.value = true
     setTimeout(() => (copied.value = false), 2000)
   })
+}
+
+function handleDragStart(event, userId) {
+  event.dataTransfer.setData('application/json', JSON.stringify({ user_id: userId }))
+  event.dataTransfer.effectAllowed = 'move'
+}
+
+async function handleDrop(event, targetGroupNumber) {
+  event.preventDefault()
+  const data = JSON.parse(event.dataTransfer.getData('application/json'))
+  if (!data.user_id) return
+  try {
+    await moveMember(route.params.slug, { user_id: data.user_id, target_group_number: targetGroupNumber })
+    await refetchActivity()
+  } catch {}
 }
 
 async function refetchActivity() {
@@ -394,7 +409,7 @@ async function handleUngroup() {
       <h3 class="rule-heading section-heading">
         <span class="section-heading-text">{{ sectionTitle }}</span>
         <select
-          v-if="activity.members?.length && sortOptions.length > 2"
+          v-if="!showManualAdjust && activity.members?.length && sortOptions.length > 2"
           v-model="sortKey"
           class="sort-select"
         >
@@ -413,39 +428,69 @@ async function handleUngroup() {
         <div class="members-toolbar">
           <span class="members-summary">{{ memberTitle }}</span>
         </div>
-        <div v-if="activity.has_groups && sortKey === 'group' && activity.groups?.length">
-          <div v-for="group in activity.groups" :key="group.group_number" class="group-card" :class="{ 'my-group': group.members.some(m => m.user_id === auth.user.id) }">
+        <div v-if="activity.has_groups && (showManualAdjust || sortKey === 'group') && activity.groups?.length">
+          <div
+            v-for="group in activity.groups"
+            :key="group.group_number"
+            class="group-card"
+            :class="{
+              'my-group': group.members.some(m => m.user_id === auth.user.id)
+            }"
+            @dragover.prevent
+            @drop="showManualAdjust && handleDrop($event, group.group_number)"
+          >
             <h4 class="group-title">第 {{ group.group_number }} 组 {{ group.members.length }} 人</h4>
             <div class="members-list">
-              <MemberItem
+              <div
                 v-for="member in group.members"
                 :key="member.user_id"
-                :member="member"
-                :current-user-id="auth.user.id"
-                :is-creator="activity.is_creator"
-                :show-kick="showKick"
-                :kicking-user-id="kickingUserId"
-                :uploads-url="uploadsUrl"
-                @edit="openAttrEditor()"
-                @kick="handleKick"
-              />
+                :draggable="showManualAdjust ? 'true' : 'false'"
+                :class="{ 'drag-member': showManualAdjust }"
+                @dragstart="showManualAdjust && handleDragStart($event, member.user_id)"
+              >
+                <MemberItem
+                  :member="member"
+                  :current-user-id="auth.user.id"
+                  :is-creator="activity.is_creator"
+                  :show-kick="showKick"
+                  :kicking-user-id="kickingUserId"
+                  :uploads-url="uploadsUrl"
+                  @edit="openAttrEditor()"
+                  @kick="handleKick"
+                />
+              </div>
             </div>
           </div>
-          <div v-if="activity.ungrouped_members?.length" class="group-card ungrouped-card" :class="{ 'my-group': activity.ungrouped_members.some(m => m.user_id === auth.user.id) }">
-            <h4 class="group-title">落单 {{ activity.ungrouped_members.length }} 人</h4>
+          <div
+            v-if="showManualAdjust || activity.ungrouped_members?.length"
+            class="group-card ungrouped-card"
+            :class="{
+              'my-group': activity.ungrouped_members?.some(m => m.user_id === auth.user.id),
+              'drop-target': showManualAdjust
+            }"
+            @dragover.prevent
+            @drop="showManualAdjust && handleDrop($event, null)"
+          >
+            <h4 class="group-title">落单 {{ activity.ungrouped_members?.length || 0 }} 人</h4>
             <div class="members-list">
-              <MemberItem
-                v-for="member in activity.ungrouped_members"
+              <div
+                v-for="member in activity.ungrouped_members || []"
                 :key="member.user_id"
-                :member="member"
-                :current-user-id="auth.user.id"
-                :is-creator="activity.is_creator"
-                :show-kick="showKick"
-                :kicking-user-id="kickingUserId"
-                :uploads-url="uploadsUrl"
-                @edit="openAttrEditor()"
-                @kick="handleKick"
-              />
+                :draggable="showManualAdjust ? 'true' : 'false'"
+                :class="{ 'drag-member': showManualAdjust }"
+                @dragstart="showManualAdjust && handleDragStart($event, member.user_id)"
+              >
+                <MemberItem
+                  :member="member"
+                  :current-user-id="auth.user.id"
+                  :is-creator="activity.is_creator"
+                  :show-kick="showKick"
+                  :kicking-user-id="kickingUserId"
+                  :uploads-url="uploadsUrl"
+                  @edit="openAttrEditor()"
+                  @kick="handleKick"
+                />
+              </div>
             </div>
           </div>
         </div>
@@ -740,6 +785,15 @@ async function handleUngroup() {
 .ungrouped-card {
   background: #fef9e7;
   border: 1px dashed #e6a23c;
+}
+
+.drag-member {
+  cursor: grab;
+}
+
+.drag-member:active {
+  cursor: grabbing;
+  opacity: 0.7;
 }
 
 .btn-disabled {

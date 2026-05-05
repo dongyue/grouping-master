@@ -99,6 +99,11 @@ class JoinActivityRequest(BaseModel):
     preferences: dict[str, list[int]] | None = None
 
 
+class MoveMemberRequest(BaseModel):
+    user_id: int
+    target_group_number: int | None = None
+
+
 class MemberPreferencesResponse(BaseModel):
     want: list[int] = []
     avoid: list[int] = []

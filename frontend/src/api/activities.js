@@ -48,3 +48,7 @@ export function updateMemberInfo(slug, data) {
   return api.put(`/activities/${slug}/member-info`, data)
 }
 
+export function moveMember(slug, data) {
+  return api.post(`/activities/${slug}/groups/move`, data)
+}
+

@@ -355,6 +355,15 @@ activities 表的 `constraints` 字段为 JSON 数组，每项为一条多样性
 - 删除该活动下所有分组及成员关系，活动恢复未分组状态
 - 响应：`{message: "已解除分组"}`
 
+`POST /api/activities/{slug}/groups/move`
+- 请求体：`{user_id: int, target_group_number: int | null}`
+- 仅活动创建者可执行，非创建者返回 403
+- 活动未分组时返回 400
+- 成员不存在时返回 404
+- 将成员从当前所在组（或落单）移到目标组：`target_group_number` 为组号时移入该组（组不存在则自动创建），为 `null` 时移入落单区域
+- 移动后不自动删除空组
+- 响应：`{message: "已移动"}`
+
 `GET /api/activities/{slug}/logs`
 - 无请求体
 - 仅活动创建者可查看，非创建者返回 403
@@ -480,6 +489,13 @@ activities 表的 `constraints` 字段为 JSON 数组，每项为一条多样性
 - 标题格式如「尽量安排与他/她们同组」（上限为 1 时显示「他/她」），下方标注隐私声明和调整提示
 - 以 checkbox 列表展示，每项显示头像和昵称；已选满上限时未选项置灰
 - 日志页面仅活动创建者可访问，非创建者重定向回详情页
+
+### 6.10 手动调整拖拽交互
+
+- 使用 HTML5 Drag & Drop API，不引入第三方拖拽库
+- 手动调整状态下，每个成员条目设置 `draggable="true"`，`dragstart` 时在 `dataTransfer` 中携带 `user_id` 和来源信息
+- 各组卡片和落单区域卡片设置 `@dragover.prevent` 和 `@drop` 事件，`drop` 时读取 `dataTransfer` 获取 `user_id`，调用 `POST /api/activities/{slug}/groups/move` 保存
+- API 返回后刷新活动数据以更新视图
 
 ## 7. 分组算法设计
 
