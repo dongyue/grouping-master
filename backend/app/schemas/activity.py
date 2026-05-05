@@ -104,6 +104,10 @@ class MoveMemberRequest(BaseModel):
     target_group_number: int | None = None
 
 
+class CreateGroupRequest(BaseModel):
+    move_ungrouped: bool = False
+
+
 class MemberPreferencesResponse(BaseModel):
     want: list[int] = []
     avoid: list[int] = []

@@ -364,6 +364,14 @@ activities 表的 `constraints` 字段为 JSON 数组，每项为一条多样性
 - 移动后不自动删除空组
 - 响应：`{message: "已移动"}`
 
+`POST /api/activities/{slug}/groups/create`
+- 请求体：`{move_ungrouped: bool}`
+- 仅活动创建者可执行，非创建者返回 403
+- 活动未分组时返回 400
+- 在已有组末尾追加新组（组号 = 当前最大组号 + 1）
+- `move_ungrouped` 为 `true` 时将全部落单成员移入新组
+- 响应：`{message: "已创建新组", group_number: int}`
+
 `GET /api/activities/{slug}/logs`
 - 无请求体
 - 仅活动创建者可查看，非创建者返回 403
@@ -496,6 +504,7 @@ activities 表的 `constraints` 字段为 JSON 数组，每项为一条多样性
 - 手动调整状态下，每个成员条目设置 `draggable="true"`，`dragstart` 时在 `dataTransfer` 中携带 `user_id` 和来源信息
 - 各组卡片和落单区域卡片设置 `@dragover.prevent` 和 `@drop` 事件，`drop` 时读取 `dataTransfer` 获取 `user_id`，调用 `POST /api/activities/{slug}/groups/move` 保存
 - API 返回后刷新活动数据以更新视图
+- 组列表末尾设有「新增组」按钮，调用 `POST /api/activities/{slug}/groups/create`；若有落单人员则先弹确认框选择是否一并移入新组
 
 ## 7. 分组算法设计
 

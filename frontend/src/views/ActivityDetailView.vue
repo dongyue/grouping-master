@@ -2,7 +2,7 @@
 import { ref, onMounted, onBeforeUnmount, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
-import { getActivity, joinActivity, leaveActivity, deleteActivity, kickMember, createGroups, deleteGroups, updateMemberInfo, moveMember } from '../api/activities'
+import { getActivity, joinActivity, leaveActivity, deleteActivity, kickMember, createGroups, deleteGroups, updateMemberInfo, moveMember, createGroup } from '../api/activities'
 import { getUserAttributes } from '../api/auth'
 import ConfirmModal from '../components/ConfirmModal.vue'
 import AttributeSelector from '../components/AttributeSelector.vue'
@@ -178,8 +178,8 @@ function handleClickOutside(event) {
   }
 }
 
-function showConfirm(title, message, onConfirm) {
-  confirmModal.value = { show: true, title, message, onConfirm }
+function showConfirm(title, message, onConfirm, onCancel, confirmText, cancelText) {
+  confirmModal.value = { show: true, title, message, onConfirm, onCancel, confirmText, cancelText }
 }
 
 function handleCopyLink() {
@@ -203,6 +203,33 @@ async function handleDrop(event, targetGroupNumber) {
     await moveMember(route.params.slug, { user_id: data.user_id, target_group_number: targetGroupNumber })
     await refetchActivity()
   } catch {}
+}
+
+async function handleCreateGroup() {
+  const ungroupedCount = activity.value?.ungrouped_members?.length || 0
+  if (ungroupedCount === 0) {
+    try {
+      await createGroup(route.params.slug, { move_ungrouped: false })
+      await refetchActivity()
+    } catch {}
+    return
+  }
+
+  showConfirm('新增组', `当前有 ${ungroupedCount} 人落单，是否将他们移入新组？`,
+    async () => {
+      try {
+        await createGroup(route.params.slug, { move_ungrouped: true })
+        await refetchActivity()
+      } catch {}
+    },
+    async () => {
+      try {
+        await createGroup(route.params.slug, { move_ungrouped: false })
+        await refetchActivity()
+      } catch {}
+    },
+    '是', '否'
+  )
 }
 
 async function refetchActivity() {
@@ -465,8 +492,7 @@ async function handleUngroup() {
             v-if="showManualAdjust || activity.ungrouped_members?.length"
             class="group-card ungrouped-card"
             :class="{
-              'my-group': activity.ungrouped_members?.some(m => m.user_id === auth.user.id),
-              'drop-target': showManualAdjust
+              'my-group': activity.ungrouped_members?.some(m => m.user_id === auth.user.id)
             }"
             @dragover.prevent
             @drop="showManualAdjust && handleDrop($event, null)"
@@ -492,6 +518,9 @@ async function handleUngroup() {
                 />
               </div>
             </div>
+          </div>
+          <div v-if="showManualAdjust" class="add-group-area">
+            <button class="btn-add-group" @click="handleCreateGroup">+ 新增组</button>
           </div>
         </div>
         <div v-else-if="sortedMembers.flat?.length" class="members-list">
@@ -616,8 +645,8 @@ async function handleUngroup() {
               {{ leaving ? '退出中...' : '退出活动' }}
             </button>
           </div>
+          </div>
         </div>
-      </div>
     </template>
   </div>
   <ConfirmModal
@@ -625,7 +654,9 @@ async function handleUngroup() {
     :title="confirmModal.title"
     :message="confirmModal.message"
     @confirm="confirmModal.onConfirm(); confirmModal.show = false"
-    @cancel="confirmModal.show = false"
+      @cancel="confirmModal.show = false; confirmModal.onCancel?.()"
+      :confirm-text="confirmModal.confirmText"
+      :cancel-text="confirmModal.cancelText"
   />
 </template>
 
@@ -794,6 +825,26 @@ async function handleUngroup() {
 .drag-member:active {
   cursor: grabbing;
   opacity: 0.7;
+}
+
+.add-group-area {
+  margin-bottom: 12px;
+}
+
+.btn-add-group {
+  background: transparent;
+  border: 1px dashed #bbb;
+  border-radius: 8px;
+  color: #888;
+  font-size: 13px;
+  padding: 8px 24px;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.btn-add-group:hover {
+  border-color: #666;
+  color: #555;
 }
 
 .btn-disabled {

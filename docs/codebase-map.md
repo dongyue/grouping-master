@@ -59,7 +59,7 @@ routers → schemas → models → database.py
 | `auth.py` | `/api/auth/*` — 注册/登录/登出/me/改密/忘记密码/重置密码/更新资料/头像/注销账号/个人属性 |
 | `activities.py` | `/api/activities` — POST 创建、GET 列表、GET `/:slug` 详情、PUT `/:slug` 编辑、DELETE `/:slug` 删除 |
 | `members.py` | `/api/activities/:slug` — POST join/leave、PUT attributes、DELETE members/:user_id |
-| `groups.py` | `/api/activities/:slug` — POST groups（含重新分组）、DELETE groups（解除分组）、POST groups/move（手动调整移成员） |
+| `groups.py` | `/api/activities/:slug` — POST groups（含重新分组）、DELETE groups（解除分组）、POST groups/move（手动调整移成员）、POST groups/create（新增组） |
 | `logs.py` | `/api/activities/:slug` — GET logs（仅创建者，按时间倒序） |
 
 ### 业务服务（app/services/）

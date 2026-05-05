@@ -2,6 +2,8 @@
 defineProps({
   title: { type: String, default: '确认操作' },
   message: { type: String, default: '确定要执行此操作吗？' },
+  confirmText: { type: String, default: '确定' },
+  cancelText: { type: String, default: '取消' },
 })
 
 const emit = defineEmits(['confirm', 'cancel'])
@@ -13,8 +15,8 @@ const emit = defineEmits(['confirm', 'cancel'])
       <h3 class="modal-title">{{ title }}</h3>
       <p class="modal-message">{{ message }}</p>
       <div class="modal-actions">
-        <button class="btn btn-secondary" @click="emit('cancel')">取消</button>
-        <button class="btn btn-danger" @click="emit('confirm')">确定</button>
+        <button class="btn btn-secondary" @click="emit('cancel')">{{ cancelText }}</button>
+        <button class="btn btn-danger" @click="emit('confirm')">{{ confirmText }}</button>
       </div>
     </div>
   </div>

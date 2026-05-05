@@ -16,6 +16,7 @@ from app.schemas.activity import (
     ActivityUpdateRequest,
     JoinActivityRequest,
     MoveMemberRequest,
+    CreateGroupRequest,
     ActivityResponse,
     ActivityDetailResponse,
     MemberItem,
