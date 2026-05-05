@@ -52,6 +52,9 @@ const actionLabels = {
   group: '执行分组',
   ungroup: '解除分组',
   member_edit: '编辑个人信息',
+  member_move: '移成员',
+  group_create: '新增组',
+  group_delete: '删除组',
 }
 </script>
 
@@ -204,6 +207,9 @@ const actionLabels = {
 .log-type.type-group { background: #f9f0ff; color: #722ed1; }
 .log-type.type-ungroup { background: #fff7e6; color: #d48806; }
 .log-type.type-member_edit { background: #f0f5ff; color: #1d39c4; }
+.log-type.type-member_move { background: #f0f5ff; color: #1d39c4; }
+.log-type.type-group_create { background: #f0f5ff; color: #1d39c4; }
+.log-type.type-group_delete { background: #f0f5ff; color: #1d39c4; }
 
 .log-time {
   font-size: 12px;
