@@ -340,18 +340,16 @@ async function handleDelete() {
 }
 
 async function handleKick(userId, nickname) {
-  showConfirm('踢出成员', `确定要将 ${nickname} 踢出此活动吗？`, async () => {
-    kickingUserId.value = userId
-    kickError.value = ''
-    try {
-      await kickMember(route.params.slug, userId)
-      await refetchActivity()
-    } catch (err) {
-      kickError.value = err.response?.data?.detail || '踢出失败'
-    } finally {
-      kickingUserId.value = null
-    }
-  })
+  kickingUserId.value = userId
+  kickError.value = ''
+  try {
+    await kickMember(route.params.slug, userId)
+    await refetchActivity()
+  } catch (err) {
+    kickError.value = err.response?.data?.detail || '踢出失败'
+  } finally {
+    kickingUserId.value = null
+  }
 }
 
 async function handleGroup() {
@@ -456,7 +454,7 @@ async function handleUngroup() {
           :class="{ active: showKick }"
           @click="showKick = !showKick"
         >
-          {{ showKick ? '完成管理' : '管理成员' }}
+          {{ showKick ? '踢毕' : '踢人' }}
         </button>
       </h3>
       <div class="members-section">

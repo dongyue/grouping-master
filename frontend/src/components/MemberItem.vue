@@ -26,12 +26,13 @@ const emit = defineEmits(['edit', 'kick'])
     <span v-if="member.attribute_warnings?.length" class="warn-icon" :title="member.attribute_warnings.join('\n')">&#9888;</span>
     <span v-if="member.user_id === currentUserId" class="edit-icon" @click="$emit('edit')" title="编辑个人信息">&#x270E;</span>
     <button
-      v-if="isCreator && member.user_id !== currentUserId && showKick"
+      v-if="isCreator && showKick"
       class="btn-kick"
       :disabled="kickingUserId === member.user_id"
+      title="踢出此人"
       @click="$emit('kick', member.user_id, member.nickname)"
     >
-      {{ kickingUserId === member.user_id ? '踢出中...' : '踢出' }}
+      {{ kickingUserId === member.user_id ? '...' : '×' }}
     </button>
   </div>
 </template>
@@ -132,22 +133,26 @@ const emit = defineEmits(['edit', 'kick'])
 }
 
 .btn-kick {
-  font-size: 11px;
-  padding: 2px 10px;
-  border: 1px solid #e74c3c;
-  border-radius: 4px;
-  background: transparent;
-  color: #e74c3c;
+  width: 24px;
+  height: 24px;
+  border: none;
+  background: #fff;
+  color: #999;
+  font-size: 16px;
   cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
   margin-left: auto;
-  transition: all 0.2s;
-  white-space: nowrap;
   flex-shrink: 0;
+  transition: color 0.15s, background 0.15s;
 }
 
 .btn-kick:hover:not(:disabled) {
-  background: #e74c3c;
-  color: #fff;
+  color: #dc2626;
+  background: #fef2f2;
 }
 
 .btn-kick:disabled {

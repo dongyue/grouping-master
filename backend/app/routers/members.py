@@ -219,9 +219,6 @@ def kick_member(
     if activity.user_id != current_user.id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="只有活动创建者才能踢出成员")
 
-    if user_id == current_user.id:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="创建者不能踢出自己，请使用退出活动功能")
-
     membership = db.query(ActivityMember).filter(
         ActivityMember.activity_id == activity.id,
         ActivityMember.user_id == user_id,
