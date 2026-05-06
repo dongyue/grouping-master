@@ -249,6 +249,7 @@ async function refetchActivity() {
     activity.value = res.data
     sortKey.value = res.data.has_groups ? 'group' : 'joined'
     if (!res.data.has_groups) showManualAdjust.value = false
+    changeLogs.value = []
     if (res.data.is_creator && res.data.has_groups) fetchChangeLogs()
   } catch {} // silently ignore refetch failures
 }
