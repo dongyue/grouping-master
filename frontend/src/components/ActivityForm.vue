@@ -97,7 +97,7 @@ function handleSubmit() {
             <span class="rule-label">{{ groupStrategy === 'fixed_group_count' ? '组' : '人' }}</span>
           </div>
         </div>
-        <ConstraintEditor v-model="constraints" />
+        <ConstraintEditor v-model="constraints" :group-param="groupStrategy === 'fixed_group_size' ? groupParam : null" />
         <div class="form-group">
           <label>成员偏好设置</label>
           <div class="pref-row">

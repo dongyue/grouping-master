@@ -4,6 +4,7 @@ import { presetAttributes } from '../utils/constraintPresets'
 
 const MAX_CONSTRAINTS = 10  // 与后端 config.py 同步
 const constraints = defineModel({ type: Array, default: () => [] })
+const props = defineProps({ groupParam: { type: Number, default: null } })
 
 function addConstraint() {
   constraints.value.push({
@@ -40,16 +41,26 @@ function getValuesCount(c) {
   return c.allowed_values_raw.split(/[,，]/).map(s => s.trim()).filter(s => s).length
 }
 
+function getLimit(c) {
+  const n = getValuesCount(c)
+  const gp = props.groupParam
+  return c.constraint_type === 'min_diversity'
+    ? (gp ? Math.min(n, gp) : n)
+    : (gp ? Math.min(n - 1, gp - 1) : n - 1)
+}
+
 watch(constraints, () => {
   constraints.value.forEach(c => {
     const n = getValuesCount(c)
     if (n === 0) return
+    const gp = props.groupParam
+    const limit = c.constraint_type === 'min_diversity'
+      ? (gp ? Math.min(n, gp) : n)
+      : (gp ? Math.min(n - 1, gp - 1) : n - 1)
     if (c.constraint_type === 'min_diversity') {
-      if (c.constraint_value > n) c.constraint_value = n
-      if (c.constraint_value < 2) c.constraint_value = 2
+      c.constraint_value = Math.max(2, Math.min(c.constraint_value, limit))
     } else {
-      if (c.constraint_value > n - 1) c.constraint_value = Math.max(n - 1, 1)
-      if (c.constraint_value < 1) c.constraint_value = 1
+      c.constraint_value = Math.max(1, Math.min(c.constraint_value, limit))
     }
   })
 }, { deep: true })
@@ -81,7 +92,7 @@ watch(constraints, () => {
         <span class="constraint-label">有</span>
         <input v-model.number="c.constraint_value" type="number"
           :min="c.constraint_type === 'min_diversity' ? 2 : 1"
-          :max="c.constraint_type === 'min_diversity' ? Math.max(getValuesCount(c), 2) : Math.max(getValuesCount(c) - 1, 1)"
+          :max="getLimit(c)"
           class="constraint-value" />
         <span class="constraint-label">种不同值</span>
       </div>

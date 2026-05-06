@@ -167,7 +167,7 @@ activities 表的 `constraints` 字段为 JSON 数组，每项为一条多样性
 | `attribute_name` | str | 属性名，同一活动内不可重复 |
 | `allowed_values` | list[str] | 属性值枚举，至少 2 个值 |
 | `constraint_type` | str | `"min_diversity"`（限定最小多样性）或 `"max_diversity"`（限定最大多样性） |
-| `constraint_value` | int | 限定值。限定最小值时满足 2 ≤ value ≤ len(allowed_values)；限定最大值时满足 1 ≤ value ≤ len(allowed_values)-1 |
+| `constraint_value` | int | 限定值。min_diversity 满足 2 ≤ v ≤ min(len(allowed_values), group_param)；max_diversity 满足 1 ≤ v ≤ min(len(allowed_values)−1, group_param−1)。以上 group_param 仅在固定每组人数策略下生效 |
 
 ### 2.13 索引策略
 
@@ -479,7 +479,7 @@ activities 表的 `constraints` 字段为 JSON 数组，每项为一条多样性
 - 新建 `ConstraintEditor.vue`，封装组内多样性限定规则的增删改 UI
 - 属性名支持下拉选择预设值（性别、团队、部门、单位、班级、年级、学校）+ 自定义输入
 - 选择「性别」时自动填入枚举值「男，女」
-- 限定值输入框根据 constrained_type 动态限制 min/max
+- 限定值输入框根据 constrained_type 动态限制 min/max，上限受 group_param 约束（固定策略下），计算逻辑与后端校验一致
 - 规则数量上限 10 条，达到上限后隐藏添加按钮
 - 供创建活动页和编辑活动页复用
 

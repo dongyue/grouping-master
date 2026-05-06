@@ -1,5 +1,5 @@
 from pydantic import BaseModel, field_validator, model_validator
-from typing import Literal
+from typing import Literal, Self
 from app.config import MAX_CONSTRAINTS, MAX_PREFERENCE_COUNT
 
 
@@ -48,6 +48,47 @@ class ActivityBaseRequest(BaseModel):
     def validate_constraints(cls, v: list | None) -> list | None:
         if v is None:
             return v
+        if len(v) > MAX_CONSTRAINTS:
+            raise ValueError(f"约束规则不超过{MAX_CONSTRAINTS}条")
+        seen_names = set()
+        for rule in v:
+            attr_name = rule.attribute_name.strip()
+            if not attr_name:
+                raise ValueError("属性名不能为空")
+            if attr_name in seen_names:
+                raise ValueError(f"属性名「{attr_name}」已存在，不能重复")
+            seen_names.add(attr_name)
+            n = len(rule.allowed_values)
+            if n < 2:
+                raise ValueError(f"属性「{attr_name}」的枚举值至少需要2个")
+            if rule.constraint_type == "min_diversity":
+                if rule.constraint_value < 2:
+                    raise ValueError(f"属性「{attr_name}」的『至少』限定值不能小于2")
+                if rule.constraint_value > n:
+                    raise ValueError(f"属性「{attr_name}」的『至少』限定值({rule.constraint_value})不能大于枚举值数量({n})")
+            else:
+                if rule.constraint_value < 1:
+                    raise ValueError(f"属性「{attr_name}」的『最多』限定值不能小于1")
+                if rule.constraint_value >= n:
+                    raise ValueError(f"属性「{attr_name}」的『最多』限定值({rule.constraint_value})不能达到枚举值数量({n})")
+        return v
+
+    @model_validator(mode='after')
+    def validate_constraint_group_limits(self) -> Self:
+        if self.group_strategy != 'fixed_group_size' or not self.constraints:
+            return self
+        gs = self.group_param
+        for rule in self.constraints:
+            n = len(rule.allowed_values)
+            if rule.constraint_type == 'min_diversity':
+                limit = min(n, gs)
+                if rule.constraint_value > limit:
+                    raise ValueError(f"属性「{rule.attribute_name}」的『至少』限定值({rule.constraint_value})不能大于{limit}（每组{gs}人最多{gs}种）")
+            else:
+                limit = min(n - 1, gs - 1)
+                if rule.constraint_value > limit:
+                    raise ValueError(f"属性「{rule.attribute_name}」的『最多』限定值({rule.constraint_value})不能大于{limit}（每组{gs}人）")
+        return self
         if len(v) > MAX_CONSTRAINTS:
             raise ValueError(f"约束规则不超过{MAX_CONSTRAINTS}条")
         seen_names = set()
