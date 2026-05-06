@@ -52,7 +52,8 @@
 
 理解现有代码时，**文档优先，按需读源码**：
 
-1. 先读 `docs/requirements.md` — 了解相关功能需求
+0. 先读 `README.md` — 了解项目概况、功能、技术栈
+1. 再读 `docs/requirements.md` — 了解相关功能需求
 2. 再读 `docs/design.md` — 了解数据库设计、API 设计、技术方案
 3. 再读 `docs/codebase-map.md` — 定位需要改动的文件
 4. 最后，只读要改的文件，不批量读取无关模块
