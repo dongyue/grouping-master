@@ -13,10 +13,17 @@
 
 ## 截图
 
-<!-- TODO: 替换为实际截图 -->
-![首页](screenshots/home.png)
-![活动详情页-分组前](screenshots/activity-before.png)
-![活动详情页-分组后](screenshots/activity-after.png)
+![首页](docs/screenshots/home.png)
+*首页：我创建的活动与加入的活动列表*
+
+![活动分组设置](docs/screenshots/activity-settings.png)
+*创建活动时可配置分组方式、组内规则和成员偏好*
+
+![加入活动](docs/screenshots/join-activity.png)
+*成员加入时填写个人属性，选择想同组或不想同组的人*
+
+![自动分组结果](docs/screenshots/auto-grouping.png)
+*分组完成，按组展示成员，支持手动调整和变动追踪*
 
 ## 技术栈
 
