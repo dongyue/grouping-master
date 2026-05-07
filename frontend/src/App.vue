@@ -1,9 +1,11 @@
 <script setup>
+import { ref } from 'vue'
 import { useAuthStore } from './stores/auth'
 import { useRouter } from 'vue-router'
 
 const auth = useAuthStore()
 const router = useRouter()
+const showIntro = ref(false)
 
 async function handleLogout() {
   await auth.logout()
@@ -17,6 +19,7 @@ async function handleLogout() {
       <div class="header-inner">
         <a href="/" @click.prevent="router.push('/')" class="logo">分组大师</a>
         <nav>
+          <a href="#" @click.prevent="showIntro = true">?</a>
           <a href="/settings" @click.prevent="router.push('/settings')">设置</a>
           <a href="#" @click.prevent="handleLogout">退出</a>
         </nav>
@@ -25,6 +28,19 @@ async function handleLogout() {
     <main>
       <router-view />
     </main>
+
+    <div v-if="showIntro" class="modal-overlay" @click.self="showIntro = false">
+      <div class="modal-box">
+        <h3>关于分组大师</h3>
+        <p class="intro-text">
+          按自定义约束自动分组，支持手动拖拽调整，实时追踪成员变动。适用于团建、课程分组、住宿分配等场景。
+        </p>
+        <p class="intro-link">
+          <a href="https://github.com/dongyue/grouping-master" target="_blank" rel="noopener">GitHub →</a>
+        </p>
+        <button class="btn btn-primary" @click="showIntro = false" style="width:auto;padding:8px 24px;margin-top:16px">关闭</button>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -280,5 +296,48 @@ main {
 .actions .btn {
   width: auto;
   padding: 0 24px;
+}
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-box {
+  background: #fff;
+  border-radius: 12px;
+  padding: 32px;
+  min-width: 320px;
+  max-width: 400px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.16);
+  text-align: center;
+}
+
+.modal-box h3 {
+  font-size: 18px;
+  font-weight: 700;
+  color: #333;
+  margin-bottom: 16px;
+}
+
+.intro-text {
+  font-size: 14px;
+  color: #666;
+  line-height: 1.8;
+}
+
+.intro-link {
+  margin-top: 12px;
+}
+
+.intro-link a {
+  font-size: 14px;
+  color: #4f46e5;
+  text-decoration: none;
 }
 </style>
