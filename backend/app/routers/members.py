@@ -116,8 +116,7 @@ def join_activity(
 
     # Sync nickname back to user profile
     if body.nickname.strip() != current_user.nickname:
-        current_user = db.merge(current_user)
-        current_user.nickname = body.nickname.strip()
+        db.query(User).filter(User.id == current_user.id).update({"nickname": body.nickname.strip()})
 
     add_activity_log(db, activity.id, current_user.id, "join", f"{current_user.nickname}加入了活动")
     if body.attribute_values:
@@ -176,8 +175,7 @@ def update_member_info(
     # Update nickname
     membership.nickname = body.nickname.strip()
     if body.nickname.strip() != current_user.nickname:
-        current_user = db.merge(current_user)
-        current_user.nickname = body.nickname.strip()
+        db.query(User).filter(User.id == current_user.id).update({"nickname": body.nickname.strip()})
 
     add_activity_log(db, activity.id, current_user.id, "member_edit", f"{current_user.nickname} 更新了自己在活动中的个人信息")
     db.commit()
