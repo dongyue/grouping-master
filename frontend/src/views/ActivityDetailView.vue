@@ -42,6 +42,7 @@ const confirmModal = ref({ show: false, title: '', message: '', onConfirm: null 
 const showAttributeSelector = ref(false)
 const attributeSubmitting = ref(false)
 const editAttrValues = ref({})
+const editNickname = ref('')
 const editAttrLabel = ref('确认')
 const isEditingAttrs = ref(false)
 const userAttributes = ref({})
@@ -263,6 +264,7 @@ async function fetchChangeLogs() {
 
 async function handleJoin() {
   isEditingAttrs.value = false
+  editNickname.value = auth.user?.nickname || ''
   showAttributeSelector.value = true
 }
 
@@ -290,6 +292,7 @@ async function handleAttributeConfirm({ nickname, attributeValues, preferences }
 function openAttrEditor() {
   const me = activity.value.members?.find(m => m.user_id === auth.user.id)
   editAttrValues.value = me?.attributes || {}
+  editNickname.value = me?.nickname || auth.user?.nickname || ''
   editAttrLabel.value = '保存'
   isEditingAttrs.value = true
   showAttributeSelector.value = true
@@ -439,7 +442,7 @@ async function handleUngroup() {
           v-if="showAttributeSelector"
           :constraints="activity.constraints || []"
           :submitting="attributeSubmitting"
-          :initial-nickname="auth.user?.nickname || ''"
+          :initial-nickname="editNickname"
           :initial-values="editAttrValues"
           :user-attributes="userAttributes"
           :confirm-label="editAttrLabel"
