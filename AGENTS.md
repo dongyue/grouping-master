@@ -7,6 +7,8 @@
 
 **凡是涉及源代码的改动，严格按以下步骤执行。需用户确认的步骤，必须经用户确认后方可进入下一步，严禁跳步。每个步骤完成后在 `.checklist.md` 中逐项打勾，带「→ 用户确认」的项须经用户确认后方可打勾。`.checklist.md` 不纳入版本控制。**
 
+**重要：永远不要主动 commit 或 push。只有用户明确要求（如"commit 吧"、"push"、"进入步骤 8"）时才可以执行。**
+
 0. 用户与 AI 讨论需求：AI 复述自身理解、评估合理性、给出建议，直至用户认为 OK
 1. 从 master 拉出新的 feature 分支。从 `.checklist.example.md` 复制为 `.checklist.md`，填写 feature 分支名
 2. 编写/更新 `docs/requirements.md`，给用户确认

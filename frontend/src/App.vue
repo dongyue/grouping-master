@@ -38,7 +38,7 @@ async function handleLogout() {
         <p class="intro-link">
           <a href="https://github.com/dongyue/grouping-master" target="_blank" rel="noopener">GitHub →</a>
         </p>
-        <button class="btn btn-primary" @click="showIntro = false" style="width:auto;padding:8px 24px;margin-top:16px">关闭</button>
+        <button class="btn btn-primary" @click="showIntro = false" style="width:auto;padding:8px 24px;margin-top:16px;display:inline-block">关闭</button>
       </div>
     </div>
   </div>
