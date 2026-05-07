@@ -7,7 +7,7 @@ DB_HOST = os.getenv("DB_HOST", "localhost")
 DB_PORT = int(os.getenv("DB_PORT", "3306"))
 DB_USER = os.getenv("DB_USER", "root")
 DB_PASSWORD = os.getenv("DB_PASSWORD", "")
-DB_NAME = os.getenv("DB_NAME", "fenzudashi")
+DB_NAME = os.getenv("DB_NAME", "grouping_master")
 
 DATABASE_URL = f"mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}?charset=utf8mb4"
 
@@ -23,7 +23,7 @@ SMTP_HOST = os.getenv("SMTP_HOST", "").strip()
 SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))
 SMTP_USER = os.getenv("SMTP_USER", "").strip()
 SMTP_PASSWORD = os.getenv("SMTP_PASSWORD", "").strip()
-SMTP_FROM = os.getenv("SMTP_FROM", "noreply@fenzudashi.com").strip()
+SMTP_FROM = os.getenv("SMTP_FROM", "noreply@grouping-master.com").strip()
 SMTP_USE_SSL = os.getenv("SMTP_USE_SSL", "false").lower() == "true"
 SMTP_STARTTLS = os.getenv("SMTP_STARTTLS", "true").lower() != "false"  # 默认 true，显式设 false 才跳过
 

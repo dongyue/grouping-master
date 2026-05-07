@@ -37,40 +37,28 @@
 
 ### 环境要求
 
-- Python 3.12+
-- Node.js 18+
+- Python 3.12+（含 `venv` 模块：`sudo apt install python3.12-venv`）
+- Node.js 18+（含 npm：`sudo apt install nodejs npm`）
 - MySQL 8.0
 
-### 后端
+### 创建数据库
+
+在 MySQL 中创建数据库（如已存在可跳过）：
+
+```sql
+CREATE DATABASE grouping_master CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+```
+
+### 配置环境变量
+
+进入 `backend/` 目录，复制 `.env.example` 为 `.env`，按需修改：
 
 ```bash
 cd backend
-python3 -m venv venv && source venv/bin/activate
-pip install -r requirements.txt
-cp .env.example .env   # 编辑 .env 填写数据库连接等信息
-alembic upgrade head
-uvicorn app.main:app --reload
+cp .env.example .env
 ```
 
-> 开发环境中如不需要真实发送邮件，可启动 Python 内置的调试 SMTP 服务器替代：
-> ```bash
-> python3 -m smtpd -c DebuggingServer -n localhost:1025
-> ```
-> 然后将 `.env` 中 `SMTP_HOST=localhost`、`SMTP_PORT=1025` 即可。邮件内容将打印在终端而非真实投递。
-
-### 前端
-
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-默认访问 `http://localhost:5173`。
-
-## 环境变量
-
-在 `backend/.env` 中配置：
+主要配置项：
 
 | 变量 | 说明 |
 |------|------|
@@ -78,6 +66,56 @@ npm run dev
 | `SECRET_KEY` | Session 签名密钥 |
 | `SMTP_HOST/PORT/USER/PASSWORD/FROM` | 邮件服务（找回密码用） |
 | `FRONTEND_URL` | 前端地址（CORS + 重置密码链接） |
+
+### 后端
+
+```bash
+cd backend
+python3 -m venv venv && source venv/bin/activate
+pip install -r requirements.txt
+alembic upgrade head
+uvicorn app.main:app --reload
+```
+
+> `alembic` 和 `uvicorn` 均由 `pip install -r requirements.txt` 安装到虚拟环境中，无需单独 `apt install`。
+> 生产环境部署时去掉 `--reload` 并后台运行：`sudo nohup venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 80 &`。后端会自动托管前端构建产物，访问同一个端口即可。
+
+### 调试 SMTP 服务（可选）
+
+开发环境中可使用 [aiosmtpd](https://github.com/aio-libs/aiosmtpd) 替代真实邮件服务，重置密码等邮件的原始内容将直接打印在终端。
+
+```bash
+# 安装（仅首次）
+sudo apt install python3-aiosmtpd
+# 启动调试 SMTP 服务
+python3 -m aiosmtpd -n -l localhost:1025
+```
+
+然后将 `.env` 中 SMTP 相关配置设为：
+
+```
+SMTP_HOST=localhost
+SMTP_PORT=1025
+SMTP_USER=
+SMTP_PASSWORD=
+SMTP_FROM=noreply@localhost
+SMTP_USE_SSL=false
+SMTP_STARTTLS=false
+```
+
+> 终端输出的邮件内容为 MIME 原始格式，正文以 base64 编码显示属正常现象。后端同时会在 stderr 打印 `[DEV] 重置密码链接:` 便于直接复制使用。
+
+### 前端
+
+```bash
+cd frontend
+npm install
+npm run dev   # 开发模式，默认 http://localhost:5173
+```
+
+前端已内置 `.env.example`（API 地址默认指向 `localhost:8000`），如后端端口有变化，复制为 `.env` 后修改 `VITE_API_BASE_URL` 即可。
+
+> 生产环境使用 `npm run build` 生成 `dist/` 目录，后端启动时自动检测并托管前端静态文件。构建后直接访问后端端口（如 `http://your-server:8000`）即可，无需额外 Web 服务器。
 
 ## 目录结构
 
