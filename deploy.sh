@@ -23,4 +23,4 @@ rm -f nohup.out
 sudo nohup venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 80 > /dev/null 2>&1 &
 cd ..
 
-echo ">>> 部署完成，访问 http://$(hostname -I | awk '{print $1}')/"
+echo ">>> 部署完成"
