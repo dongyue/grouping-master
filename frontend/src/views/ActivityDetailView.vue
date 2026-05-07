@@ -189,10 +189,23 @@ function showConfirm(title, message, onConfirm, onCancel, confirmText, cancelTex
 
 function handleCopyLink() {
   const url = window.location.origin + router.resolve({ name: 'activity-detail', params: { slug: route.params.slug } }).href
-  navigator.clipboard.writeText(url).then(() => {
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(url).then(() => {
+      copied.value = true
+      setTimeout(() => (copied.value = false), 2000)
+    }).catch(() => {})
+  } else {
+    const ta = document.createElement('textarea')
+    ta.value = url
+    ta.style.position = 'fixed'
+    ta.style.left = '-9999px'
+    document.body.appendChild(ta)
+    ta.select()
+    document.execCommand('copy')
+    document.body.removeChild(ta)
     copied.value = true
     setTimeout(() => (copied.value = false), 2000)
-  })
+  }
 }
 
 function handleDragStart(event, userId) {
