@@ -9,7 +9,7 @@ import AttributeSelector from '../components/AttributeSelector.vue'
 import MemberItem from '../components/MemberItem.vue'
 import { formatDate } from '../utils/date'
 
-const uploadsUrl = import.meta.env.VITE_UPLOADS_URL || 'http://localhost:8000'
+const uploadsUrl = import.meta.env.VITE_UPLOADS_URL ?? 'http://localhost:8000'
 
 const route = useRoute()
 const router = useRouter()
