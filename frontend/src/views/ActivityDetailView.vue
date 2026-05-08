@@ -303,7 +303,7 @@ async function handleAttributeConfirm({ nickname, attributeValues, preferences }
 }
 
 function openAttrEditor() {
-  const me = activity.value.members?.find(m => m.user_id === auth.user.id)
+  const me = activity.value.members?.find(m => m.user_id === auth.user?.id)
   editAttrValues.value = me?.attributes || {}
   editNickname.value = me?.nickname || auth.user?.nickname || ''
   editAttrLabel.value = '保存'
@@ -465,7 +465,7 @@ async function handleUngroup() {
           :allow-avoid-preferences="activity.allow_avoid_preferences"
           :max-avoid-count="activity.max_avoid_count"
           :initial-preferences="activity.my_preferences || { want: [], avoid: [] }"
-          :current-user-id="auth.user.id"
+          :current-user-id="auth.user?.id"
           :uploads-url="uploadsUrl"
           @confirm="isEditingAttrs ? handleAttrEditConfirm($event) : handleAttributeConfirm($event)"
           @cancel="handleAttrCancel"
@@ -507,7 +507,7 @@ async function handleUngroup() {
             :key="group.group_number"
             class="group-card"
             :class="{
-              'my-group': group.members.some(m => m.user_id === auth.user.id),
+              'my-group': group.members.some(m => m.user_id === auth.user?.id),
               'group-card-adjust': showManualAdjust
             }"
             @dragover.prevent
@@ -525,7 +525,7 @@ async function handleUngroup() {
               >
                 <MemberItem
                   :member="member"
-                  :current-user-id="auth.user.id"
+                  :current-user-id="auth.user?.id"
                   :is-creator="activity.is_creator"
                   :show-kick="showKick"
                   :kicking-user-id="kickingUserId"
@@ -540,7 +540,7 @@ async function handleUngroup() {
             v-if="showManualAdjust || activity.ungrouped_members?.length"
             class="group-card ungrouped-card"
             :class="{
-              'my-group': activity.ungrouped_members?.some(m => m.user_id === auth.user.id)
+              'my-group': activity.ungrouped_members?.some(m => m.user_id === auth.user?.id)
             }"
             @dragover.prevent
             @drop="showManualAdjust && handleDrop($event, null)"
@@ -556,7 +556,7 @@ async function handleUngroup() {
               >
                 <MemberItem
                   :member="member"
-                  :current-user-id="auth.user.id"
+                  :current-user-id="auth.user?.id"
                   :is-creator="activity.is_creator"
                   :show-kick="showKick"
                   :kicking-user-id="kickingUserId"
@@ -576,7 +576,7 @@ async function handleUngroup() {
             v-for="member in sortedMembers.flat"
             :key="member.user_id"
             :member="member"
-            :current-user-id="auth.user.id"
+            :current-user-id="auth.user?.id"
             :is-creator="activity.is_creator"
             :show-kick="showKick"
             :kicking-user-id="kickingUserId"
@@ -587,14 +587,14 @@ async function handleUngroup() {
           />
         </div>
         <div v-else-if="sortedMembers.grouped">
-          <div v-for="(members, groupLabel) in sortedMembers.grouped" :key="groupLabel" class="group-card" :class="{ 'my-group': members.some(m => m.user_id === auth.user.id) }">
+          <div v-for="(members, groupLabel) in sortedMembers.grouped" :key="groupLabel" class="group-card" :class="{ 'my-group': members.some(m => m.user_id === auth.user?.id) }">
             <h4 class="group-title">{{ groupLabel }} {{ members.length }} 人</h4>
             <div class="members-list">
               <MemberItem
                 v-for="member in members"
                 :key="member.user_id"
                 :member="member"
-                :current-user-id="auth.user.id"
+                :current-user-id="auth.user?.id"
                 :is-creator="activity.is_creator"
                 :show-kick="showKick"
                 :kicking-user-id="kickingUserId"
