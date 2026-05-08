@@ -8,8 +8,8 @@ const router = useRouter()
 const showIntro = ref(false)
 
 async function handleLogout() {
-  router.push('/login')
   await auth.logout()
+  router.push('/login')
 }
 </script>
 
