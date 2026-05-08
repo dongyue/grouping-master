@@ -81,7 +81,7 @@ function handleSubmit() {
 <template>
   <div class="overlay" @click.self="emit('cancel')">
     <div class="modal">
-      <h3 class="modal-title">个人信息</h3>
+      <h3 class="modal-title">我在本活动中的个人信息</h3>
       <p class="pref-footer">请在本页填写您在本次活动中的个人信息，加入活动后可在编辑页中继续修改完善</p>
       <div class="fields">
         <div class="field">
@@ -102,7 +102,7 @@ function handleSubmit() {
             :members="otherMembers"
             :max="maxWantCount"
             action-label="尽量安排与"
-            :privacy-note="allowAvoidPreferences ? '此名单系统不会透露给任何人（下同）' : '此名单系统不会透露给任何人'"
+            :privacy-note="allowAvoidPreferences ? '请在活动已有成员中指定；此名单系统不会透露给任何人（下同）' : '请在活动已有成员中指定；此名单系统不会透露给任何人'"
             :uploads-url="uploadsUrl"
           />
         </div>

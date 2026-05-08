@@ -47,6 +47,7 @@ function toggle(userId) {
     <p class="ms-heading">{{ heading }}</p>
     <p v-if="showPrivacy" class="ms-subtitle">{{ privacyNote }}</p>
     <div class="ms-list">
+      <p v-if="!sortedMembers.length" class="ms-empty">活动尚无人加入</p>
       <label
         v-for="m in sortedMembers"
         :key="m.user_id"
@@ -97,6 +98,14 @@ function toggle(userId) {
   border: 1px solid #eee;
   border-radius: 6px;
   padding: 4px;
+}
+
+.ms-empty {
+  padding: 8px;
+  text-align: center;
+  font-size: 12px;
+  color: #aaa;
+  margin: 0;
 }
 
 .ms-item {
