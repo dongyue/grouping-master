@@ -1,7 +1,8 @@
 #!/bin/bash
 set -e
 echo ">>> 拉取最新代码..."
-git pull
+git fetch
+git checkout origin/master
 
 echo ">>> 安装依赖..."
 cd frontend
