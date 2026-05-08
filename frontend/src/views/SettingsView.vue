@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { updateProfile, uploadAvatar, deleteAccount, getUserAttributes, saveUserAttributes } from '../api/auth'
 import { useAuthStore } from '../stores/auth'
@@ -12,6 +12,11 @@ const router = useRouter()
 const auth = useAuthStore()
 
 const nickname = ref(auth.user?.nickname || '')
+watch(() => auth.user?.nickname, (val) => {
+  if (val && val !== nickname.value) {
+    nickname.value = val
+  }
+})
 const error = ref('')
 const success = ref('')
 const saving = ref(false)

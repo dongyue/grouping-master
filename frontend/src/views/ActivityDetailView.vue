@@ -294,6 +294,9 @@ async function handleAttributeConfirm({ nickname, attributeValues, preferences }
     })
     await refetchActivity()
     joinSuccess.value = '加入成功'
+    if (auth.user && nickname) {
+      auth.user = { ...auth.user, nickname }
+    }
     setTimeout(() => (joinSuccess.value = ''), 2000)
   } catch (err) {
     joinError.value = err.response?.data?.detail || '加入失败'
@@ -323,6 +326,9 @@ async function handleAttrEditConfirm({ nickname, attributeValues, preferences })
     })
     await refetchActivity()
     joinSuccess.value = '个人信息已更新'
+    if (auth.user && nickname) {
+      auth.user = { ...auth.user, nickname }
+    }
     setTimeout(() => (joinSuccess.value = ''), 2000)
   } catch (err) {
     joinError.value = err.response?.data?.detail || '更新失败'
