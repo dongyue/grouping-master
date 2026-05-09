@@ -33,7 +33,7 @@ async function handleLogout() {
       <div class="modal-box">
         <h3>关于分组大师</h3>
         <p class="intro-text">
-          按自定义约束自动分组，支持手动拖拽调整，实时追踪成员变动。适用于团建、课程分组、住宿分配等场景。
+          按自定义约束自动平均分组，支持手动拖拽调整，实时追踪成员变动。适用于团建、课程分组、住宿分配等场景。
         </p>
         <p class="intro-link">
           <a href="https://github.com/dongyue/grouping-master" target="_blank" rel="noopener">GitHub →</a>

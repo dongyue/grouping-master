@@ -33,7 +33,7 @@ async function handleLogin() {
   <div class="page-card">
     <h1 class="page-title">分组大师</h1>
     <p class="intro">
-      按自定义约束自动分组，支持手动拖拽调整，实时追踪成员变动。适用于团建、课程分组、住宿分配等场景。
+      按自定义约束自动平均分组，支持手动拖拽调整，实时追踪成员变动。适用于团建、课程分组、住宿分配等场景。
       <a href="https://github.com/dongyue/grouping-master" target="_blank" rel="noopener">GitHub</a>
     </p>
     <div v-if="error" class="error-msg">{{ error }}</div>
