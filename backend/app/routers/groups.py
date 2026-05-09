@@ -49,7 +49,7 @@ def create_groups(
             if warnings:
                 issue_list.append({
                     "user_id": m.user_id,
-                    "nickname": m.user.nickname,
+            "nickname": m.user.nickname if m.user else m.nickname,
                     "issues": warnings,
                 })
         if issue_list:

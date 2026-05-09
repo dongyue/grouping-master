@@ -255,6 +255,6 @@ def kick_member(
         ).delete()
 
     db.delete(membership)
-    add_activity_log(db, activity.id, current_user.id, "kick", f"{current_user.nickname}将{kicked_user.nickname}从{group_info}踢出了活动")
+    add_activity_log(db, activity.id, current_user.id, "kick", f"{current_user.nickname}将{kicked_user.nickname if kicked_user else '未知用户'}从{group_info}踢出了活动")
     db.commit()
     return {"message": "已将该成员移出活动"}

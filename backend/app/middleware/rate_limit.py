@@ -43,5 +43,5 @@ class RateLimiter:
         self._store[key] = (window_start, count + 1)
 
         self._call_count += 1
-        if self._call_count % 100 == 0:
+        if self._call_count % 100 == 0 or len(self._store) > 10000:
             self._cleanup_expired(now)

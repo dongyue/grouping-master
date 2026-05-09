@@ -7,6 +7,9 @@ from app.config import SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASSWORD, SMTP_FROM
 
 
 def send_reset_email(to_email: str, token: str, base_url: str = "") -> None:
+    if not SMTP_HOST:
+        raise RuntimeError("SMTP_HOST 未配置，无法发送邮件")
+
     frontend = base_url or FRONTEND_URL
     reset_url = f"{frontend}/reset-password?token={token}"
     subject = "分组大师 - 重置密码"
