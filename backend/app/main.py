@@ -4,6 +4,7 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, JSONResponse
+from sqlalchemy import text
 from app.routers import auth_router, activities_router, members_router, groups_router, logs_router
 from app.config import FRONTEND_URL, UPLOAD_DIR
 
@@ -51,7 +52,7 @@ async def startup_health():
     from app.database import SessionLocal
     try:
         db = SessionLocal()
-        db.execute("SELECT 1")
+        db.execute(text("SELECT 1"))
         db.close()
         logger.info("数据库连接正常")
     except Exception as e:

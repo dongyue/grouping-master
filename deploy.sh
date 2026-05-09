@@ -26,13 +26,13 @@ venv/bin/alembic upgrade head
 
 echo ">>> 重启后端..."
 # 优雅关闭
-pkill -TERM -f "uvicorn app.main:app" || true
+sudo pkill -TERM -f "uvicorn app.main:app" || true
 sleep 2
 # 强制清理残留
-pkill -KILL -f "uvicorn app.main:app" || true
+sudo pkill -KILL -f "uvicorn app.main:app" || true
 sleep 1
 
-nohup venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 80 > uvicorn.log 2>&1 &
+sudo nohup venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 80 > uvicorn.log 2>&1 &
 cd ..
 
 # 等待启动
