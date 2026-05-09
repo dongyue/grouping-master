@@ -23,6 +23,8 @@ class RegisterRequest(BaseModel):
             return None
         if len(v) < 8:
             raise ValueError("密码长度至少8位")
+        if len(v) > 128:
+            raise ValueError("密码长度不能超过128位")
         return v
 
     @field_validator("password_confirm")
@@ -30,8 +32,8 @@ class RegisterRequest(BaseModel):
     def validate_password_confirm(cls, v: str | None) -> str | None:
         if v is None or v == "":
             return None
-        if len(v) < 8:
-            raise ValueError("确认密码长度至少8位")
+        if len(v) > 128:
+            raise ValueError("确认密码长度不能超过128位")
         return v
 
     @model_validator(mode="after")
@@ -50,6 +52,8 @@ class RegisterRequest(BaseModel):
         v = v.strip()
         if len(v) < 1 or len(v) > 50:
             raise ValueError("昵称长度1-50位")
+        if not re.match(r"^[\w\u4e00-\u9fff\u3040-\u309f\u30a0-\u30ff .\-]+$", v):
+            raise ValueError("昵称包含不允许的字符")
         return v
 
 
@@ -68,6 +72,8 @@ class ChangePasswordRequest(BaseModel):
     def validate_password(cls, v: str) -> str:
         if len(v) < 8:
             raise ValueError("密码长度至少8位")
+        if len(v) > 128:
+            raise ValueError("密码长度不能超过128位")
         return v
 
     @model_validator(mode="after")
@@ -90,6 +96,8 @@ class ResetPasswordRequest(BaseModel):
     def validate_password(cls, v: str) -> str:
         if len(v) < 8:
             raise ValueError("密码长度至少8位")
+        if len(v) > 128:
+            raise ValueError("密码长度不能超过128位")
         return v
 
 
@@ -103,6 +111,8 @@ class UpdateProfileRequest(BaseModel):
             v = v.strip()
             if len(v) < 1 or len(v) > 50:
                 raise ValueError("昵称长度1-50位")
+            if not re.match(r"^[\w\u4e00-\u9fff\u3040-\u309f\u30a0-\u30ff .\-]+$", v):
+                raise ValueError("昵称包含不允许的字符")
         return v
 
 
@@ -127,3 +137,13 @@ class UserAttributesResponse(BaseModel):
 
 class UpdateUserAttributesRequest(BaseModel):
     attributes: dict[str, str]
+
+    @field_validator("attributes")
+    @classmethod
+    def validate_attributes(cls, v: dict[str, str]) -> dict[str, str]:
+        if len(v) > 50:
+            raise ValueError("属性数量不超过50个")
+        for name, value in v.items():
+            if len(name) > 50 or len(value) > 100:
+                raise ValueError("属性名或值过长")
+        return v

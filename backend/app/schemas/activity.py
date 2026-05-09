@@ -1,5 +1,6 @@
 from pydantic import BaseModel, field_validator, model_validator
 from typing import Literal, Self
+import re
 from app.config import MAX_CONSTRAINTS, MAX_PREFERENCE_COUNT
 
 
@@ -27,6 +28,13 @@ class ActivityBaseRequest(BaseModel):
         v = v.strip()
         if len(v) < 1 or len(v) > 100:
             raise ValueError("标题长度 1-100 位")
+        return v
+
+    @field_validator("description")
+    @classmethod
+    def validate_description(cls, v: str | None) -> str | None:
+        if v is not None and len(v) > 10000:
+            raise ValueError("描述长度不能超过10000个字符")
         return v
 
     @field_validator("group_strategy")
@@ -89,30 +97,6 @@ class ActivityBaseRequest(BaseModel):
                 if rule.constraint_value > limit:
                     raise ValueError(f"属性「{rule.attribute_name}」的『最多』限定值({rule.constraint_value})不能大于{limit}（每组{gs}人）")
         return self
-        if len(v) > MAX_CONSTRAINTS:
-            raise ValueError(f"约束规则不超过{MAX_CONSTRAINTS}条")
-        seen_names = set()
-        for rule in v:
-            attr_name = rule.attribute_name.strip()
-            if not attr_name:
-                raise ValueError("属性名不能为空")
-            if attr_name in seen_names:
-                raise ValueError(f"属性名「{attr_name}」已存在，不能重复")
-            seen_names.add(attr_name)
-            n = len(rule.allowed_values)
-            if n < 2:
-                raise ValueError(f"属性「{attr_name}」的枚举值至少需要2个")
-            if rule.constraint_type == "min_diversity":
-                if rule.constraint_value < 2:
-                    raise ValueError(f"属性「{attr_name}」的『至少』限定值不能小于2")
-                if rule.constraint_value > n:
-                    raise ValueError(f"属性「{attr_name}」的『至少』限定值({rule.constraint_value})不能大于枚举值数量({n})")
-            else:
-                if rule.constraint_value < 1:
-                    raise ValueError(f"属性「{attr_name}」的『最多』限定值不能小于1")
-                if rule.constraint_value >= n:
-                    raise ValueError(f"属性「{attr_name}」的『最多』限定值({rule.constraint_value})不能达到枚举值数量({n})")
-        return v
 
     @field_validator("max_want_count")
     @classmethod
@@ -141,6 +125,16 @@ class JoinActivityRequest(BaseModel):
     nickname: str
     attribute_values: dict[str, str] | None = None
     preferences: dict[str, list[int]] | None = None
+
+    @field_validator("nickname")
+    @classmethod
+    def validate_nickname(cls, v: str) -> str:
+        v = v.strip()
+        if len(v) < 1 or len(v) > 50:
+            raise ValueError("昵称长度1-50位")
+        if not re.match(r"^[\w\u4e00-\u9fff\u3040-\u309f\u30a0-\u30ff .\-]+$", v):
+            raise ValueError("昵称包含不允许的字符")
+        return v
 
 
 class MoveMemberRequest(BaseModel):
