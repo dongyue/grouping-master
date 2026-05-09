@@ -22,9 +22,9 @@ routers → schemas → models → database.py
 
 | 文件 | 职责 |
 |------|------|
-| `app/main.py` | FastAPI 入口：CORS 配置、静态文件挂载、子路由注册 |
-| `app/config.py` | 读取 `.env`，导出数据库/SMTP/Session/上传目录/密码要求等全局配置 |
-| `app/database.py` | SQLAlchemy 引擎/Session 工厂、`Base` 基类、`get_db` 依赖注入 |
+| `app/main.py` | FastAPI 入口：CORS 配置、静态文件挂载、子路由注册、全局异常处理器、启动数据库健康检查 |
+| `app/config.py` | 读取 `.env`，导出数据库/SMTP/Session/上传目录/重置链接调试开关/Cookie Secure 等全局配置 |
+| `app/database.py` | SQLAlchemy 引擎（含连接池配置）/Session 工厂、`Base` 基类、`get_db` 依赖注入 |
 
 ### ORM 模型（app/models/）
 

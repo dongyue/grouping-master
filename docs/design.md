@@ -253,7 +253,7 @@ activities 表的 `constraints` 字段为 JSON 数组，每项为一条多样性
 **认证机制**
 
 - 登录成功后服务端创建 Session（MySQL sessions 表），生成随机 session_id
-- session_id 通过 `Set-Cookie` 返回，属性：`HttpOnly; SameSite=Lax; Max-Age=2592000`（30天）
+- session_id 通过 `Set-Cookie` 返回，属性：`HttpOnly; SameSite=Lax; Max-Age=604800`（7天）。`COOKIE_SECURE` 环境变量为 `true` 时额外添加 `Secure` 标志
 - 后续请求自动携带 Cookie，中间件 `get_current_user` 校验 session_id 是否有效
 - 登出时删除服务端 session，前端清除 Cookie
 
@@ -406,12 +406,12 @@ activities 表的 `constraints` 字段为 JSON 数组，每项为一条多样性
 ## 4. 安全策略
 
 - 密码使用 bcrypt 哈希存储，不存明文
-- Cookie 设为 HttpOnly 防 XSS，SameSite=Lax 防 CSRF
+- Cookie 设为 HttpOnly 防 XSS，SameSite=Lax 防 CSRF，HTTPS 环境可开启 Secure 标志（`COOKIE_SECURE=true`）
 - 头像上传校验 MIME 类型、文件魔术头和文件大小（2MB），UUID 重命名防遍历
 - 忘记密码接口无论邮箱是否存在返回统一信息，防止用户枚举
 - 重置密码后销毁该用户所有 Session，强制重新登录
 - 活动使用随机 slug 替代自增 ID 暴露在 URL 中，防止枚举遍历
-- 登录、注册、忘记密码接口实施 IP 级别速率限制，防暴力破解
+- 登录、注册、忘记密码、重置密码接口实施 IP 级别速率限制，防暴力破解
 
 ### 4.1 速率限制
 
