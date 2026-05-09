@@ -120,6 +120,8 @@ def change_password(
     user = db.query(User).filter(User.id == current_user.id).first()
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="用户不存在")
+    if not user.password_hash and body.old_password:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="该账号未设置密码，旧密码字段请留空")
     success = auth_service.change_password(db, user, body.old_password, body.new_password)
     if not success:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="旧密码不正确")

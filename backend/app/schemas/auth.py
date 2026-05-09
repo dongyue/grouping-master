@@ -63,17 +63,18 @@ class LoginRequest(BaseModel):
 
 
 class ChangePasswordRequest(BaseModel):
-    old_password: str
+    old_password: str = ""
     new_password: str
     new_password_confirm: str
 
     @field_validator("new_password")
     @classmethod
     def validate_password(cls, v: str) -> str:
-        if len(v) < 8:
-            raise ValueError("密码长度至少8位")
+        from app.config import REQUIRE_PASSWORD
         if len(v) > 128:
             raise ValueError("密码长度不能超过128位")
+        if REQUIRE_PASSWORD and len(v) < 8:
+            raise ValueError("密码长度至少8位")
         return v
 
     @model_validator(mode="after")
@@ -94,10 +95,11 @@ class ResetPasswordRequest(BaseModel):
     @field_validator("new_password")
     @classmethod
     def validate_password(cls, v: str) -> str:
-        if len(v) < 8:
-            raise ValueError("密码长度至少8位")
+        from app.config import REQUIRE_PASSWORD
         if len(v) > 128:
             raise ValueError("密码长度不能超过128位")
+        if REQUIRE_PASSWORD and len(v) < 8:
+            raise ValueError("密码长度至少8位")
         return v
 
 

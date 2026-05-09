@@ -1,7 +1,7 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { changePassword } from '../api/auth'
+import { changePassword, getAuthConfig } from '../api/auth'
 
 const router = useRouter()
 const oldPassword = ref('')
@@ -10,6 +10,14 @@ const newPasswordConfirm = ref('')
 const error = ref('')
 const success = ref('')
 const loading = ref(false)
+const requirePassword = ref(true)
+
+onMounted(async () => {
+  try {
+    const res = await getAuthConfig()
+    requirePassword.value = res.data.require_password
+  } catch {}
+})
 
 async function handleChangePassword() {
   error.value = ''
@@ -46,16 +54,16 @@ async function handleChangePassword() {
     <div v-if="success" class="success-msg">{{ success }}</div>
     <form @submit.prevent="handleChangePassword">
       <div class="form-group">
-        <label>旧密码</label>
-        <input v-model="oldPassword" type="password" required placeholder="输入当前密码" />
+        <label>旧密码 <span v-if="!requirePassword" class="optional">(未设密码可留空)</span></label>
+        <input v-model="oldPassword" type="password" placeholder="输入当前密码" />
       </div>
       <div class="form-group">
         <label>新密码</label>
-        <input v-model="newPassword" type="password" required placeholder="至少8位" />
+        <input v-model="newPassword" type="password" :placeholder="requirePassword ? '至少8位' : '留空则不设密码'" />
       </div>
       <div class="form-group">
         <label>确认新密码</label>
-        <input v-model="newPasswordConfirm" type="password" required placeholder="再次输入新密码" />
+        <input v-model="newPasswordConfirm" type="password" placeholder="再次输入新密码" />
       </div>
       <button type="submit" class="btn btn-primary" :disabled="loading">
         {{ loading ? '修改中...' : '确认修改' }}

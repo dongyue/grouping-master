@@ -76,9 +76,9 @@ def get_user_by_email(db: Session, email: str) -> User | None:
 
 
 def change_password(db: Session, user: User, old_password: str, new_password: str) -> bool:
-    if not verify_password(old_password, user.password_hash):
+    if user.password_hash and not verify_password(old_password, user.password_hash):
         return False
-    user.password_hash = hash_password(new_password)
+    user.password_hash = hash_password(new_password) if new_password else ""
     db.commit()
     return True
 
@@ -117,7 +117,7 @@ def reset_password_with_token(db: Session, token: str, new_password: str) -> Use
     if not user:
         return None
 
-    user.password_hash = hash_password(new_password)
+    user.password_hash = hash_password(new_password) if new_password else ""
     reset.used = True
 
     # 销毁该用户所有 session，强制重新登录
