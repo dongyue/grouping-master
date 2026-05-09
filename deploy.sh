@@ -1,8 +1,11 @@
 #!/bin/bash
 set -e
+
+BACKUP_DIR="frontend/dist.bak.$(date +%s)"
+
 echo ">>> 拉取最新代码..."
 git fetch
-git checkout origin/master
+git reset --hard origin/master
 
 echo ">>> 安装依赖..."
 cd frontend
@@ -11,6 +14,9 @@ cd ..
 
 echo ">>> 构建前端..."
 cd frontend
+if [ -d dist ]; then
+    mv dist "../$BACKUP_DIR"
+fi
 npm run build
 cd ..
 
@@ -19,9 +25,26 @@ cd backend
 venv/bin/alembic upgrade head
 
 echo ">>> 重启后端..."
-sudo pkill uvicorn || true
-rm -f nohup.out
-sudo nohup venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 80 > /dev/null 2>&1 &
+# 优雅关闭
+pkill -TERM -f "uvicorn app.main:app" || true
+sleep 2
+# 强制清理残留
+pkill -KILL -f "uvicorn app.main:app" || true
+sleep 1
+
+nohup venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 80 > uvicorn.log 2>&1 &
 cd ..
 
-echo ">>> 部署完成"
+# 等待启动
+sleep 3
+if curl -sf http://localhost:80/api/auth/config > /dev/null 2>&1; then
+    echo ">>> 部署完成"
+    rm -rf "../$BACKUP_DIR" 2>/dev/null || true
+else
+    echo "!!! 健康检查失败，请查看 backend/uvicorn.log"
+    if [ -d "../$BACKUP_DIR" ]; then
+        mv "../$BACKUP_DIR" frontend/dist
+        echo ">>> 已回滚前端构建产物"
+    fi
+    exit 1
+fi

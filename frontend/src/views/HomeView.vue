@@ -11,8 +11,10 @@ const success = ref('')
 const createdActivities = ref([])
 const joinedActivities = ref([])
 const loading = ref(true)
+const error = ref('')
 
 async function fetchActivities() {
+  error.value = ''
   try {
     const [createdRes, joinedRes] = await Promise.all([
       listActivities('created'),
@@ -21,7 +23,7 @@ async function fetchActivities() {
     createdActivities.value = createdRes.data
     joinedActivities.value = joinedRes.data
   } catch (err) {
-    console.error('加载活动列表错误:', err)
+    error.value = err.response?.data?.detail || '加载活动列表失败'
   } finally {
     loading.value = false
   }
@@ -49,6 +51,7 @@ function truncate(text) {
 <template>
   <div class="page-card">
     <div v-if="success" class="success-msg">{{ success }}</div>
+    <div v-if="error" class="error-msg">{{ error }}</div>
 
     <div v-if="loading" style="text-align: center; color: #999; padding: 20px;">加载中...</div>
 
