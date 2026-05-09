@@ -151,13 +151,7 @@ npm install
 npm run dev   # 开发模式，默认 http://localhost:5173，API 请求通过 Vite proxy 转发到后端
 ```
 
-#### 生产构建
-
-```bash
-npm run build  # 生成 dist/ 目录
-```
-
-后端启动时自动检测 `frontend/dist/` 并托管静态文件，构建后直接访问后端端口即可，无需额外 Web 服务器。
+> 生产部署由 `deploy.sh` 统一处理（含前端构建），见上方后端「生产运行」一节。
 
 ## 目录结构
 
