@@ -18,6 +18,8 @@ const form = ref({
 const error = ref('')
 const loading = ref(false)
 
+const enablePasswordReset = import.meta.env.VITE_ENABLE_PASSWORD_RESET !== 'false'
+
 async function handleRegister() {
   error.value = ''
   if (form.value.password || form.value.password_confirm) {
@@ -73,7 +75,7 @@ async function handleRegister() {
         <label>确认密码 *</label>
         <input v-model="form.password_confirm" type="password" placeholder="再次输入密码" />
       </div>
-      <div class="form-group">
+      <div v-if="enablePasswordReset" class="form-group">
         <label>备用邮箱 <span class="optional">(可选，用于找回密码)</span></label>
         <input v-model="form.email" type="email" placeholder="your@email.com" />
       </div>

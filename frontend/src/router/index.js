@@ -20,16 +20,24 @@ const routes = [
     component: () => import('../views/RegisterView.vue'),
     meta: { guest: true },
   },
-  {
-    path: '/forgot-password',
-    name: 'forgot-password',
-    component: () => import('../views/ForgotPasswordView.vue'),
-  },
-  {
-    path: '/reset-password',
-    name: 'reset-password',
-    component: () => import('../views/ResetPasswordView.vue'),
-  },
+]
+
+if (import.meta.env.VITE_ENABLE_PASSWORD_RESET !== 'false') {
+  routes.push(
+    {
+      path: '/forgot-password',
+      name: 'forgot-password',
+      component: () => import('../views/ForgotPasswordView.vue'),
+    },
+    {
+      path: '/reset-password',
+      name: 'reset-password',
+      component: () => import('../views/ResetPasswordView.vue'),
+    },
+  )
+}
+
+routes.push(
   {
     path: '/activities',
     redirect: '/',
@@ -75,17 +83,11 @@ const routes = [
     name: 'not-found',
     component: () => import('../views/NotFoundView.vue'),
   },
-]
+)
 
 const router = createRouter({
   history: createWebHistory(),
   routes,
-})
-
-router.onError((error) => {
-  if (error.message.includes('Failed to fetch dynamically imported module')) {
-    window.location.reload()
-  }
 })
 
 router.beforeEach(async (to, from, next) => {

@@ -114,7 +114,7 @@ routers → schemas → models → database.py
 | `main.js` | Vue 3 入口：创建 Pinia、Router，挂载 `#app` |
 | `App.vue` | 根组件：顶部导航栏 + `<router-view>` + 全局样式 |
 | `style.css` | CSS reset 与字体渲染优化 |
-| `router/index.js` | 路由表 + `beforeEach` 鉴权守卫 + 登录重定向 + 404 兜底路由 |
+| `router/index.js` | 路由表 + `beforeEach` 鉴权守卫 + 登录重定向 + 404 兜底路由，忘记密码相关路由由 `VITE_ENABLE_PASSWORD_RESET` 控制是否注册 |
 
 ### API 调用层（api/）
 
@@ -163,8 +163,8 @@ routers → schemas → models → database.py
 | `CreateActivityView.vue` | 创建活动页：管理 joinActivity 复选框，通过 ActivityForm 渲染表单 |
 | `ActivityDetailView.vue` | 活动详情页：操作按钮栏、分组规则展示、成员列表（含排序切换/属性分类/分组/落单视图）、属性选择、确认对话框 |
 | `ActivityEditView.vue` | 编辑活动页：加载活动数据并转换 constraints 格式，通过 ActivityForm 渲染预填表单 |
-| `LoginView.vue` | 登录页 |
-| `RegisterView.vue` | 注册页 |
+| `LoginView.vue` | 登录页，"忘记密码"链接由 `VITE_ENABLE_PASSWORD_RESET` 控制显隐 |
+| `RegisterView.vue` | 注册页，邮箱输入框由 `VITE_ENABLE_PASSWORD_RESET` 控制显隐 |
 | `ForgotPasswordView.vue` | 忘记密码页 |
 | `ResetPasswordView.vue` | 重置密码页 |
 | `ChangePasswordView.vue` | 修改密码页 |

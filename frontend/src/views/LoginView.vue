@@ -12,6 +12,8 @@ const password = ref('')
 const error = ref('')
 const loading = ref(false)
 
+const enablePasswordReset = import.meta.env.VITE_ENABLE_PASSWORD_RESET !== 'false'
+
 async function handleLogin() {
   error.value = ''
   loading.value = true
@@ -50,8 +52,10 @@ async function handleLogin() {
     </form>
     <div class="form-footer">
       <a href="/register" @click.prevent="router.push('/register')">注册账号</a>
-      <span style="margin: 0 10px">|</span>
-      <a href="/forgot-password" @click.prevent="router.push('/forgot-password')">忘记密码</a>
+      <template v-if="enablePasswordReset">
+        <span style="margin: 0 10px">|</span>
+        <a href="/forgot-password" @click.prevent="router.push('/forgot-password')">忘记密码</a>
+      </template>
     </div>
   </div>
 </template>

@@ -22,7 +22,7 @@
 4. 用户确认后 → 编写代码
 5. 当且仅当改动涉及算法逻辑时 → 更新/编写单测脚本，跑全部后端单测通过（`cd backend && source venv/bin/activate && python3 -m pytest tests/ -v`）
 6. 用户人工测试验收
-7. 验收通过后 → 检查并更新 `docs/requirements.md`、`docs/design.md`、`docs/codebase-map.md`，给用户确认。检查要点：
+7. 验收通过后 → 检查并更新 `docs/requirements.md`、`docs/design.md`、`docs/codebase-map.md`、`README.md`，给用户确认。检查要点：
    - **反映源码**：文档描述的功能、接口、算法与当前代码实际行为一致
    - **终态而非改动**：全文只描述系统当前全量状态，无「新增」「保留」「原逻辑不变」等增量措辞
    - **详略得当**：需求文档不涉及实现细节（算法步骤、函数签名），设计文档不重复需求文档中已有的纯功能描述，代码库地图每个文件的职责描述一两句话即可

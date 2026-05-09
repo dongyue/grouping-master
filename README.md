@@ -49,7 +49,9 @@
 CREATE DATABASE grouping_master CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 ```
 
-### 配置环境变量
+### 后端
+
+#### 配置环境变量
 
 进入 `backend/` 目录，复制 `.env.example` 为 `.env`，按需修改：
 
@@ -67,7 +69,7 @@ cp .env.example .env
 | `SMTP_HOST/PORT/USER/PASSWORD/FROM` | 邮件服务（找回密码用） |
 | `FRONTEND_URL` | 前端地址（CORS + 重置密码链接） |
 
-### 后端
+#### 开发运行
 
 ```bash
 cd backend
@@ -78,9 +80,16 @@ uvicorn app.main:app --reload
 ```
 
 > `alembic` 和 `uvicorn` 均由 `pip install -r requirements.txt` 安装到虚拟环境中，无需单独 `apt install`。
-> 生产环境部署时去掉 `--reload` 并后台运行：`sudo nohup venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 80 &`。后端会自动托管前端构建产物，访问同一个端口即可。
 
-### 调试 SMTP 服务（可选）
+#### 生产运行
+
+```bash
+sudo nohup venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 80 &
+```
+
+后端会自动托管前端构建产物（`frontend/dist/`），前端和后端均通过同一个端口访问。
+
+#### 调试 SMTP 服务（可选）
 
 开发环境中可使用 [aiosmtpd](https://github.com/aio-libs/aiosmtpd) 替代真实邮件服务，重置密码等邮件的原始内容将直接打印在终端。
 
@@ -107,15 +116,38 @@ SMTP_STARTTLS=false
 
 ### 前端
 
+#### 配置环境变量
+
+进入 `frontend/` 目录，复制 `.env.example` 为 `.env`：
+
+```bash
+cd frontend
+cp .env.example .env
+```
+
+主要配置项：
+
+| 变量 | 说明 |
+|------|------|
+| `VITE_API_BASE_URL` | 后端 API 地址，本地开发设为 `http://localhost:8000/api`，生产环境设为 `/api`（同端口） |
+| `VITE_UPLOADS_URL` | 头像等静态资源地址，本地开发设为 `http://localhost:8000`，生产环境留空（同端口） |
+| `VITE_ENABLE_PASSWORD_RESET` | 是否启用忘记密码功能，默认 `true`。设为 `false` 关闭 |
+
+#### 开发运行
+
 ```bash
 cd frontend
 npm install
-npm run dev   # 开发模式，默认 http://localhost:5173
+npm run dev   # 开发模式，默认 http://localhost:5173，API 请求通过 Vite proxy 转发到后端
 ```
 
-前端已内置 `.env.example`（API 地址默认指向 `localhost:8000`），如后端端口有变化，复制为 `.env` 后修改 `VITE_API_BASE_URL` 即可。
+#### 生产构建
 
-> 生产环境使用 `npm run build` 生成 `dist/` 目录，后端启动时自动检测并托管前端静态文件。构建后直接访问后端端口（如 `http://your-server:8000`）即可，无需额外 Web 服务器。
+```bash
+npm run build  # 生成 dist/ 目录
+```
+
+后端启动时自动检测 `frontend/dist/` 并托管静态文件，构建后直接访问后端端口即可，无需额外 Web 服务器。
 
 ## 目录结构
 

@@ -441,9 +441,9 @@ activities 表的 `constraints` 字段为 JSON 数组，每项为一条多样性
 | 路径 | 页面 | 鉴权 | 说明 |
 |------|------|------|------|
 | `/login` | 登录页 | 仅未登录可访问 | 账号名 + 密码表单 |
-| `/register` | 注册页 | 仅未登录可访问 | 注册表单（含确认密码） |
-| `/forgot-password` | 忘记密码页 | 公开 | 输入邮箱发送重置链接 |
-| `/reset-password` | 重置密码页 | 公开 | ?token=xxx，设置新密码 |
+| `/register` | 注册页 | 仅未登录可访问 | 注册表单（含确认密码），邮箱字段由 `VITE_ENABLE_PASSWORD_RESET` 控制显隐 |
+| `/forgot-password` | 忘记密码页 | 公开 | 输入邮箱发送重置链接（由 `VITE_ENABLE_PASSWORD_RESET` 控制是否注册） |
+| `/reset-password` | 重置密码页 | 公开 | ?token=xxx，设置新密码（由 `VITE_ENABLE_PASSWORD_RESET` 控制是否注册） |
 | `/` | 首页 | 需登录 | 「我创建的活动」列表（含「创建活动」按钮）+「我加入的活动」列表 |
 | `/activities/create` | 创建活动页 | 需登录 | 标题、描述、分组规则表单 |
 | `/activities/:slug` | 活动详情页 | 需登录 | 操作按钮栏、分组规则展示、成员列表（含排序/分类/分组/落单视图）、编辑入口 |
@@ -472,6 +472,7 @@ activities 表的 `constraints` 字段为 JSON 数组，每项为一条多样性
 
 ### 6.5 前端环境变量
 - API 基地址通过 `.env` 变量 `VITE_API_BASE_URL` 配置（默认 `/api`），头像资源地址通过 `.env` 变量 `VITE_UPLOADS_URL` 配置
+- `VITE_ENABLE_PASSWORD_RESET` 控制是否启用忘记密码功能（默认 `true`）。关闭时前端不注册 `/forgot-password` 和 `/reset-password` 路由，登录页不显示"忘记密码"链接，注册页不显示备用邮箱输入框
 - Vite 开发服务器配置代理 `/api` → `http://localhost:8000`，避免跨域问题
 - 前端 Axios 通过 `withCredentials: true` 携带 Cookie
 
