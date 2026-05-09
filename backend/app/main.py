@@ -25,7 +25,7 @@ if os.getenv("CORS_ORIGINS"):
     origins = [o.strip() for o in os.getenv("CORS_ORIGINS", "").split(",") if o.strip()]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins or None,
+    allow_origins=origins if origins else [],
     allow_origin_regex=r"https?://(localhost|127\.0\.0\.1):\d+" if not origins else None,
     allow_credentials=True,
     allow_methods=["*"],
