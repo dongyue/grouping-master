@@ -1,5 +1,6 @@
 import os
 import sys
+import logging
 from datetime import datetime, timedelta
 from sqlalchemy.orm import Session
 import bcrypt as _bcrypt
@@ -7,8 +8,10 @@ import bcrypt as _bcrypt
 from app.models.user import User
 from app.models.session import Session as SessionModel
 from app.models.password_reset import PasswordReset
-from app.config import SESSION_EXPIRE_DAYS, RESET_TOKEN_EXPIRE_MINUTES, FRONTEND_URL
+from app.config import SESSION_EXPIRE_DAYS, RESET_TOKEN_EXPIRE_MINUTES, FRONTEND_URL, DEV_PRINT_RESET_LINK
 from app.services.mail import send_reset_email, generate_token
+
+logger = logging.getLogger("auth")
 
 
 def hash_password(password: str) -> str:
@@ -27,8 +30,7 @@ def create_user(db: Session, username: str, nickname: str, password: str | None,
         email=email if email else None,
     )
     db.add(user)
-    db.commit()
-    db.refresh(user)
+    db.flush()
     return user
 
 
@@ -37,7 +39,7 @@ def authenticate_user(db: Session, username: str, password: str) -> User | None:
     if not user:
         return None
     if not user.password_hash:
-        return user
+        return user if not password else None
     if verify_password(password, user.password_hash):
         return user
     return None
@@ -90,13 +92,14 @@ def create_password_reset(db: Session, user: User, frontend_url: str = "") -> st
 
     base_url = frontend_url or FRONTEND_URL
     reset_url = f"{base_url}/reset-password?token={token}"
-    print(f"\n[DEV] 重置密码链接:\n    {reset_url}\n", file=sys.stderr)
+    if DEV_PRINT_RESET_LINK:
+        print(f"\n[DEV] 重置密码链接:\n    {reset_url}\n", file=sys.stderr)
 
     if user.email:
         try:
             send_reset_email(user.email, token, base_url)
-        except Exception as e:
-            print(f"[SMTP] 邮件发送失败: {e}\n", file=sys.stderr)
+        except Exception:
+            logger.exception("发送重置密码邮件失败 user_id=%s", user.id)
 
     return token
 

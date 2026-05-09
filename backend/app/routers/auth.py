@@ -48,6 +48,7 @@ def _make_auth_response(user, session_id: str, status_code: int = status.HTTP_20
         max_age=SESSION_EXPIRE_DAYS * 24 * 3600,
         httponly=True,
         samesite="lax",
+        secure=os.getenv("COOKIE_SECURE", "false").lower() == "true",
     )
     return response
 
@@ -70,6 +71,8 @@ def register(body: RegisterRequest, db: Session = Depends(get_db), rate: None = 
 
     user = auth_service.create_user(db, body.username, body.nickname, body.password, body.email)
     session_id = auth_service.create_session(db, user.id)
+    db.commit()
+    db.refresh(user)
 
     return _make_auth_response(user, session_id, status_code=status.HTTP_201_CREATED)
 
@@ -124,22 +127,18 @@ def change_password(
 
 
 @router.post("/forgot-password", response_model=MessageResponse)
-def forgot_password(request: Request, body: ForgotPasswordRequest, db: Session = Depends(get_db), rate: None = Depends(rate_limiter)):
+def forgot_password(body: ForgotPasswordRequest, db: Session = Depends(get_db), rate: None = Depends(rate_limiter)):
     user = auth_service.get_user_by_email(db, body.email)
     if not user:
         return {"message": "如果该邮箱已注册，重置密码链接已发送"}
 
-    origin = request.headers.get("Origin") or request.headers.get("Referer", "")
-    # 提取 base URL（去掉路径部分）
-    frontend_url = origin.rstrip("/")
-
-    auth_service.create_password_reset(db, user, frontend_url)
+    auth_service.create_password_reset(db, user, FRONTEND_URL)
 
     return {"message": "如果该邮箱已注册，重置密码链接已发送"}
 
 
 @router.post("/reset-password", response_model=MessageResponse)
-def reset_password(body: ResetPasswordRequest, db: Session = Depends(get_db)):
+def reset_password(body: ResetPasswordRequest, db: Session = Depends(get_db), rate: None = Depends(rate_limiter)):
     user = auth_service.reset_password_with_token(db, body.token, body.new_password)
     if not user:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="重置链接无效或已过期")
@@ -183,12 +182,16 @@ async def upload_avatar(
 
     os.makedirs(AVATAR_DIR, exist_ok=True)
 
-    ext = os.path.splitext(file.filename or ".jpg")[1] or ".jpg"
+    ext_map = {"image/jpeg": ".jpg", "image/png": ".png", "image/gif": ".gif"}
+    ext = ext_map.get(file.content_type, ".jpg")
     filename = f"{uuid.uuid4().hex}{ext}"
     filepath = os.path.join(AVATAR_DIR, filename)
 
-    with open(filepath, "wb") as f:
-        f.write(content)
+    try:
+        with open(filepath, "wb") as f:
+            f.write(content)
+    except OSError:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="头像保存失败")
 
     user = db.query(User).filter(User.id == current_user.id).first()
     if not user:

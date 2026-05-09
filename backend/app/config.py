@@ -11,8 +11,8 @@ DB_NAME = os.getenv("DB_NAME", "grouping_master")
 
 DATABASE_URL = f"mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}?charset=utf8mb4"
 
-SECRET_KEY = os.getenv("SECRET_KEY", "dev-secret-change-me")
-SESSION_EXPIRE_DAYS = 30
+SECRET_KEY = os.getenv("SECRET_KEY")
+SESSION_EXPIRE_DAYS = 7
 # 以下上限前端也有对应常量，修改时需两端同步
 MAX_CONSTRAINTS = 10
 MAX_PREFERENCE_COUNT = 10
@@ -36,3 +36,5 @@ FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
 REQUIRE_PASSWORD = os.getenv("REQUIRE_PASSWORD", "true").lower() != "false"
 
 RESET_TOKEN_EXPIRE_MINUTES = 30
+
+DEV_PRINT_RESET_LINK = os.getenv("DEV_PRINT_RESET_LINK", "false").lower() == "true"
