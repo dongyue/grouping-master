@@ -1,15 +1,21 @@
 #!/bin/bash
+# 部署脚本 — bash deploy.sh 运行，80 端口需 PORT=80 sudo -E bash deploy.sh
 set -e
 
+PORT="${PORT:-8000}"
 BACKUP_DIR="frontend/dist.bak.$(date +%s)"
+SUDO=""
+if [ -n "$SUDO_USER" ]; then
+    SUDO="sudo -u $SUDO_USER"
+fi
 
 echo ">>> 拉取最新代码..."
-git fetch
-git reset --hard origin/master
+$SUDO git fetch
+$SUDO git reset --hard origin/master
 
 echo ">>> 安装依赖..."
 cd frontend
-npm install
+$SUDO npm install
 cd ..
 
 echo ">>> 构建前端..."
@@ -17,7 +23,7 @@ cd frontend
 if [ -d dist ]; then
     mv dist "../$BACKUP_DIR"
 fi
-npm run build
+$SUDO npm run build
 cd ..
 
 echo ">>> 数据库迁移..."
@@ -26,18 +32,18 @@ venv/bin/alembic upgrade head
 
 echo ">>> 重启后端..."
 # 优雅关闭
-sudo pkill -TERM -f "uvicorn app.main:app" || true
+pkill -TERM -f "uvicorn app.main:app" || true
 sleep 2
 # 强制清理残留
-sudo pkill -KILL -f "uvicorn app.main:app" || true
+pkill -KILL -f "uvicorn app.main:app" || true
 sleep 1
 
-sudo nohup venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 80 > uvicorn.log 2>&1 &
+nohup venv/bin/uvicorn app.main:app --host 0.0.0.0 --port "$PORT" </dev/null > uvicorn.log 2>&1 &
 cd ..
 
 # 等待启动
 sleep 3
-if curl -sf http://localhost:80/api/auth/config > /dev/null 2>&1; then
+if curl -sf "http://localhost:$PORT/api/auth/config" > /dev/null 2>&1; then
     echo ">>> 部署完成"
     rm -rf "../$BACKUP_DIR" 2>/dev/null || true
 else

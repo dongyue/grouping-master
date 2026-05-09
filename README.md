@@ -83,11 +83,21 @@ uvicorn app.main:app --reload
 
 #### 生产运行
 
+使用一键部署脚本 `deploy.sh`，自动完成拉取代码 → 安装前端依赖 → 构建前端 → 数据库迁移 → 重启服务：
+
 ```bash
-sudo nohup venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 80 &
+# 默认 8000 端口
+bash deploy.sh
+
+# 指定端口
+PORT=9000 bash deploy.sh
+
+# 绑定 80 端口（需 root）
+PORT=80 sudo -E bash deploy.sh
 ```
 
-后端会自动托管前端构建产物（`frontend/dist/`），前端和后端均通过同一个端口访问。
+> 脚本启动后 `sleep 3` 然后自动健康检查，成功显示「部署完成」并删除旧版备份，失败则回滚前端构建产物。
+> 后端自动托管前端的 `dist/` 静态文件，无需额外 Web 服务器。
 
 #### 调试 SMTP 服务（可选）
 
